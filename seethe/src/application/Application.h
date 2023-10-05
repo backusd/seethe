@@ -1,12 +1,16 @@
 #pragma once
 #include "pch.h"
 #include "window/MainWindow.h"
+#include "simulation/Simulation.h"
 #include "rendering/DeviceResources.h"
 #include "rendering/DescriptorVector.h"
+#include "rendering/Renderer.h"
 #include "utils/Timer.h"
 #include "utils/Constants.h"
 
-
+#include "imgui.h"
+#include "backends/imgui_impl_win32.h"
+#include "backends/imgui_impl_dx12.h"
 
 namespace seethe
 {
@@ -18,6 +22,7 @@ public:
 	Application(Application&&) = delete;
 	Application& operator=(const Application&) = delete;
 	Application& operator=(Application&&) = delete;
+	~Application();
 
 	int Run();
 
@@ -32,7 +37,7 @@ public:
 	ND LRESULT MainWindowOnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 	ND LRESULT MainWindowOnRButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 	ND LRESULT MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
+	ND LRESULT MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	ND LRESULT MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 	ND LRESULT MainWindowOnMouseEnter(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 	ND LRESULT MainWindowOnMouseLeave(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
@@ -47,11 +52,14 @@ public:
 private:
 	void Update();
 	void Render();
+	void RenderUI();
 	void Present();
 
 	std::unique_ptr<MainWindow> m_mainWindow;
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	Timer m_timer;
+	Simulation m_simulation;
+	std::unique_ptr<Renderer> m_renderer;
 
 	// Rendering resources
 	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, g_numFrameResources> m_allocators;

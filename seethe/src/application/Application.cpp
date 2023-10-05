@@ -1,44 +1,105 @@
 #include "Application.h"
 #include "utils/Log.h"
 
+// Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function on Simulation
+#pragma push_macro("AddAtom")
+#undef AddAtom
+
 namespace seethe
 {
 Application::Application() :
 	m_timer(),
 	m_viewport{},
-	m_scissorRect{ 0, 0, 1, 1 }
+	m_scissorRect{}
 {
+	// Initialize all fence values to 0
+	std::fill(std::begin(m_fences), std::end(m_fences), 0);
+
 	m_mainWindow = std::make_unique<MainWindow>(this);
-	m_deviceResources = std::make_shared<DeviceResources>(m_mainWindow->GetHWND(), m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+
+	// Initialize viewport (even though this will be reset every frame by query the ImGui viewport window)
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f; 
+	m_viewport.Height = static_cast<float>(m_mainWindow->GetHeight()); 
+	m_viewport.Width = static_cast<float>(m_mainWindow->GetWidth()); 
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+
+	m_scissorRect = { 0, 0, m_mainWindow->GetWidth(), m_mainWindow->GetHeight() }; 
+
 	m_timer.Reset();
 
+	m_simulation.AddAtom();
 
-	// Initialize all fence values to 0
-	std::fill(std::begin(m_fences), std::end(m_fences), 0); 
+
+
+
+	m_deviceResources = std::make_shared<DeviceResources>(m_mainWindow->GetHWND(), m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+
+	// Initialize the descriptor vector
+	m_descriptorVector = std::make_unique<DescriptorVector>(m_deviceResources, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_descriptorVector->IncrementCount(); // ImGUI will use the first slot in the descriptor vector for its font's SRV, therefore, we need to manually increment the count within the descriptor vector
 
 	// Initialize allocators
-	auto device = m_deviceResources->GetDevice();
-	for (unsigned int iii = 0; iii < g_numFrameResources; ++iii)
+	auto device = m_deviceResources->GetDevice(); 
+	for (unsigned int iii = 0; iii < g_numFrameResources; ++iii) 
 	{
-		GFX_THROW_INFO(
+		GFX_THROW_INFO( 
 			device->CreateCommandAllocator(
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				IID_PPV_ARGS(m_allocators[iii].GetAddressOf())
+				D3D12_COMMAND_LIST_TYPE_DIRECT, 
+				IID_PPV_ARGS(m_allocators[iii].GetAddressOf()) 
 			)
 		);
 	}
 
-	// Initialize the descriptor vector
-	m_descriptorVector = std::make_unique<DescriptorVector>(m_deviceResources, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	// Reset the command list so we can execute commands when initializing the renderer
+	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
+	
+	m_renderer = std::make_unique<Renderer>(m_deviceResources);
 
-	// Initialize viewport
-	m_viewport.TopLeftX = 0.0f;
-	m_viewport.TopLeftY = 0.0f;
-	m_viewport.Height = static_cast<float>(m_mainWindow->GetHeight());
-	m_viewport.Width = static_cast<float>(m_mainWindow->GetWidth());
-	m_viewport.MinDepth = 0.0f;
-	m_viewport.MaxDepth = 1.0f;
+	// Execute the initialization commands.
+	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Close()); 
+	ID3D12CommandList* cmdsLists[] = { m_deviceResources->GetCommandList() }; 
+	GFX_THROW_INFO_ONLY(m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(cmdsLists), cmdsLists));
 
+	// Wait until initialization is complete.
+	m_deviceResources->FlushCommandQueue();
+
+
+	// ==================================================================================
+	// ImGUI
+	// Setup ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplWin32_Init(m_mainWindow->GetHWND());
+	ImGui_ImplDX12_Init(
+		m_deviceResources->GetDevice(),				// YOUR_D3D_DEVICE
+		g_numFrameResources,						// NUM_FRAME_IN_FLIGHT
+		m_deviceResources->GetBackBufferFormat(),	// YOUR_RENDER_TARGET_DXGI_FORMAT
+		m_descriptorVector->GetRawHeapPointer(),	// YOUR_SRV_DESC_HEAP
+		// You'll need to designate a descriptor from your descriptor heap for Dear ImGui to use internally for its font texture's SRV
+		m_descriptorVector->GetCPUHandleAt(0),		// YOUR_CPU_DESCRIPTOR_HANDLE_FOR_FONT_SRV,
+		m_descriptorVector->GetGPUHandleAt(0)		// YOUR_GPU_DESCRIPTOR_HANDLE_FOR_FONT_SRV);
+	);
+
+	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+	ASSERT(font != nullptr, "Could not find font");
+}
+Application::~Application()
+{
+	ImGui_ImplDX12_Shutdown(); 
+	ImGui_ImplWin32_Shutdown(); 
+	ImGui::DestroyContext(); 
 }
 
 int Application::Run()
@@ -56,6 +117,13 @@ int Application::Run()
 		{
 			m_timer.Tick();
 			Update();
+
+			// Start the ImGui frame
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			RenderUI();
 			Render();
 			Present();
 		}
@@ -120,13 +188,112 @@ void Application::Update()
 	GFX_THROW_INFO_ONLY(
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps)
 	);
+
+
+
+
+	m_renderer->Update(m_timer, m_currentFrameIndex, m_viewport);
+}
+void Application::RenderUI()
+{
+	static bool opt_fullscreen = true;
+	static bool opt_padding = false;
+
+	{
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+		const ImGuiViewport* viewport = ImGui::GetMainViewport(); 
+		ImGui::SetNextWindowPos(viewport->WorkPos); 
+		ImGui::SetNextWindowSize(viewport->WorkSize); 
+		ImGui::SetNextWindowViewport(viewport->ID); 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		ImGui::Begin("My DockSpace", nullptr, window_flags);
+		ImGui::PopStyleVar(3);
+
+		ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+		ImGui::DockSpace(dockspace_id);
+
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("Options")) 
+			{
+				ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen); 
+				ImGui::MenuItem("Padding", NULL, &opt_padding); 
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Examples"))
+			{
+				ImGui::MenuItem("Fullscreen2", NULL, &opt_fullscreen);
+				ImGui::MenuItem("Padding2", NULL, &opt_padding);
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenuBar(); 
+		}
+
+		ImGui::End();
+	}
+
+	// Left Panel
+	{
+		//ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+		//window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove; 
+		//window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+		//window_flags |= ImGuiWindowFlags_NoNavFocus;
+		ImGuiWindowFlags window_flags = 0;
+		window_flags |= ImGuiWindowFlags_NoCollapse;
+		window_flags |= ImGuiWindowFlags_NoTitleBar;
+
+		ImGui::Begin("Left Panel", nullptr, window_flags);
+
+		ImGui::Text("Text on the Left");
+
+		ImGui::End();
+	}
+
+	// Right Panel
+	{
+		ImGui::Begin("Right Panel");
+
+		ImGui::Text("Text on the Right");
+
+		ImGui::End();
+	}
+
+	// Bottom Panel
+	{
+		ImGui::Begin("Bottom Panel");
+
+		ImGui::Text("Text on the Bottom");
+
+		ImGui::End();
+	}
+
+	// Viewport
+	{
+		ImGui::Begin("Viewport");
+		ImVec2 pos = ImGui::GetWindowPos();
+		m_viewport.TopLeftX = pos.x;
+		m_viewport.TopLeftY = pos.y;
+		m_viewport.Height = ImGui::GetWindowHeight();
+		m_viewport.Width = ImGui::GetWindowWidth();
+		ImGui::End();
+	}
+
+	// Call ImGUI::Render here - NOTE: It will not actually render to the back buffer, but rather an
+	//							 internal buffer. We have to call ImGui_ImplDX12_RenderDrawData below
+	//                           to have it actually render to the back buffer
+	ImGui::ShowDemoWindow();
+	ImGui::Render();
 }
 void Application::Render()
 {
 	auto commandList = m_deviceResources->GetCommandList();
-
-	GFX_THROW_INFO_ONLY(commandList->RSSetViewports(1, &m_viewport));
-	GFX_THROW_INFO_ONLY(commandList->RSSetScissorRects(1, &m_scissorRect));
 
 	// Indicate a state transition on the resource usage.
 	auto _b = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -148,9 +315,22 @@ void Application::Render()
 		commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &depthStencilView)
 	);
 
+	// Render ImGui content to back buffer
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
+	// NOTE: Setting the viewport must come AFTER calling ImGui_ImplDX12_RenderDrawData because it overwrites the viewport
+	GFX_THROW_INFO_ONLY(commandList->RSSetViewports(1, &m_viewport));
+	GFX_THROW_INFO_ONLY(commandList->RSSetScissorRects(1, &m_scissorRect));
+
 	//////
-	// RENDER STUFF HERE
+	// RENDER STUFF HERE (on top of UI ??)
 	//////
+	m_renderer->Render(m_simulation, m_currentFrameIndex);
+
+
+
+
+
 
 	// Indicate a state transition on the resource usage.
 	auto _b2 = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -319,9 +499,17 @@ LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// ... Window Resize event ...
+	int height = m_mainWindow->GetHeight();
+	int width = m_mainWindow->GetWidth();
+	m_deviceResources->OnResize(height, width);
+	m_viewport.Height = static_cast<float>(height);
+	m_viewport.Width = static_cast<float>(width);
+	m_scissorRect = { 0, 0, width, height };
+	m_renderer->OnResize(); // Must be called AFTER device resources have been resized
+
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-size
 	// --> "An application should return zero if it processes this message."
@@ -427,3 +615,6 @@ LRESULT Application::MainWindowOnKillFocus(HWND hWnd, UINT msg, WPARAM wParam, L
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 }
+
+
+#pragma pop_macro("AddAtom") // See note above for 'AddAtom'

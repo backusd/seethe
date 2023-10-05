@@ -56,6 +56,9 @@ public:
     unsigned int EmplaceBackConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC* desc);
     unsigned int EmplaceBackUnorderedAccessView(ID3D12Resource* pResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc);
 
+    inline void IncrementCount() noexcept { ++m_count; }
+    inline void DecrementCount() noexcept { --m_count; }
+
     void ReleaseAt(unsigned int index) noexcept;
 
 private:
