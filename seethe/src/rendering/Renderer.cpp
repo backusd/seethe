@@ -7,7 +7,7 @@ Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources) :
 	m_deviceResources(deviceResources),
 	m_camera()
 {
-	m_camera.SetPosition(0.0f, 2.0f, -15.0f);
+	//m_camera.SetPosition(0.0f, 2.0f, -15.0f);
 	m_camera.SetLens(0.25f * MathHelper::Pi, m_deviceResources->AspectRatio(), 1.0f, 1000.0f);
 	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 
@@ -63,12 +63,11 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 	passConstants.FarZ = 1000.0f;
 	passConstants.TotalTime = timer.TotalTime();
 	passConstants.DeltaTime = timer.DeltaTime();
+	passConstants.AmbientLight = { 0.25f, 0.25f, 0.25f, 1.0f };
 
-	passConstants.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
-
-	passConstants.FogColor = { 0.7f, 0.7f, 0.7f, 1.0f };
-	passConstants.gFogStart = 5.0f;
-	passConstants.gFogRange = 150.0f;
+//	passConstants.FogColor = { 0.7f, 0.7f, 0.7f, 1.0f };
+//	passConstants.gFogStart = 5.0f;
+//	passConstants.gFogRange = 150.0f;
 
 	passConstants.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
 	passConstants.Lights[0].Strength = { 0.9f, 0.9f, 0.9f };
