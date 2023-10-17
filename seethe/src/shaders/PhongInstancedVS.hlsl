@@ -17,6 +17,14 @@
 // Constant data that varies per frame.
 
 #define MAX_INSTANCES 100
+#define NUM_MATERIALS 10
+
+struct MaterialIn
+{
+    float4 DiffuseAlbedo;
+    float3 FresnelR0;
+    float  Roughness;
+};
 
 cbuffer cbInstanceData : register(b0)
 {
@@ -25,13 +33,9 @@ cbuffer cbInstanceData : register(b0)
 
 cbuffer cbMaterial : register(b1)
 {
-    float4 gDiffuseAlbedo;
-    float3 gFresnelR0;
-    float gRoughness;
-    float4x4 gMatTransform;
+    MaterialIn gMaterial;
 };
 
-// Constant data that varies per material.
 cbuffer cbPass : register(b2)
 {
     float4x4 gView;

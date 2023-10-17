@@ -10,6 +10,7 @@
 #include "utils/Timer.h"
 
 #define MAX_INSTANCES 100
+#define NUM_MATERIALS 10
 
 struct ObjectConstants
 {
@@ -25,7 +26,6 @@ struct Vertex
 {
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT3 Normal;
-	//	DirectX::XMFLOAT2 TexC;
 };
 
 struct MeshData
@@ -39,9 +39,11 @@ struct Material
 	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
 	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
 	float Roughness = 0.25f;
+};
 
-	// Used in texture mapping.
-	DirectX::XMFLOAT4X4 MatTransform = seethe::MathHelper::Identity4x4();
+struct MaterialData
+{
+	Material MaterialArray[NUM_MATERIALS];
 };
 
 
@@ -132,11 +134,13 @@ private:
 	unsigned int m_indexCount = 0;
 
 
-	Material m_material = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
+//	Material m_material = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	MaterialData m_materialData = {};
 
 	std::unique_ptr<ConstantBufferT<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBufferT<Material>> m_materialBuffer;
-	std::unique_ptr<ConstantBufferT<ObjectConstants>> m_objectConstantsBuffer;
+//	std::unique_ptr<ConstantBufferT<Material>> m_materialBuffer;
+	std::unique_ptr<ConstantBufferT<MaterialData>> m_materialsConstantBuffer;
+//	std::unique_ptr<ConstantBufferT<ObjectConstants>> m_objectConstantsBuffer;
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 };

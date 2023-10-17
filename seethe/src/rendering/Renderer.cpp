@@ -77,7 +77,10 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 
 	// ======================================================================
 
-	m_materialBuffer->CopyData(frameIndex, m_material);
+	m_materialData.MaterialArray[0] = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f }; 
+
+	//m_materialBuffer->CopyData(frameIndex, m_material);
+	m_materialsConstantBuffer->CopyData(frameIndex, m_materialData);
 }
 
 void Renderer::Render(const Simulation& simulation, int frameIndex)
@@ -123,7 +126,8 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 	//commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(0, m_instanceConstantBuffer->GetGPUVirtualAddress(frameIndex));
-	commandList->SetGraphicsRootConstantBufferView(1, m_materialBuffer->GetGPUVirtualAddress(frameIndex));
+	//commandList->SetGraphicsRootConstantBufferView(1, m_materialBuffer->GetGPUVirtualAddress(frameIndex));
+	commandList->SetGraphicsRootConstantBufferView(1, m_materialsConstantBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(2, m_passConstantsBuffer->GetGPUVirtualAddress(frameIndex));
 
 	GFX_THROW_INFO_ONLY(commandList->DrawIndexedInstanced(m_indexCount, simulation.Atoms().size(), 0, 0, 0));
@@ -259,8 +263,9 @@ void Renderer::CreatePSOs()
 void Renderer::CreateConstantBuffers()
 {
 	m_passConstantsBuffer = std::make_unique<ConstantBufferT<PassConstants>>(m_deviceResources);
-	m_materialBuffer = std::make_unique<ConstantBufferT<Material>>(m_deviceResources); 
-	m_objectConstantsBuffer = std::make_unique<ConstantBufferT<ObjectConstants>>(m_deviceResources); 
+//	m_materialBuffer = std::make_unique<ConstantBufferT<Material>>(m_deviceResources); 
+	m_materialsConstantBuffer = std::make_unique<ConstantBufferT<MaterialData>>(m_deviceResources);
+//	m_objectConstantsBuffer = std::make_unique<ConstantBufferT<ObjectConstants>>(m_deviceResources);
 
 	// Instancing
 	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceData>>(m_deviceResources);

@@ -22,6 +22,15 @@
 
 // Constant data that varies per frame.
 
+#define NUM_MATERIALS 10
+
+struct MaterialIn
+{
+    float4 DiffuseAlbedo;
+    float3 FresnelR0;
+    float Roughness;
+};
+
 cbuffer cbPerObject : register(b0)
 {
     float4x4 gWorld;
@@ -29,10 +38,7 @@ cbuffer cbPerObject : register(b0)
 
 cbuffer cbMaterial : register(b1)
 {
-    float4 gDiffuseAlbedo;
-    float3 gFresnelR0;
-    float gRoughness;
-    float4x4 gMatTransform;
+    MaterialIn gMaterial[NUM_MATERIALS];
 };
 
 // Constant data that varies per material.
@@ -76,20 +82,21 @@ float4 main(VertexOut pin) : SV_Target
 
     // Vector from point being lit to eye. 
     float3 toEyeW = normalize(gEyePosW - pin.PosW);
+    
+    int iii = 0;
 
 	// Indirect lighting.
-    float4 ambient = gAmbientLight * gDiffuseAlbedo;
+    float4 ambient = gAmbientLight * gMaterial[iii].DiffuseAlbedo;
 
-    const float shininess = 1.0f - gRoughness;
-    Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
+    const float shininess = 1.0f - gMaterial[iii].Roughness;
+    Material mat = { gMaterial[iii].DiffuseAlbedo, gMaterial[iii].FresnelR0, shininess };
     float3 shadowFactor = 1.0f;
-    float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
-        pin.NormalW, toEyeW, shadowFactor);
+    float4 directLight = ComputeLighting(gLights, mat, pin.PosW, pin.NormalW, toEyeW, shadowFactor);
 
     float4 litColor = ambient + directLight;
 
     // Common convention to take alpha from diffuse material.
-    litColor.a = gDiffuseAlbedo.a;
+    litColor.a = gMaterial[iii].DiffuseAlbedo.a;
 
     return litColor;
 }
