@@ -65,10 +65,6 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 	passConstants.DeltaTime = timer.DeltaTime();
 	passConstants.AmbientLight = { 0.25f, 0.25f, 0.25f, 1.0f };
 
-//	passConstants.FogColor = { 0.7f, 0.7f, 0.7f, 1.0f };
-//	passConstants.gFogStart = 5.0f;
-//	passConstants.gFogRange = 150.0f;
-
 	passConstants.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
 	passConstants.Lights[0].Strength = { 0.9f, 0.9f, 0.9f };
 	passConstants.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
@@ -82,20 +78,42 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 	// ======================================================================
 
 	m_materialBuffer->CopyData(frameIndex, m_material);
-
-	// ======================================================================
-
-	ObjectConstants o = {};
-	DirectX::XMStoreFloat4x4(&o.World, DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f));
-
-	m_objectConstantsBuffer->CopyData(frameIndex, o);
 }
 
 void Renderer::Render(const Simulation& simulation, int frameIndex)
 {
+//	ObjectConstants o = {}; 
+//	const DirectX::XMFLOAT3& p = simulation.Atoms()[0].position;
+//	DirectX::XMStoreFloat4x4(&o.World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z))); 
+//
+//	m_objectConstantsBuffer->CopyData(frameIndex, o); 
+
+
+	InstanceData d = {};
+	int iii = 0;
+
+	for (const auto& atom : simulation.Atoms())
+	{
+		const DirectX::XMFLOAT3& p = atom.position;
+		DirectX::XMStoreFloat4x4(&d.WorldArray[iii], DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
+		++iii;
+	}
+
+	m_instanceConstantBuffer->CopyData(frameIndex, d);
+
+
+
+
+
+
+
+
+	// ========================================================================
+
 	auto commandList = m_deviceResources->GetCommandList();
 
-	commandList->SetPipelineState(m_pso.Get());
+	//commandList->SetPipelineState(m_pso.Get());
+	commandList->SetPipelineState(m_psoInstanced.Get());
 
 	commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 
@@ -103,11 +121,12 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 	commandList->IASetIndexBuffer(&m_indexBufferView);
 	commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
+	//commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
+	commandList->SetGraphicsRootConstantBufferView(0, m_instanceConstantBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(1, m_materialBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(2, m_passConstantsBuffer->GetGPUVirtualAddress(frameIndex));
 
-	GFX_THROW_INFO_ONLY(commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0));
+	GFX_THROW_INFO_ONLY(commandList->DrawIndexedInstanced(m_indexCount, simulation.Atoms().size(), 0, 0, 0));
 }
 
 void Renderer::CreateRootSignature()
@@ -158,8 +177,18 @@ void Renderer::CreateShadersAndInputLayout()
 	m_inputLayout = std::make_unique<InputLayout>(
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			//{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },		}
+	);
+
+	// Instancing
+	m_phongVSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedVS.cso");
+	m_phongPSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedPS.cso");
+
+	m_inputLayoutInstanced = std::make_unique<InputLayout>(
+		std::vector<D3D12_INPUT_ELEMENT_DESC>{ 
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "InstanceID", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }, 
 		}
 	);
 }
@@ -206,12 +235,35 @@ void Renderer::CreatePSOs()
 	desc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
 	desc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 	GFX_THROW_INFO(m_deviceResources->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_pso)));
+
+	//
+	// Instancing....
+	//
+	ZeroMemory(&desc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	desc.InputLayout = m_inputLayoutInstanced->GetInputLayoutDesc();
+	desc.pRootSignature = m_rootSignature.Get();
+	desc.VS = m_phongVSInstanced->GetShaderByteCode();
+	desc.PS = m_phongPSInstanced->GetShaderByteCode();
+	desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	desc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	desc.SampleMask = UINT_MAX;
+	desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	desc.NumRenderTargets = 1;
+	desc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
+	desc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
+	desc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	desc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
+	GFX_THROW_INFO(m_deviceResources->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_psoInstanced)));
 }
 void Renderer::CreateConstantBuffers()
 {
 	m_passConstantsBuffer = std::make_unique<ConstantBufferT<PassConstants>>(m_deviceResources);
 	m_materialBuffer = std::make_unique<ConstantBufferT<Material>>(m_deviceResources); 
 	m_objectConstantsBuffer = std::make_unique<ConstantBufferT<ObjectConstants>>(m_deviceResources); 
+
+	// Instancing
+	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceData>>(m_deviceResources);
 }
 
 MeshData Renderer::SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount)

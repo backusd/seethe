@@ -85,6 +85,7 @@
     <ClCompile Include="src\rendering\DescriptorVector.cpp" />
     <ClCompile Include="src\rendering\DeviceResources.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
+    <ClCompile Include="src\simulation\Simulation.cpp" />
     <ClCompile Include="src\utils\DDSTextureLoader.cpp" />
     <ClCompile Include="src\utils\DxgiInfoManager.cpp" />
     <ClCompile Include="src\utils\Log.cpp" />
@@ -140,6 +141,22 @@
     <Natvis Include="vendor\imgui\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="src\shaders\PhongInstancedPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="src\shaders\PhongInstancedVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="src\shaders\PhongPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

@@ -29,7 +29,8 @@ Application::Application() :
 
 	m_timer.Reset();
 
-	m_simulation.AddAtom();
+	m_simulation.AddAtom(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));
+	m_simulation.AddAtom(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 
 
 
@@ -191,7 +192,7 @@ void Application::Update()
 
 
 
-
+	m_simulation.Update(m_timer);
 	m_renderer->Update(m_timer, m_currentFrameIndex, m_viewport);
 }
 void Application::RenderUI()

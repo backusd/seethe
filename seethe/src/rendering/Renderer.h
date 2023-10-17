@@ -9,9 +9,16 @@
 #include "utils/MathHelper.h"
 #include "utils/Timer.h"
 
+#define MAX_INSTANCES 100
+
 struct ObjectConstants
 {
 	DirectX::XMFLOAT4X4 World = seethe::MathHelper::Identity4x4();
+};
+
+struct InstanceData
+{
+	DirectX::XMFLOAT4X4 WorldArray[MAX_INSTANCES];
 };
 
 struct Vertex
@@ -69,11 +76,6 @@ struct PassConstants
 
 	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-//	DirectX::XMFLOAT4 FogColor = { 0.7f, 0.7f, 0.7f, 1.0f };
-//	float gFogStart = 5.0f;
-//	float gFogRange = 150.0f;
-//	DirectX::XMFLOAT2 cbPerObjectPad2 = { 0.0f, 0.0f };
-
 	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
 	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
 	// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
@@ -113,6 +115,13 @@ private:
 	std::unique_ptr<Shader> m_phongPS = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayout = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pso = nullptr;
+
+	// Instancing
+	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
+	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
+	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_psoInstanced = nullptr;
+	std::unique_ptr<ConstantBufferT<InstanceData>> m_instanceConstantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBufferGPU = nullptr;

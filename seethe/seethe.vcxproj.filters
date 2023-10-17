@@ -84,6 +84,9 @@
     <ClCompile Include="src\rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\simulation\Simulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\application\Application.h">
@@ -187,5 +190,7 @@
   <ItemGroup>
     <FxCompile Include="src\shaders\PhongVS.hlsl" />
     <FxCompile Include="src\shaders\PhongPS.hlsl" />
+    <FxCompile Include="src\shaders\PhongInstancedVS.hlsl" />
+    <FxCompile Include="src\shaders\PhongInstancedPS.hlsl" />
   </ItemGroup>
 </Project>
