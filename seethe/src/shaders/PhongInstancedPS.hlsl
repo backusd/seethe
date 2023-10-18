@@ -72,6 +72,7 @@ struct VertexOut
     float4 PosH : SV_POSITION;
     float3 PosW : POSITION;
     float3 NormalW : NORMAL;
+    uint   MaterialIndex : MATERIAL_INDEX;
     uint   InstanceID : InstanceID;
 };
 
@@ -83,20 +84,20 @@ float4 main(VertexOut pin) : SV_Target
     // Vector from point being lit to eye. 
     float3 toEyeW = normalize(gEyePosW - pin.PosW);
     
-    int iii = 0;
+    MaterialIn material = gMaterial[pin.MaterialIndex];
 
 	// Indirect lighting.
-    float4 ambient = gAmbientLight * gMaterial[iii].DiffuseAlbedo;
+    float4 ambient = gAmbientLight * material.DiffuseAlbedo;
 
-    const float shininess = 1.0f - gMaterial[iii].Roughness;
-    Material mat = { gMaterial[iii].DiffuseAlbedo, gMaterial[iii].FresnelR0, shininess };
+    const float shininess = 1.0f - material.Roughness;
+    Material mat = { material.DiffuseAlbedo, material.FresnelR0, shininess };
     float3 shadowFactor = 1.0f;
     float4 directLight = ComputeLighting(gLights, mat, pin.PosW, pin.NormalW, toEyeW, shadowFactor);
 
     float4 litColor = ambient + directLight;
 
     // Common convention to take alpha from diffuse material.
-    litColor.a = gMaterial[iii].DiffuseAlbedo.a;
+    litColor.a = material.DiffuseAlbedo.a;
 
     return litColor;
 }

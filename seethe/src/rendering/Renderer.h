@@ -127,10 +127,13 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBufferGPU = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUploadBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUploadBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceUploadBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView = { 0, 0, 0 };
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView = { 0, 0, DXGI_FORMAT_R16_UINT };
+	D3D12_VERTEX_BUFFER_VIEW m_instanceBufferView = { 0, 0, 0 };
 	unsigned int m_indexCount = 0;
 
 

@@ -65,6 +65,7 @@ struct VertexIn
 {
     float3 PosL : POSITION;
     float3 NormalL : NORMAL;
+    uint   MaterialIndex : MATERIAL_INDEX;
     uint   InstanceID : SV_InstanceID;
 };
 
@@ -73,6 +74,7 @@ struct VertexOut
     float4 PosH : SV_POSITION;
     float3 PosW : POSITION;
     float3 NormalW : NORMAL;
+    uint   MaterialIndex : MATERIAL_INDEX;
     uint   InstanceID : InstanceID;
 };
 
@@ -94,6 +96,7 @@ VertexOut main(VertexIn vin)
     vout.PosH = mul(posW, gViewProj);
     
     vout.InstanceID = vin.InstanceID;
+    vout.MaterialIndex = vin.MaterialIndex;
 
     return vout;
 }

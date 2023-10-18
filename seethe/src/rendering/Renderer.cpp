@@ -122,6 +122,7 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->IASetIndexBuffer(&m_indexBufferView);
+	commandList->IASetVertexBuffers(1, 1, &m_instanceBufferView);
 	commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
@@ -192,6 +193,7 @@ void Renderer::CreateShadersAndInputLayout()
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{ 
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 			{ "InstanceID", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }, 
 		}
 	);
@@ -215,6 +217,19 @@ void Renderer::CreateShapeGeometry()
 	// Get the buffer locations
 	m_vertexBufferView.BufferLocation = m_vertexBufferGPU->GetGPUVirtualAddress(); 
 	m_indexBufferView.BufferLocation = m_indexBufferGPU->GetGPUVirtualAddress(); 
+
+
+	//
+	// Instance data
+	//
+	std::vector<std::uint32_t> instanceData = { 0, 1 };
+
+	m_instanceBufferView.StrideInBytes = sizeof(std::uint32_t);
+	m_instanceBufferView.SizeInBytes = sizeof(std::uint32_t) * static_cast<unsigned int>(instanceData.size());
+
+	m_instanceBufferGPU = CreateDefaultBuffer(instanceData.data(), m_instanceBufferView.SizeInBytes, m_instanceUploadBuffer);
+
+	m_instanceBufferView.BufferLocation = m_instanceBufferGPU->GetGPUVirtualAddress(); 
 }
 void Renderer::CreatePSOs()
 {
