@@ -136,23 +136,17 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBufferGPU = nullptr;
-//	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUploadBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUploadBuffer = nullptr;
-//	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceUploadBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView = { 0, 0, 0 };
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView = { 0, 0, DXGI_FORMAT_R16_UINT };
-//	D3D12_VERTEX_BUFFER_VIEW m_instanceBufferView = { 0, 0, 0 };
 	unsigned int m_indexCount = 0;
 
 
-//	Material m_material = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
 	MaterialData m_materialData = {};
 
 	std::unique_ptr<ConstantBufferT<PassConstants>> m_passConstantsBuffer;
-//	std::unique_ptr<ConstantBufferT<Material>> m_materialBuffer;
 	std::unique_ptr<ConstantBufferT<MaterialData>> m_materialsConstantBuffer;
-//	std::unique_ptr<ConstantBufferT<ObjectConstants>> m_objectConstantsBuffer;
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 };

@@ -79,19 +79,11 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 
 	m_materialData.MaterialArray[0] = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f }; 
 
-	//m_materialBuffer->CopyData(frameIndex, m_material);
 	m_materialsConstantBuffer->CopyData(frameIndex, m_materialData);
 }
 
 void Renderer::Render(const Simulation& simulation, int frameIndex)
 {
-//	ObjectConstants o = {}; 
-//	const DirectX::XMFLOAT3& p = simulation.Atoms()[0].position;
-//	DirectX::XMStoreFloat4x4(&o.World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z))); 
-//
-//	m_objectConstantsBuffer->CopyData(frameIndex, o); 
-
-
 	InstanceDataArray d = {};
 	int iii = 0;
 
@@ -118,19 +110,15 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 	auto commandList = m_deviceResources->GetCommandList();
 
-	//commandList->SetPipelineState(m_pso.Get());
 	commandList->SetPipelineState(m_psoInstanced.Get());
 
 	commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->IASetIndexBuffer(&m_indexBufferView);
-//	commandList->IASetVertexBuffers(1, 1, &m_instanceBufferView);
 	commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	//commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(0, m_instanceConstantBuffer->GetGPUVirtualAddress(frameIndex));
-	//commandList->SetGraphicsRootConstantBufferView(1, m_materialBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(1, m_materialsConstantBuffer->GetGPUVirtualAddress(frameIndex));
 	commandList->SetGraphicsRootConstantBufferView(2, m_passConstantsBuffer->GetGPUVirtualAddress(frameIndex));
 
@@ -196,7 +184,6 @@ void Renderer::CreateShadersAndInputLayout()
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{ 
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-//			{ "MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		}
 	);
 }
@@ -219,19 +206,6 @@ void Renderer::CreateShapeGeometry()
 	// Get the buffer locations
 	m_vertexBufferView.BufferLocation = m_vertexBufferGPU->GetGPUVirtualAddress(); 
 	m_indexBufferView.BufferLocation = m_indexBufferGPU->GetGPUVirtualAddress(); 
-
-
-	//
-	// Instance data
-	//
-//	std::vector<std::uint32_t> instanceData = { 0, 1 };
-//
-//	m_instanceBufferView.StrideInBytes = sizeof(std::uint32_t);
-//	m_instanceBufferView.SizeInBytes = sizeof(std::uint32_t) * static_cast<unsigned int>(instanceData.size());
-//
-//	m_instanceBufferGPU = CreateDefaultBuffer(instanceData.data(), m_instanceBufferView.SizeInBytes, m_instanceUploadBuffer);
-//
-//	m_instanceBufferView.BufferLocation = m_instanceBufferGPU->GetGPUVirtualAddress(); 
 }
 void Renderer::CreatePSOs()
 {
@@ -280,9 +254,7 @@ void Renderer::CreatePSOs()
 void Renderer::CreateConstantBuffers()
 {
 	m_passConstantsBuffer = std::make_unique<ConstantBufferT<PassConstants>>(m_deviceResources);
-//	m_materialBuffer = std::make_unique<ConstantBufferT<Material>>(m_deviceResources); 
 	m_materialsConstantBuffer = std::make_unique<ConstantBufferT<MaterialData>>(m_deviceResources);
-//	m_objectConstantsBuffer = std::make_unique<ConstantBufferT<ObjectConstants>>(m_deviceResources);
 
 	// Instancing
 	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceDataArray>>(m_deviceResources);
