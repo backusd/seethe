@@ -19,7 +19,16 @@ struct ObjectConstants
 
 struct InstanceData
 {
-	DirectX::XMFLOAT4X4 WorldArray[MAX_INSTANCES];
+	DirectX::XMFLOAT4X4 World;
+	std::uint32_t MaterialIndex;
+	std::uint32_t Pad0;
+	std::uint32_t Pad1;
+	std::uint32_t Pad2;
+};
+
+struct InstanceDataArray
+{
+	InstanceData Data[MAX_INSTANCES];
 };
 
 struct Vertex
@@ -123,17 +132,17 @@ private:
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_psoInstanced = nullptr;
-	std::unique_ptr<ConstantBufferT<InstanceData>> m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBufferT<InstanceDataArray>> m_instanceConstantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBufferGPU = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceBufferGPU = nullptr;
+//	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceBufferGPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUploadBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUploadBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceUploadBuffer = nullptr;
+//	Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceUploadBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView = { 0, 0, 0 };
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView = { 0, 0, DXGI_FORMAT_R16_UINT };
-	D3D12_VERTEX_BUFFER_VIEW m_instanceBufferView = { 0, 0, 0 };
+//	D3D12_VERTEX_BUFFER_VIEW m_instanceBufferView = { 0, 0, 0 };
 	unsigned int m_indexCount = 0;
 
 

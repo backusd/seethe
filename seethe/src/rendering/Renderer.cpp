@@ -92,13 +92,16 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 //	m_objectConstantsBuffer->CopyData(frameIndex, o); 
 
 
-	InstanceData d = {};
+	InstanceDataArray d = {};
 	int iii = 0;
 
 	for (const auto& atom : simulation.Atoms())
 	{
 		const DirectX::XMFLOAT3& p = atom.position;
-		DirectX::XMStoreFloat4x4(&d.WorldArray[iii], DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
+		DirectX::XMStoreFloat4x4(&d.Data[iii].World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
+		
+		d.Data[iii].MaterialIndex = iii % 2;
+
 		++iii;
 	}
 
@@ -122,7 +125,7 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->IASetIndexBuffer(&m_indexBufferView);
-	commandList->IASetVertexBuffers(1, 1, &m_instanceBufferView);
+//	commandList->IASetVertexBuffers(1, 1, &m_instanceBufferView);
 	commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantsBuffer->GetGPUVirtualAddress(frameIndex));
@@ -193,8 +196,7 @@ void Renderer::CreateShadersAndInputLayout()
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{ 
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-			{ "InstanceID", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }, 
+//			{ "MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
 		}
 	);
 }
@@ -222,14 +224,14 @@ void Renderer::CreateShapeGeometry()
 	//
 	// Instance data
 	//
-	std::vector<std::uint32_t> instanceData = { 0, 1 };
-
-	m_instanceBufferView.StrideInBytes = sizeof(std::uint32_t);
-	m_instanceBufferView.SizeInBytes = sizeof(std::uint32_t) * static_cast<unsigned int>(instanceData.size());
-
-	m_instanceBufferGPU = CreateDefaultBuffer(instanceData.data(), m_instanceBufferView.SizeInBytes, m_instanceUploadBuffer);
-
-	m_instanceBufferView.BufferLocation = m_instanceBufferGPU->GetGPUVirtualAddress(); 
+//	std::vector<std::uint32_t> instanceData = { 0, 1 };
+//
+//	m_instanceBufferView.StrideInBytes = sizeof(std::uint32_t);
+//	m_instanceBufferView.SizeInBytes = sizeof(std::uint32_t) * static_cast<unsigned int>(instanceData.size());
+//
+//	m_instanceBufferGPU = CreateDefaultBuffer(instanceData.data(), m_instanceBufferView.SizeInBytes, m_instanceUploadBuffer);
+//
+//	m_instanceBufferView.BufferLocation = m_instanceBufferGPU->GetGPUVirtualAddress(); 
 }
 void Renderer::CreatePSOs()
 {
@@ -283,7 +285,7 @@ void Renderer::CreateConstantBuffers()
 //	m_objectConstantsBuffer = std::make_unique<ConstantBufferT<ObjectConstants>>(m_deviceResources);
 
 	// Instancing
-	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceData>>(m_deviceResources);
+	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceDataArray>>(m_deviceResources);
 }
 
 MeshData Renderer::SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount)

@@ -17,14 +17,6 @@ Application::Application() :
 
 	m_mainWindow = std::make_unique<MainWindow>(this);
 
-	// Initialize viewport (even though this will be reset every frame by query the ImGui viewport window)
-	m_viewport.TopLeftX = 0.0f;
-	m_viewport.TopLeftY = 0.0f; 
-	m_viewport.Height = static_cast<float>(m_mainWindow->GetHeight()); 
-	m_viewport.Width = static_cast<float>(m_mainWindow->GetWidth()); 
-	m_viewport.MinDepth = 0.0f;
-	m_viewport.MaxDepth = 1.0f;
-
 	m_scissorRect = { 0, 0, m_mainWindow->GetWidth(), m_mainWindow->GetHeight() }; 
 
 	m_timer.Reset();
@@ -117,14 +109,18 @@ int Application::Run()
 		try
 		{
 			m_timer.Tick();
-			Update();
-
+			
 			// Start the ImGui frame
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-
 			RenderUI();
+
+			// Call Update() AFTER calling RenderUI
+			// This is important because running the ImGUI code first may update values (ex. the viewport)
+			// that will be important during the update phase
+			Update();
+
 			Render();
 			Present();
 		}
@@ -277,7 +273,16 @@ void Application::RenderUI()
 
 	// Viewport
 	{
-		ImGui::Begin("Viewport");
+		ImGuiWindowFlags window_flags = 0;
+		//window_flags |= ImGuiWindowFlags_NoDocking;
+		//window_flags |= ImGuiWindowFlags_NoTitleBar; 
+		//window_flags |= ImGuiWindowFlags_NoCollapse;
+		//window_flags |= ImGuiWindowFlags_NoResize;
+		//window_flags |= ImGuiWindowFlags_NoMove; 
+		//window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+		//window_flags |= ImGuiWindowFlags_NoNavFocus;
+		bool open = ImGui::Begin("Viewport", nullptr, window_flags);
+		ASSERT(open, "Viewport window should never be closed");
 		ImVec2 pos = ImGui::GetWindowPos();
 		m_viewport.TopLeftX = pos.x;
 		m_viewport.TopLeftY = pos.y;
@@ -502,12 +507,10 @@ LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 }
 LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	// ... Window Resize event ...
+	// NOTE: Do not update the viewport here. The viewport gets updated every frame in RenderUI() 
 	int height = m_mainWindow->GetHeight();
 	int width = m_mainWindow->GetWidth();
 	m_deviceResources->OnResize(height, width);
-	m_viewport.Height = static_cast<float>(height);
-	m_viewport.Width = static_cast<float>(width);
 	m_scissorRect = { 0, 0, width, height };
 	m_renderer->OnResize(); // Must be called AFTER device resources have been resized
 

@@ -26,9 +26,18 @@ struct MaterialIn
     float  Roughness;
 };
 
+struct InstanceData
+{
+    float4x4 World;
+    uint MaterialIndex;
+    uint Pad0;
+    uint Pad1;
+    uint Pad2;
+};
+
 cbuffer cbInstanceData : register(b0)
 {
-    float4x4 gInstanceWorldArray[MAX_INSTANCES];
+    InstanceData gInstanceDataArray[MAX_INSTANCES];
 }
 
 cbuffer cbMaterial : register(b1)
@@ -65,8 +74,7 @@ struct VertexIn
 {
     float3 PosL : POSITION;
     float3 NormalL : NORMAL;
-    uint   MaterialIndex : MATERIAL_INDEX;
-    uint   InstanceID : SV_InstanceID;
+//    uint   MaterialIndex : MATERIAL_INDEX;
 };
 
 struct VertexOut
@@ -74,17 +82,17 @@ struct VertexOut
     float4 PosH : SV_POSITION;
     float3 PosW : POSITION;
     float3 NormalW : NORMAL;
-    uint   MaterialIndex : MATERIAL_INDEX;
-    uint   InstanceID : InstanceID;
+    nointerpolation uint MaterialIndex : MATERIAL_INDEX;
 };
 
 
-VertexOut main(VertexIn vin)
+VertexOut main(VertexIn vin, uint instanceID : SV_InstanceID)
 {
     VertexOut vout = (VertexOut) 0.0f;
     
-    float4x4 world = gInstanceWorldArray[vin.InstanceID];
-	
+    //float4x4 world = gInstanceWorldArray[instanceID];
+    float4x4 world = gInstanceDataArray[instanceID].World;
+    
     // Transform to world space.
     float4 posW = mul(float4(vin.PosL, 1.0f), world);
     vout.PosW = posW.xyz;
@@ -95,8 +103,8 @@ VertexOut main(VertexIn vin)
     // Transform to homogeneous clip space.
     vout.PosH = mul(posW, gViewProj);
     
-    vout.InstanceID = vin.InstanceID;
-    vout.MaterialIndex = vin.MaterialIndex;
+    //vout.MaterialIndex = vin.MaterialIndex;
+    vout.MaterialIndex = gInstanceDataArray[instanceID].MaterialIndex;
 
     return vout;
 }

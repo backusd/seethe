@@ -73,7 +73,6 @@ struct VertexOut
     float3 PosW : POSITION;
     float3 NormalW : NORMAL;
     uint   MaterialIndex : MATERIAL_INDEX;
-    uint   InstanceID : InstanceID;
 };
 
 float4 main(VertexOut pin) : SV_Target
