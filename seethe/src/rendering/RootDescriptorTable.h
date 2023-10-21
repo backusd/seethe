@@ -19,8 +19,8 @@ public:
 
 	std::function<void(RootDescriptorTable*, const Timer&, int)> Update = [](RootDescriptorTable*, const Timer&, int) {};
 
-	ND constexpr inline UINT RootParameterIndex() const noexcept { return m_rootParameterIndex; }
-	ND constexpr inline D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHandle() const noexcept { return m_descriptorHandle; }
+	ND constexpr inline UINT GetRootParameterIndex() const noexcept { return m_rootParameterIndex; }
+	ND constexpr inline D3D12_GPU_DESCRIPTOR_HANDLE GetDescriptorHandle() const noexcept { return m_descriptorHandle; }
 
 private:
 	UINT m_rootParameterIndex;

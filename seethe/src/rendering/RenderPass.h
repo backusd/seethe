@@ -60,7 +60,7 @@ public:
 
 	ND constexpr inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
 	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
-	ND constexpr inline const std::vector<RenderPassLayer>& GetRenderPassLayer() const noexcept { return m_renderPassLayers; }
+	ND constexpr inline const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
 	ND constexpr inline const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 
@@ -86,8 +86,8 @@ public:
 
 	// Function pointers for Pre/Post-Work 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not make a Draw call for this layer)
-	std::function<bool(RenderPass*, ID3D12GraphicsCommandList*)> PreWork = [](RenderPass*, ID3D12GraphicsCommandList*) { return true; };
-	std::function<void(RenderPass*, ID3D12GraphicsCommandList*)> PostWork = [](RenderPass*, ID3D12GraphicsCommandList*) {};
+	std::function<bool(RenderPass&, ID3D12GraphicsCommandList*)> PreWork = [](RenderPass&, ID3D12GraphicsCommandList*) { return true; };
+	std::function<void(RenderPass&, ID3D12GraphicsCommandList*)> PostWork = [](RenderPass&, ID3D12GraphicsCommandList*) {};
 
 private:
 	// There is too much state to worry about copying (and expensive ?), so just delete copy operations until we find a good use case

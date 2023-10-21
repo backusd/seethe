@@ -9,6 +9,8 @@
 #include "utils/MathHelper.h"
 #include "utils/Timer.h"
 
+#include "RenderPass.h"
+
 #define MAX_INSTANCES 100
 #define NUM_MATERIALS 10
 
@@ -149,5 +151,16 @@ private:
 	std::unique_ptr<ConstantBufferT<MaterialData>> m_materialsConstantBuffer;
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+
+
+	// =======================================================================
+	
+	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer);
+
+
+	D3D12_VIEWPORT m_viewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f }; // Dummy values
+	D3D12_RECT m_scissorRect = { 0, 0, 1, 1 }; // Dummy values
+
+	std::vector<RenderPass> m_renderPasses;
 };
 }

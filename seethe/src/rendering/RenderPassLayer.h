@@ -74,7 +74,7 @@ public:
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }
 
 	ND constexpr inline const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
-	ND inline const ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
+	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND constexpr inline D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
 	ND inline std::shared_ptr<MeshGroup> GetMeshGroup() const noexcept { return m_meshes; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
