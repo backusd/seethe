@@ -84,6 +84,7 @@
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\DescriptorVector.cpp" />
     <ClCompile Include="src\rendering\DeviceResources.cpp" />
+    <ClCompile Include="src\rendering\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\simulation\Simulation.cpp" />
     <ClCompile Include="src\utils\DDSTextureLoader.cpp" />
@@ -108,11 +109,19 @@
     <ClInclude Include="src\application\window\WindowTemplate.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\rendering\Camera.h" />
+    <ClInclude Include="src\rendering\ComputeLayer.h" />
     <ClInclude Include="src\rendering\ConstantBuffer.h" />
     <ClInclude Include="src\rendering\DescriptorVector.h" />
     <ClInclude Include="src\rendering\DeviceResources.h" />
     <ClInclude Include="src\rendering\InputLayout.h" />
+    <ClInclude Include="src\rendering\MeshGroup.h" />
     <ClInclude Include="src\rendering\Renderer.h" />
+    <ClInclude Include="src\rendering\RenderItem.h" />
+    <ClInclude Include="src\rendering\RenderPass.h" />
+    <ClInclude Include="src\rendering\RenderPassLayer.h" />
+    <ClInclude Include="src\rendering\RootConstantBufferView.h" />
+    <ClInclude Include="src\rendering\RootDescriptorTable.h" />
+    <ClInclude Include="src\rendering\RootSignature.h" />
     <ClInclude Include="src\rendering\Shader.h" />
     <ClInclude Include="src\simulation\Simulation.h" />
     <ClInclude Include="src\utils\Constants.h" />
