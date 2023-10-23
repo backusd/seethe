@@ -1,8 +1,6 @@
 #pragma once
 
 #define ND [[nodiscard]]
-#define LIKELY [[likely]]
-#define UNLIKELY [[unlikely]]
 
 #define CAT2(a,b) a##b
 #define CAT(a,b) CAT2(a,b)

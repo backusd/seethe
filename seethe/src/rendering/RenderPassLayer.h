@@ -59,27 +59,10 @@ public:
 	void Update(const Timer& timer, int frameIndex)
 	{
 		for (RenderItem& item : m_renderItems)
-		{
 			item.Update(timer, frameIndex);
-		}
 
 		// This is a virtual method that only actually does anything for DynamicMesh
 		m_meshes->Update(frameIndex);
-	}
-
-	void RemoveRenderItem(RenderItem* ri)
-	{
-		if (ri != nullptr) LIKELY
-		{
-			for (unsigned int iii = 0; iii < m_renderItems.size(); ++iii)
-			{
-				if (&m_renderItems[iii] == ri) UNLIKELY
-				{
-					m_renderItems.erase(m_renderItems.begin() + iii);
-					break;
-				}
-			}
-		}
 	}
 
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }

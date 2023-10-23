@@ -10,7 +10,7 @@ namespace seethe
 class RootConstantBufferView
 {
 public:
-	RootConstantBufferView(UINT rootParameterIndex, ConstantBuffer* cb) noexcept :
+	RootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept :
 		m_rootParameterIndex(rootParameterIndex),
 		m_constantBuffer(cb)
 	{
@@ -23,14 +23,14 @@ public:
 	~RootConstantBufferView() noexcept = default; 
 
 	ND constexpr inline UINT GetRootParameterIndex() const noexcept { return m_rootParameterIndex; }
-	ND constexpr inline ConstantBuffer* GetConstantBuffer() const noexcept { return m_constantBuffer; }
+	ND constexpr inline ConstantBufferBase* GetConstantBuffer() const noexcept { return m_constantBuffer; }
 
 	// No Setters yet... wait until you have a use case
 
 	std::function<void(const Timer&, int)> Update = [](const Timer&, int) {};
 
 private:
-	UINT			m_rootParameterIndex;
-	ConstantBuffer* m_constantBuffer;
+	UINT				m_rootParameterIndex;
+	ConstantBufferBase* m_constantBuffer;
 };
 }

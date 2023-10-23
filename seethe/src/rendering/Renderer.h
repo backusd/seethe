@@ -123,10 +123,10 @@ private:
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	std::unique_ptr<ConstantBufferT<InstanceDataArray>> m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBuffer<InstanceDataArray>> m_instanceConstantBuffer;
 
-	std::unique_ptr<ConstantBufferT<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBufferT<MaterialData>> m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
+	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 

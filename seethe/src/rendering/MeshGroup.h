@@ -92,14 +92,10 @@ public:
 		m_vertices(std::move(rhs.m_vertices)),
 		m_indices(std::move(rhs.m_indices))
 	{
-		LOG_WARN("{}", "MeshGroupT Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 	}
 	MeshGroupT& operator=(MeshGroupT&& rhs) noexcept
 	{
-		LOG_WARN("{}", "MeshGroupT Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 
 		MeshGroup::operator=(std::move(rhs));
@@ -185,16 +181,9 @@ public:
 	DynamicMeshGroup(DynamicMeshGroup&& rhs) noexcept :
 		MeshGroup(std::move(rhs))
 	{
-		LOG_WARN("{}", "DynamicMeshGroup Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 	}
 	DynamicMeshGroup& operator=(DynamicMeshGroup&& rhs) noexcept
 	{
-		LOG_WARN("{}", "DynamicMeshGroup Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
-
 		MeshGroup::operator=(std::move(rhs));
 		return *this;
 	}
@@ -227,18 +216,14 @@ class DynamicMeshGroupT : public DynamicMeshGroup
 public:
 	// NOTE: For Dynamic meshes, we only allow there to be a single mesh - see Note above the DynamicMeshGroup class
 	DynamicMeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
-		std::vector<T>&& vertices,
-		std::vector<std::uint16_t>&& indices) :
+					  std::vector<T>&& vertices,
+					  std::vector<std::uint16_t>&& indices) :
 		DynamicMeshGroup(deviceResources),
 		m_vertices(std::move(vertices)),
 		m_indices(std::move(indices))
 	{
 		ASSERT(m_vertices.size() > 0, "No vertices");
 		ASSERT(m_indices.size() > 0, "No indices");
-
-//		Engine::AddDynamicMeshGroup(this);
-		LOG_ERROR("{}", "Need to re-implement Engine::AddDynamicMeshGroup call in the DynamicMeshGroupT constructor");
-
 
 		// Create the submesh structure for the single mesh
 		SubmeshGeometry submesh;
@@ -278,27 +263,12 @@ public:
 		m_vertices(std::move(rhs.m_vertices)),
 		m_indices(std::move(rhs.m_indices))
 	{
-		LOG_WARN("{}", "DynamicMeshGroupT Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
-		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
-
-		// Register the DynamicMeshGroup with the Engine (don't explicitly remove the rhs object because its destructor should handle that)
-//		Engine::AddDynamicMeshGroup(this);
-		LOG_ERROR("{}", "Need to re-implement Engine::AddDynamicMeshGroup call in the DynamicMeshGroupT move constructor");
-
 		// Map the vertex and index buffers
 		GFX_THROW_INFO(m_vertexBufferGPU->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedVertexData)));
 		GFX_THROW_INFO(m_indexBufferGPU->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedIndexData)));
 	}
 	DynamicMeshGroupT& operator=(DynamicMeshGroupT&& rhs) noexcept
 	{
-		LOG_WARN("{}", "DynamicMeshGroupT Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
-		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
-
-		// Register the DynamicMeshGroup with the Engine (don't explicitly remove the rhs object because its destructor should handle that)
-//		Engine::AddDynamicMeshGroup(this);
-		LOG_ERROR("{}", "Need to re-implement Engine::AddDynamicMeshGroup call in the DynamicMeshGroupT move assignment operator");
-
-
 		DynamicMeshGroup::operator=(std::move(rhs));
 		m_vertices = std::move(rhs.m_vertices);
 		m_indices = std::move(rhs.m_indices);
@@ -311,10 +281,6 @@ public:
 	}
 	virtual ~DynamicMeshGroupT() noexcept override
 	{
-//		Engine::RemoveDynamicMeshGroup(this);
-		LOG_ERROR("{}", "Need to re-implement Engine::RemoveDynamicMeshGroup call in the DynamicMeshGroupT destructor");
-
-
 		if (m_vertexBufferGPU != nullptr)
 			m_vertexBufferGPU->Unmap(0, nullptr);
 

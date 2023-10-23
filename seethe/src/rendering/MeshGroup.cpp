@@ -14,15 +14,11 @@ MeshGroup::MeshGroup(MeshGroup&& rhs) noexcept :
 	m_indexBufferView(rhs.m_indexBufferView),
 	m_submeshes(std::move(rhs.m_submeshes))
 {
-	LOG_WARN("{}", "MeshGroup Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
-
 	// Set the "moved from" flag on the rhs object so that it knows not to call DelayedDelete on GPU resources
 	rhs.m_movedFrom = true;
 }
 MeshGroup& MeshGroup::operator=(MeshGroup&& rhs) noexcept
 {
-	LOG_WARN("{}", "MeshGroup Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that this function works as expected");
-
 	m_deviceResources = rhs.m_deviceResources;
 	m_vertexBufferGPU = rhs.m_vertexBufferGPU;
 	m_indexBufferGPU = rhs.m_indexBufferGPU;

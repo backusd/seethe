@@ -30,20 +30,18 @@ public:
 		PostWork(std::move(rhs.PostWork)),
 		m_rootSignature(rhs.m_rootSignature),
 		m_constantBufferViews(std::move(rhs.m_constantBufferViews)),
-		m_renderPassLayers(std::move(m_renderPassLayers)),
+		m_renderPassLayers(std::move(rhs.m_renderPassLayers)),
+		m_computeLayers(std::move(rhs.m_computeLayers)),
 		m_name(std::move(rhs.m_name))
-	{
-		LOG_WARN("{}", "RenderPass Move Constructor called, but this method has not been tested.");
-	}
+	{}
 	RenderPass& operator=(RenderPass&& rhs) noexcept
 	{
-		LOG_WARN("{}", "RenderPass Move Assignment operator called, but this method has not been tested.");
-
 		PreWork = std::move(rhs.PreWork);
 		PostWork = std::move(rhs.PostWork);
 		m_rootSignature = rhs.m_rootSignature;
 		m_constantBufferViews = std::move(rhs.m_constantBufferViews);
 		m_renderPassLayers = std::move(rhs.m_renderPassLayers);
+		m_computeLayers = std::move(rhs.m_computeLayers);
 		m_name = std::move(rhs.m_name);
 
 		return *this;
@@ -75,7 +73,7 @@ public:
 	constexpr void PushBackRenderPassLayer(RenderPassLayer&& rpl) noexcept { m_renderPassLayers.push_back(std::move(rpl)); }
 	constexpr void PushBackComputeLayer(ComputeLayer&& cl) noexcept { m_computeLayers.push_back(std::move(cl)); }
 
-	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBuffer* cb)
+	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb)
 	{
 		return m_constantBufferViews.emplace_back(rootParameterIndex, cb);
 	}

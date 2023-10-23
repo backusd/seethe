@@ -6,15 +6,31 @@
 
 namespace seethe
 {
-class ConstantBuffer
+class ConstantBufferBase
 {
 public:
-	ConstantBuffer(std::shared_ptr<DeviceResources> deviceResources) :
-		m_deviceResources(deviceResources)
+	ConstantBufferBase(std::shared_ptr<DeviceResources> deviceResources) :
+		m_deviceResources(deviceResources),
+		m_uploadBuffer(nullptr),
+		m_mappedData(nullptr)
 	{
 		ASSERT(m_deviceResources != nullptr, "No device resources");
 	}
-	~ConstantBuffer()
+	ConstantBufferBase(ConstantBufferBase&& rhs) noexcept :
+		m_deviceResources(rhs.m_deviceResources),
+		m_uploadBuffer(nullptr),
+		m_mappedData(nullptr),
+		m_elementByteSize(rhs.m_elementByteSize)
+	{}
+	ConstantBufferBase& operator=(ConstantBufferBase&& rhs) noexcept
+	{
+		m_deviceResources = rhs.m_deviceResources;
+		m_uploadBuffer = nullptr;
+		m_mappedData = nullptr;
+		m_elementByteSize = rhs.m_elementByteSize;
+		return *this;
+	}
+	~ConstantBufferBase()
 	{
 		if (m_uploadBuffer != nullptr)
 			m_uploadBuffer->Unmap(0, nullptr);
@@ -25,21 +41,21 @@ public:
 		m_deviceResources->DelayedDelete(m_uploadBuffer);
 	}
 
-	ND inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress(unsigned int frameIndex) noexcept
+	ND inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress(unsigned int frameIndex) const noexcept
 	{
 		return m_uploadBuffer->GetGPUVirtualAddress() + static_cast<UINT64>(frameIndex) * m_elementByteSize;
 	}
 
 
 protected:
-	ConstantBuffer(const ConstantBuffer& rhs) = delete;
-	ConstantBuffer& operator=(const ConstantBuffer& rhs) = delete;
+	ConstantBufferBase(const ConstantBufferBase& rhs) = delete;
+	ConstantBufferBase& operator=(const ConstantBufferBase& rhs) = delete;
 
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_uploadBuffer;
-	BYTE* m_mappedData = nullptr;
+	BYTE* m_mappedData;
 
 	// Constant buffers must be a multiple of the minimum hardware
 	// allocation size (usually 256 bytes).  So round up to nearest
@@ -56,11 +72,36 @@ protected:
 };
 
 template<typename T>
-class ConstantBufferT : public ConstantBuffer
+class ConstantBuffer : public ConstantBufferBase
 {
 public:
-	ConstantBufferT(std::shared_ptr<DeviceResources> deviceResources) :
-		ConstantBuffer(deviceResources)
+	ConstantBuffer(std::shared_ptr<DeviceResources> deviceResources) :
+		ConstantBufferBase(deviceResources)
+	{
+		Initialize();
+	}
+	ConstantBuffer(ConstantBuffer&& rhs) :
+		ConstantBufferBase(std::move(rhs))
+	{
+		Initialize();
+	}
+	ConstantBuffer& operator=(ConstantBuffer&& rhs)
+	{
+		ConstantBufferBase::operator=(std::move(rhs));
+		Initialize();
+		return *this;
+	}
+
+	inline void CopyData(unsigned int frameIndex, const T& data) noexcept
+	{
+		memcpy(&m_mappedData[frameIndex * m_elementByteSize], &data, sizeof(T));
+	}
+
+private:
+	ConstantBuffer(const ConstantBuffer& rhs) = delete;
+	ConstantBuffer& operator=(const ConstantBuffer& rhs) = delete;
+
+	void Initialize()
 	{
 		m_elementByteSize = (sizeof(T) + 255) & ~255;
 
@@ -88,15 +129,6 @@ public:
 		// We do not need to unmap until we are done with the resource. However, we must not write to
 		// the resource while it is in use by the GPU (so we must use synchronization techniques).
 	}
-
-	inline void CopyData(unsigned int frameIndex, const T& data) noexcept
-	{
-		memcpy(&m_mappedData[frameIndex * m_elementByteSize], &data, sizeof(T));
-	}
-
-private:
-	ConstantBufferT(const ConstantBufferT& rhs) = delete;
-	ConstantBufferT& operator=(const ConstantBufferT& rhs) = delete;
 };
 
 }

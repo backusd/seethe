@@ -68,6 +68,10 @@ public:
 	}
 
 	constexpr void PushBackComputeItem(ComputeItem&& ci) noexcept { m_computeItems.push_back(std::move(ci)); }
+	constexpr ComputeItem& EmplaceBackComputeItem(unsigned int threadGroupCountX = 1, unsigned int threadGroupCountY = 1, unsigned int threadGroupCountZ = 1) noexcept 
+	{ 
+		return m_computeItems.emplace_back(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+	}
 
 	ND constexpr inline std::vector<ComputeItem>& GetComputeItems() noexcept { return m_computeItems; }
 	ND constexpr inline const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }

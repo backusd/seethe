@@ -29,7 +29,7 @@ void Renderer::InitializeRenderPasses()
 	std::shared_ptr<RootSignature> rootSig1 = std::make_shared<RootSignature>(m_deviceResources, rootSigDesc);
 	RenderPass& pass1 = m_renderPasses.emplace_back(rootSig1, "Render Pass #1");
 
-	m_passConstantsBuffer = std::make_unique<ConstantBufferT<PassConstants>>(m_deviceResources);
+	m_passConstantsBuffer = std::make_unique<ConstantBuffer<PassConstants>>(m_deviceResources);
 	RootConstantBufferView& perPassConstantsCBV = pass1.EmplaceBackRootConstantBufferView(2, m_passConstantsBuffer.get());
 	perPassConstantsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
@@ -80,7 +80,7 @@ void Renderer::InitializeRenderPasses()
 		};
 
 
-	m_materialsConstantBuffer = std::make_unique<ConstantBufferT<MaterialData>>(m_deviceResources);
+	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<MaterialData>>(m_deviceResources);
 	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(1, m_materialsConstantBuffer.get());
 	materialsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
@@ -99,9 +99,10 @@ void Renderer::InitializeRenderPasses()
 
 	std::vector<std::vector<std::uint16_t>> indices;
 	indices.push_back(std::move(sphereMesh.indices));
-
-	//MeshGroupT<Vertex> meshGroup(m_deviceResources, vertices, indices); 
+	
 	std::shared_ptr<MeshGroupT<Vertex>> meshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
+
+
 
 	m_phongVSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedVS.cso");
 	m_phongPSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedPS.cso");
@@ -134,28 +135,36 @@ void Renderer::InitializeRenderPasses()
 	//RenderPassLayer layer1(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
-	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
-	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.Atoms().size()));
 
-	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceDataArray>>(m_deviceResources); 
-	RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
-	sphereInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
-		{
-			InstanceDataArray d = {};
-			int iii = 0;
+	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceDataArray>>(m_deviceResources);
 
-			for (const auto& atom : m_simulation.Atoms())
+
+	for (int iii = 0; iii < 1; ++iii)
+	{
+
+
+		RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
+		sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.Atoms().size()));
+		
+		RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
+		sphereInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 			{
-				const DirectX::XMFLOAT3& p = atom.position;
-				DirectX::XMStoreFloat4x4(&d.Data[iii].World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
+				InstanceDataArray d = {};
+				int iii = 0;
 
-				d.Data[iii].MaterialIndex = iii % 2;
+				for (const auto& atom : m_simulation.Atoms())
+				{
+					const DirectX::XMFLOAT3& p = atom.position;
+					DirectX::XMStoreFloat4x4(&d.Data[iii].World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
 
-				++iii;
-			}
+					d.Data[iii].MaterialIndex = iii % 2;
 
-			m_instanceConstantBuffer->CopyData(frameIndex, d);
-		};
+					++iii;
+				}
+
+				m_instanceConstantBuffer->CopyData(frameIndex, d);
+			};
+	}
 }
 
 void Renderer::OnResize()

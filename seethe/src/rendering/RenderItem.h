@@ -25,7 +25,7 @@ public:
 
 	constexpr inline void PushBackRootConstantBufferView(RootConstantBufferView&& rcbv) noexcept { m_constantBufferViews.push_back(std::move(rcbv)); }
 	constexpr inline void PushBackRootConstantBufferView(const RootConstantBufferView& rcbv) noexcept { m_constantBufferViews.push_back(rcbv); }
-	constexpr inline RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBuffer* cb) noexcept { return m_constantBufferViews.emplace_back(rootParameterIndex, cb); }
+	constexpr inline RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept { return m_constantBufferViews.emplace_back(rootParameterIndex, cb); }
 
 	constexpr inline void PushBackRootDescriptorTable(RootDescriptorTable&& rdt) noexcept { m_descriptorTables.push_back(std::move(rdt)); }
 	constexpr inline void PushBackRootDescriptorTable(const RootDescriptorTable& rdt) noexcept { m_descriptorTables.push_back(rdt); }
@@ -56,19 +56,13 @@ public:
 		m_submeshIndex(submeshIndex),
 		m_instanceCount(instanceCount)
 	{}
-	RenderItem(RenderItem&& rhs) noexcept : 
+	constexpr RenderItem(RenderItem&& rhs) noexcept : 
 		RenderComputeItemBase(std::move(rhs)), 
 		m_submeshIndex(rhs.m_submeshIndex),
 		m_instanceCount(rhs.m_instanceCount)
+	{}
+	constexpr RenderItem& operator=(RenderItem&& rhs) noexcept
 	{
-		LOG_WARN("{}", "RenderItem Move Constructor called, but this method has not been tested.");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-	}
-	RenderItem& operator=(RenderItem&& rhs) noexcept
-	{
-		LOG_WARN("{}", "RenderItem Move Assignment operator called, but this method has not been tested.");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-
 		RenderComputeItemBase::operator=(std::move(rhs));
 		m_submeshIndex = rhs.m_submeshIndex;
 		m_instanceCount = rhs.m_instanceCount;
@@ -107,20 +101,14 @@ public:
 		m_threadGroupCountY(threadGroupCountY),
 		m_threadGroupCountZ(threadGroupCountZ)
 	{}
-	ComputeItem(ComputeItem&& rhs) noexcept :
+	constexpr ComputeItem(ComputeItem&& rhs) noexcept :
 		RenderComputeItemBase(std::move(rhs)),
 		m_threadGroupCountX(rhs.m_threadGroupCountX),
 		m_threadGroupCountY(rhs.m_threadGroupCountY),
 		m_threadGroupCountZ(rhs.m_threadGroupCountZ)
+	{}
+	constexpr ComputeItem& operator=(ComputeItem&& rhs) noexcept
 	{
-		LOG_WARN("{}", "ComputeItem Move Constructor called, but this method has not been tested.");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-	}
-	ComputeItem& operator=(ComputeItem&& rhs) noexcept
-	{
-		LOG_WARN("{}", "ComputeItem Move Assignment operator called, but this method has not been tested.");
-		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
-
 		RenderComputeItemBase::operator=(std::move(rhs));
 		m_threadGroupCountX = rhs.m_threadGroupCountX;
 		m_threadGroupCountY = rhs.m_threadGroupCountY;
