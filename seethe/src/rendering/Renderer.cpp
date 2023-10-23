@@ -134,10 +134,11 @@ void Renderer::InitializeRenderPasses()
 	//RenderPassLayer layer1(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
-	RenderItem& sphere = layer1.EmplaceBackRenderItem();
+	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
+	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.Atoms().size()));
 
 	m_instanceConstantBuffer = std::make_unique<ConstantBufferT<InstanceDataArray>>(m_deviceResources); 
-	RootConstantBufferView& sphereInstanceCBV = sphere.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
+	RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
 	sphereInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			InstanceDataArray d = {};
@@ -254,7 +255,7 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 				SubmeshGeometry mesh = meshGroup->GetSubmesh(item.GetSubmeshIndex());
 				GFX_THROW_INFO_ONLY(
-					commandList->DrawIndexedInstanced(mesh.IndexCount, 2, mesh.StartIndexLocation, mesh.BaseVertexLocation, 0)
+					commandList->DrawIndexedInstanced(mesh.IndexCount, item.GetInstanceCount(), mesh.StartIndexLocation, mesh.BaseVertexLocation, 0)
 				);
 			}
 		}

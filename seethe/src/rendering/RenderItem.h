@@ -52,10 +52,14 @@ protected:
 class RenderItem : public RenderComputeItemBase
 {
 public:
-	constexpr RenderItem(unsigned int submeshIndex = 0) noexcept : m_submeshIndex(submeshIndex) {}
+	constexpr RenderItem(unsigned int submeshIndex = 0, unsigned int instanceCount = 1) noexcept : 
+		m_submeshIndex(submeshIndex),
+		m_instanceCount(instanceCount)
+	{}
 	RenderItem(RenderItem&& rhs) noexcept : 
 		RenderComputeItemBase(std::move(rhs)), 
-		m_submeshIndex(rhs.m_submeshIndex)
+		m_submeshIndex(rhs.m_submeshIndex),
+		m_instanceCount(rhs.m_instanceCount)
 	{
 		LOG_WARN("{}", "RenderItem Move Constructor called, but this method has not been tested.");
 		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
@@ -67,11 +71,15 @@ public:
 
 		RenderComputeItemBase::operator=(std::move(rhs));
 		m_submeshIndex = rhs.m_submeshIndex;
+		m_instanceCount = rhs.m_instanceCount;
 		return *this;
 	}
 
 	ND constexpr inline unsigned int GetSubmeshIndex() const noexcept { return m_submeshIndex; }
+	ND constexpr inline unsigned int GetInstanceCount() const noexcept { return m_instanceCount; }
+	
 	constexpr inline void SetSubmeshIndex(unsigned int index) noexcept { m_submeshIndex = index; }
+	constexpr inline void SetInstanceCount(unsigned int count) noexcept { m_instanceCount = count; }
 
 private:
 	RenderItem(const RenderItem&) = delete;
@@ -80,6 +88,8 @@ private:
 	// The PSO will hold and bind the mesh-group for all of the render items it will render.
 	// Here, we just need to keep track of which submesh index the render item references
 	unsigned int m_submeshIndex;
+
+	unsigned int m_instanceCount;
 };
 
 
