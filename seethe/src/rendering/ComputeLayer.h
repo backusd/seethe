@@ -63,9 +63,11 @@ public:
 
 	constexpr void PushBackComputeItem(ComputeItem&& ci) noexcept { m_computeItems.push_back(std::move(ci)); }
 
+	ND constexpr inline std::vector<ComputeItem>& GetComputeItems() noexcept { return m_computeItems; }
 	ND constexpr inline const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }
-	ND inline const ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
-	ND constexpr inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
+	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
+	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
+	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 
 	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }

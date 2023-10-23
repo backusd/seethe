@@ -22,7 +22,7 @@ public:
 		m_mappedData = nullptr;
 
 		// Upload buffer might still be in use by the GPU, so do a delayed delete
-//		Engine::DelayedDelete(m_uploadBuffer);
+		m_deviceResources->DelayedDelete(m_uploadBuffer);
 	}
 
 	ND inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress(unsigned int frameIndex) noexcept

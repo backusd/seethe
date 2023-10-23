@@ -48,7 +48,8 @@ Application::Application() :
 	// Reset the command list so we can execute commands when initializing the renderer
 	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
 	
-	m_renderer = std::make_unique<Renderer>(m_deviceResources);
+	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_simulation);
+	m_renderer->SetScissorRect(m_scissorRect);
 
 	// Execute the initialization commands.
 	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Close()); 
@@ -288,6 +289,7 @@ void Application::RenderUI()
 		m_viewport.TopLeftY = pos.y;
 		m_viewport.Height = ImGui::GetWindowHeight();
 		m_viewport.Width = ImGui::GetWindowWidth();
+		m_renderer->SetViewport(m_viewport);
 		ImGui::End();
 	}
 
@@ -325,8 +327,8 @@ void Application::Render()
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
 	// NOTE: Setting the viewport must come AFTER calling ImGui_ImplDX12_RenderDrawData because it overwrites the viewport
-	GFX_THROW_INFO_ONLY(commandList->RSSetViewports(1, &m_viewport));
-	GFX_THROW_INFO_ONLY(commandList->RSSetScissorRects(1, &m_scissorRect));
+//	GFX_THROW_INFO_ONLY(commandList->RSSetViewports(1, &m_viewport));
+//	GFX_THROW_INFO_ONLY(commandList->RSSetScissorRects(1, &m_scissorRect));
 
 	//////
 	// RENDER STUFF HERE (on top of UI ??)
@@ -367,6 +369,10 @@ void Application::Present()
 	GFX_THROW_INFO( 
 		m_deviceResources->GetCommandQueue()->Signal(m_deviceResources->GetFence(), m_fences[m_currentFrameIndex]) 
 	);
+
+	// At the end of each frame, we need to clean up all resources that were previously
+	// passed to DeviceResources::DelayedDelete()
+	m_deviceResources->CleanupResources();
 }
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
@@ -513,7 +519,7 @@ LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 	m_deviceResources->OnResize(height, width);
 	m_scissorRect = { 0, 0, width, height };
 	m_renderer->OnResize(); // Must be called AFTER device resources have been resized
-
+	m_renderer->SetScissorRect(m_scissorRect);
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-size
 	// --> "An application should return zero if it processes this message."

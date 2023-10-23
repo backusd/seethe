@@ -461,4 +461,26 @@ namespace seethe
 
 		++m_currentFence;
 	}
+
+	void DeviceResources::DelayedDelete(Microsoft::WRL::ComPtr<ID3D12Resource> resource) noexcept
+	{
+		// store a ComPtr to the resource as well as the current fence value which is the maximum fence
+		// value where the resource might still be referenced on the GPU
+		m_resourcesToDelete.emplace_back(m_currentFence, resource);
+	}
+
+	void DeviceResources::CleanupResources() noexcept
+	{
+		if (m_resourcesToDelete.size() > 0)
+		{
+			UINT64 completedFence = m_fence->GetCompletedValue();
+
+			// Erase all elements for which the completed fence is at or beyond the fence value in the tuple
+			std::erase_if(m_resourcesToDelete, [&completedFence](const std::tuple<UINT64, Microsoft::WRL::ComPtr<ID3D12Resource>>& tup) 
+				{
+					return completedFence >= std::get<0>(tup); 
+				}
+			);
+		}
+	}
 }

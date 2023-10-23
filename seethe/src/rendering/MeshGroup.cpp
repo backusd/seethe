@@ -17,7 +17,7 @@ MeshGroup::MeshGroup(MeshGroup&& rhs) noexcept :
 	LOG_WARN("{}", "MeshGroup Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
 
 	// Set the "moved from" flag on the rhs object so that it knows not to call DelayedDelete on GPU resources
-//	rhs.m_movedFrom = true;
+	rhs.m_movedFrom = true;
 }
 MeshGroup& MeshGroup::operator=(MeshGroup&& rhs) noexcept
 {
@@ -31,7 +31,7 @@ MeshGroup& MeshGroup::operator=(MeshGroup&& rhs) noexcept
 	m_submeshes = std::move(rhs.m_submeshes);
 
 	// Set the "moved from" flag on the rhs object so that it knows not to call DelayedDelete on GPU resources
-//	rhs.m_movedFrom = true;
+	rhs.m_movedFrom = true;
 
 	return *this;
 }
@@ -88,9 +88,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> MeshGroup::CreateDefaultBuffer(const void
 	commandList->ResourceBarrier(1, &_b2);
 
 	// MUST delete the upload buffer AFTER it is done being referenced by the GPU
-//	Engine::DelayedDelete(uploadBuffer);
-	LOG_ERROR("{}", "Need to re-implement Engine::DelayedDelete call in MeshGroup::CreateDefaultBuffer()");
-
+	m_deviceResources->DelayedDelete(uploadBuffer);
 
 	// Note: uploadBuffer has to be kept alive after the above function calls because
 	// the command list has not been executed yet that performs the actual copy.

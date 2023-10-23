@@ -56,6 +56,14 @@ public:
 		);
 	}
 
+	void Update(const Timer& timer, int frameIndex)
+	{
+		for (RenderItem& item : m_renderItems)
+		{
+			item.Update(timer, frameIndex);
+		}
+	}
+
 	void RemoveRenderItem(RenderItem* ri)
 	{
 		if (ri != nullptr) LIKELY
@@ -72,11 +80,14 @@ public:
 	}
 
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }
+	constexpr RenderItem& EmplaceBackRenderItem() noexcept { return m_renderItems.emplace_back(); }
 
+	ND constexpr inline std::vector<RenderItem>& GetRenderItems() noexcept { return m_renderItems; }
 	ND constexpr inline const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND constexpr inline D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
 	ND inline std::shared_ptr<MeshGroup> GetMeshGroup() const noexcept { return m_meshes; }
+	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 
 	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }

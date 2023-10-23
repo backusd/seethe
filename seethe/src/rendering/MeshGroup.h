@@ -48,14 +48,11 @@ protected:
 		// If the MeshGroup is being destructed because it was moved from, then we don't want to delete the resources
 		// because they now belong to a new MeshGroup object. However, if the object simply went out of scope or was
 		// intentially deleted, then the resources are no longer necessary and should be delayed deleted
-//		if (!m_movedFrom)
-//		{
-//			Engine::DelayedDelete(m_vertexBufferGPU);
-//			Engine::DelayedDelete(m_indexBufferGPU);
-//		}
-
-		LOG_ERROR("{}", "Need to re-implement Engine::DelayedDelete call in MeshGroup::CleanUp()");
-
+		if (!m_movedFrom)
+		{
+			m_deviceResources->DelayedDelete(m_vertexBufferGPU);
+			m_deviceResources->DelayedDelete(m_indexBufferGPU);
+		}
 	}
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
@@ -69,6 +66,8 @@ protected:
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView = { 0, 0, DXGI_FORMAT_R16_UINT };
 
 	std::vector<SubmeshGeometry> m_submeshes;
+
+	bool m_movedFrom = false;
 
 private:
 	// There is too much state to worry about copying, so just delete copy operations until we find a good use case
@@ -93,11 +92,13 @@ public:
 		m_indices(std::move(rhs.m_indices))
 	{
 		LOG_WARN("{}", "MeshGroupT Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 	}
 	MeshGroupT& operator=(MeshGroupT&& rhs) noexcept
 	{
 		LOG_WARN("{}", "MeshGroupT Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that the constructor works as expected");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 
 		MeshGroup::operator=(std::move(rhs));
@@ -184,11 +185,13 @@ public:
 		MeshGroup(std::move(rhs))
 	{
 		LOG_WARN("{}", "DynamicMeshGroup Move Constructor called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 	}
 	DynamicMeshGroup& operator=(DynamicMeshGroup&& rhs) noexcept
 	{
 		LOG_WARN("{}", "DynamicMeshGroup Move Assignment operator called, but this method has not been tested. Make sure this call was intentional and, if so, that the function works as expected");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 
 		MeshGroup::operator=(std::move(rhs));

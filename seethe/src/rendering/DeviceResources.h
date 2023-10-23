@@ -89,6 +89,10 @@ public:
 
 	void Present();
 
+	void DelayedDelete(Microsoft::WRL::ComPtr<ID3D12Resource> resource) noexcept;
+	void CleanupResources() noexcept;
+
+
 private:
 	void CreateDevice();
 	void CreateCommandObjects();
@@ -136,6 +140,9 @@ private:
 	D3D_DRIVER_TYPE m_d3dDriverType = D3D_DRIVER_TYPE_HARDWARE;
 	DXGI_FORMAT m_backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	// Resources that can be deleted once they are no longer referenced by the GPU
+	std::vector<std::tuple<UINT64, Microsoft::WRL::ComPtr<ID3D12Resource>>> m_resourcesToDelete;
 
 
 #if defined(DEBUG)

@@ -31,7 +31,9 @@ public:
 	constexpr inline void PushBackRootDescriptorTable(const RootDescriptorTable& rdt) noexcept { m_descriptorTables.push_back(rdt); }
 	constexpr inline RootDescriptorTable& EmplaceBackRootDescriptorTable(UINT rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE descriptorHandle) noexcept { return m_descriptorTables.emplace_back(rootParameterIndex, descriptorHandle); }
 
+	ND constexpr inline std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
 	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
+	ND constexpr inline std::vector<RootDescriptorTable>& GetRootDescriptorTables() noexcept { return m_descriptorTables; }
 	ND constexpr inline const std::vector<RootDescriptorTable>& GetRootDescriptorTables() const noexcept { return m_descriptorTables; }
 
 protected:
@@ -51,15 +53,17 @@ class RenderItem : public RenderComputeItemBase
 {
 public:
 	constexpr RenderItem(unsigned int submeshIndex = 0) noexcept : m_submeshIndex(submeshIndex) {}
-	constexpr RenderItem(RenderItem&& rhs) noexcept : 
+	RenderItem(RenderItem&& rhs) noexcept : 
 		RenderComputeItemBase(std::move(rhs)), 
 		m_submeshIndex(rhs.m_submeshIndex)
 	{
 		LOG_WARN("{}", "RenderItem Move Constructor called, but this method has not been tested.");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 	}
-	constexpr RenderItem& operator=(RenderItem&& rhs) noexcept
+	RenderItem& operator=(RenderItem&& rhs) noexcept
 	{
 		LOG_WARN("{}", "RenderItem Move Assignment operator called, but this method has not been tested.");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 
 		RenderComputeItemBase::operator=(std::move(rhs));
 		m_submeshIndex = rhs.m_submeshIndex;
@@ -93,17 +97,19 @@ public:
 		m_threadGroupCountY(threadGroupCountY),
 		m_threadGroupCountZ(threadGroupCountZ)
 	{}
-	constexpr ComputeItem(ComputeItem&& rhs) noexcept :
+	ComputeItem(ComputeItem&& rhs) noexcept :
 		RenderComputeItemBase(std::move(rhs)),
 		m_threadGroupCountX(rhs.m_threadGroupCountX),
 		m_threadGroupCountY(rhs.m_threadGroupCountY),
 		m_threadGroupCountZ(rhs.m_threadGroupCountZ)
 	{
 		LOG_WARN("{}", "ComputeItem Move Constructor called, but this method has not been tested.");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 	}
-	constexpr ComputeItem& operator=(ComputeItem&& rhs) noexcept
+	ComputeItem& operator=(ComputeItem&& rhs) noexcept
 	{
 		LOG_WARN("{}", "ComputeItem Move Assignment operator called, but this method has not been tested.");
+		LOG_WARN("{}", "      NOTE: Make this constexpr when you remove LOG_WARN");
 
 		RenderComputeItemBase::operator=(std::move(rhs));
 		m_threadGroupCountX = rhs.m_threadGroupCountX;

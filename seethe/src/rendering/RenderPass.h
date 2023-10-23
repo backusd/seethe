@@ -58,10 +58,14 @@ public:
 	}
 
 
-	ND constexpr inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
+	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
+	ND constexpr inline std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
 	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
+	ND constexpr inline std::vector<RenderPassLayer>& GetRenderPassLayers() noexcept { return m_renderPassLayers; }
 	ND constexpr inline const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
+	ND constexpr inline std::vector<ComputeLayer>& GetComputeLayers() noexcept { return m_computeLayers; }
 	ND constexpr inline const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
+	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 
 	inline void SetRootSignature(std::shared_ptr<RootSignature> rs) noexcept { m_rootSignature = rs; }
@@ -71,17 +75,17 @@ public:
 	constexpr void PushBackRenderPassLayer(RenderPassLayer&& rpl) noexcept { m_renderPassLayers.push_back(std::move(rpl)); }
 	constexpr void PushBackComputeLayer(ComputeLayer&& cl) noexcept { m_computeLayers.push_back(std::move(cl)); }
 
-	constexpr void EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBuffer* cb)
+	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBuffer* cb)
 	{
-		m_constantBufferViews.emplace_back(rootParameterIndex, cb);
+		return m_constantBufferViews.emplace_back(rootParameterIndex, cb);
 	}
-	void EmplaceBackRenderPassLayer(std::shared_ptr<DeviceResources> deviceResources,
+	RenderPassLayer& EmplaceBackRenderPassLayer(std::shared_ptr<DeviceResources> deviceResources,
 		std::shared_ptr<MeshGroup> meshGroup,
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		const std::string& name = "Unnamed")
 	{
-		m_renderPassLayers.emplace_back(deviceResources, meshGroup, desc, topology, name);
+		return m_renderPassLayers.emplace_back(deviceResources, meshGroup, desc, topology, name);
 	}
 
 	// Function pointers for Pre/Post-Work 

@@ -101,51 +101,29 @@ namespace seethe
 class Renderer
 {
 public:
-	Renderer(std::shared_ptr<DeviceResources> deviceResources);
+	Renderer(std::shared_ptr<DeviceResources> deviceResources, Simulation& simulation);
 
 	void Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& vp);
 	void Render(const Simulation& simulation, int frameIndex);
 	void OnResize();
 
+	inline void SetViewport(const D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
+	inline void SetScissorRect(const D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
+
 private:
-	void CreateRootSignature();
-	void CreateShadersAndInputLayout();
-	void CreateShapeGeometry();
-	void CreatePSOs();
-	void CreateConstantBuffers();
+	void InitializeRenderPasses();
 
 	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(const void* initData, UINT64 byteSize, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
 
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	Camera m_camera;
 
 
-
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
-	std::unique_ptr<Shader> m_phongVS = nullptr;
-	std::unique_ptr<Shader> m_phongPS = nullptr;
-	std::unique_ptr<InputLayout> m_inputLayout = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pso = nullptr;
-
-	// Instancing
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_psoInstanced = nullptr;
 	std::unique_ptr<ConstantBufferT<InstanceDataArray>> m_instanceConstantBuffer;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBufferGPU = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBufferGPU = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUploadBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUploadBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView = { 0, 0, 0 };
-	D3D12_INDEX_BUFFER_VIEW m_indexBufferView = { 0, 0, DXGI_FORMAT_R16_UINT };
-	unsigned int m_indexCount = 0;
-
-
-	MaterialData m_materialData = {};
 
 	std::unique_ptr<ConstantBufferT<PassConstants>> m_passConstantsBuffer;
 	std::unique_ptr<ConstantBufferT<MaterialData>> m_materialsConstantBuffer;
@@ -155,8 +133,9 @@ private:
 
 	// =======================================================================
 	
-	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer);
+	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer, int frameIndex);
 
+	Simulation& m_simulation; // GET RID OF THIS!! The code that references the simulation should be oustide this class
 
 	D3D12_VIEWPORT m_viewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f }; // Dummy values
 	D3D12_RECT m_scissorRect = { 0, 0, 1, 1 }; // Dummy values
