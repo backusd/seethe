@@ -101,7 +101,7 @@ void Renderer::InitializeRenderPasses()
 	indices.push_back(std::move(sphereMesh.indices));
 
 	//MeshGroupT<Vertex> meshGroup(m_deviceResources, vertices, indices); 
-	std::shared_ptr<MeshGroup> meshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
+	std::shared_ptr<MeshGroupT<Vertex>> meshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
 
 	m_phongVSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedVS.cso");
 	m_phongPSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedPS.cso");
@@ -174,9 +174,10 @@ void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& 
 		pass.Update(timer, frameIndex);
 
 		for (RenderPassLayer& layer : pass.GetRenderPassLayers())
-		{
 			layer.Update(timer, frameIndex);
-		}
+
+		for (ComputeLayer& layer : pass.GetComputeLayers())
+			layer.Update(timer, frameIndex);
 	}
 }
 

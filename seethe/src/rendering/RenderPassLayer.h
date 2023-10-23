@@ -62,6 +62,9 @@ public:
 		{
 			item.Update(timer, frameIndex);
 		}
+
+		// This is a virtual method that only actually does anything for DynamicMesh
+		m_meshes->Update(frameIndex);
 	}
 
 	void RemoveRenderItem(RenderItem* ri)

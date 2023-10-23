@@ -40,6 +40,7 @@ public:
 	}
 
 	ND inline const SubmeshGeometry& GetSubmesh(unsigned int index) const noexcept { return m_submeshes[index]; }
+	virtual inline void Update(int frameIndex) noexcept {}
 
 protected:
 	ND Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(const void* initData, UINT64 byteSize) const;
@@ -198,7 +199,7 @@ public:
 		return *this;
 	}
 	virtual ~DynamicMeshGroup() noexcept override {}
-	inline void Update(int frameIndex) noexcept
+	inline void Update(int frameIndex) noexcept override
 	{
 		// For dynamic meshes, we keep gNumFrameResources copies of the vertex/index buffer in a single, continuous buffer
 		// All we need to do every time Update() is called, is to update the vertex/index buffer views to point at the correct
