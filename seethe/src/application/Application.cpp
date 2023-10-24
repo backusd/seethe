@@ -48,8 +48,7 @@ Application::Application() :
 	// Reset the command list so we can execute commands when initializing the renderer
 	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
 	
-	m_renderer = std::make_unique<Renderer>(m_deviceResources);
-	m_renderer->SetScissorRect(m_scissorRect);
+	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
 
 	InitializeRenderPasses();
 
@@ -433,7 +432,7 @@ void Application::Update()
 
 
 	m_simulation.Update(m_timer);
-	m_renderer->Update(m_timer, m_currentFrameIndex, m_viewport);
+	m_renderer->Update(m_timer, m_currentFrameIndex);
 }
 void Application::RenderUI()
 {
@@ -532,7 +531,6 @@ void Application::RenderUI()
 		m_viewport.TopLeftY = pos.y;
 		m_viewport.Height = ImGui::GetWindowHeight();
 		m_viewport.Width = ImGui::GetWindowWidth();
-		m_renderer->SetViewport(m_viewport);
 		ImGui::End();
 	}
 
@@ -761,8 +759,6 @@ LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 	int width = m_mainWindow->GetWidth();
 	m_deviceResources->OnResize(height, width);
 	m_scissorRect = { 0, 0, width, height };
-	m_renderer->OnResize(); // Must be called AFTER device resources have been resized
-	m_renderer->SetScissorRect(m_scissorRect);
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-size
 	// --> "An application should return zero if it processes this message."

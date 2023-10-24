@@ -3,26 +3,22 @@
 
 namespace seethe
 {
-Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources) :
+Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources, 
+				   D3D12_VIEWPORT& viewport, 
+				   D3D12_RECT& scissorRect) :
 	m_deviceResources(deviceResources),
-	m_camera()
+	m_camera(),
+	m_viewport(viewport),
+	m_scissorRect(scissorRect)
 {
 	//m_camera.SetPosition(0.0f, 2.0f, -15.0f);
-	m_camera.SetLens(0.25f * MathHelper::Pi, m_deviceResources->AspectRatio(), 1.0f, 1000.0f);
 	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
 
-void Renderer::OnResize()
-{
-	m_camera.SetLens(0.25f * MathHelper::Pi, m_viewport.Width / m_viewport.Height, 1.0f, 1000.0f);
-}
-
-void Renderer::Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& vp)
+void Renderer::Update(const Timer& timer, int frameIndex)
 {
 	m_camera.UpdateViewMatrix();
-
-	m_camera.SetLens(0.25f * MathHelper::Pi, vp.Width / vp.Height, 1.0f, 1000.0f);
-
+	m_camera.SetLens(0.25f * MathHelper::Pi, m_viewport.Width / m_viewport.Height, 1.0f, 1000.0f);
 
 	for (RenderPass& pass : m_renderPasses)
 	{

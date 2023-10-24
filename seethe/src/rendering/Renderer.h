@@ -5,113 +5,26 @@
 #include "DeviceResources.h"
 #include "InputLayout.h"
 #include "Shader.h"
+#include "RenderPass.h"
 #include "simulation/Simulation.h"
 #include "utils/MathHelper.h"
 #include "utils/Timer.h"
-
-#include "RenderPass.h"
-
-#define MAX_INSTANCES 100
-#define NUM_MATERIALS 10
-
-struct ObjectConstants
-{
-	DirectX::XMFLOAT4X4 World = seethe::MathHelper::Identity4x4();
-};
-
-struct InstanceData
-{
-	DirectX::XMFLOAT4X4 World;
-	std::uint32_t MaterialIndex;
-	std::uint32_t Pad0;
-	std::uint32_t Pad1;
-	std::uint32_t Pad2;
-};
-
-struct InstanceDataArray
-{
-	InstanceData Data[MAX_INSTANCES];
-};
-
-struct Vertex
-{
-	DirectX::XMFLOAT3 Pos;
-	DirectX::XMFLOAT3 Normal;
-};
-
-struct MeshData
-{
-	std::vector<Vertex> vertices;
-	std::vector<std::uint16_t> indices;
-};
-
-struct Material
-{
-	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
-	float Roughness = 0.25f;
-};
-
-struct MaterialData
-{
-	Material MaterialArray[NUM_MATERIALS];
-};
-
-
-static constexpr int MaxLights = 16;
-
-struct Light
-{
-	DirectX::XMFLOAT3   Strength = { 0.5f, 0.5f, 0.5f };
-	float               FalloffStart = 1.0f;                // point/spot light only
-	DirectX::XMFLOAT3   Direction = { 0.0f, -1.0f, 0.0f };  // directional/spot light only
-	float               FalloffEnd = 10.0f;                 // point/spot light only
-	DirectX::XMFLOAT3   Position = { 0.0f, 0.0f, 0.0f };    // point/spot light only
-	float               SpotPower = 64.0f;                  // spot light only
-};
-
-struct PassConstants
-{
-	DirectX::XMFLOAT4X4 View = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvView = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 Proj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 ViewProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvViewProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT3 EyePosW = { 0.0f, 0.0f, 0.0f };
-	float cbPerObjectPad1 = 0.0f;
-	DirectX::XMFLOAT2 RenderTargetSize = { 0.0f, 0.0f };
-	DirectX::XMFLOAT2 InvRenderTargetSize = { 0.0f, 0.0f };
-	float NearZ = 0.0f;
-	float FarZ = 0.0f;
-	float TotalTime = 0.0f;
-	float DeltaTime = 0.0f;
-
-	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
-	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-	// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-	// are spot lights for a maximum of MaxLights per object.
-	Light Lights[MaxLights];
-};
 
 namespace seethe
 {
 class Renderer
 {
 public:
-	Renderer(std::shared_ptr<DeviceResources> deviceResources);
+	Renderer(std::shared_ptr<DeviceResources> deviceResources, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect);
 
-	void Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& vp);
+	void Update(const Timer& timer, int frameIndex);
 	void Render(const Simulation& simulation, int frameIndex);
-	void OnResize();
 
 	ND constexpr inline Camera& GetCamera() noexcept { return m_camera; }
 	ND constexpr inline const Camera& GetCamera() const noexcept { return m_camera; }
 
-	inline void SetViewport(const D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
-	inline void SetScissorRect(const D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
+	inline void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
+	inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
 
 	constexpr void PushBackRenderPass(RenderPass&& pass) noexcept { m_renderPasses.push_back(std::move(pass)); }
 	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
@@ -121,11 +34,17 @@ private:
 	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer, int frameIndex);
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
+
+	// Note: we do NOT allow camera to be a reference to a Camera object controlled by
+	// the application. The reason being is that we must enforce each Renderer instance to
+	// have its own camera (no sharing a camera). The application is responsible for calling
+	// GetCamera() and updating its position/orientation when necessary
 	Camera m_camera;
 
-	// !!! MAKE VIEWPORT A REFERENCE !!!
-	D3D12_VIEWPORT m_viewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f }; // Dummy values
-	D3D12_RECT m_scissorRect = { 0, 0, 1, 1 }; // Dummy values
+	// Have the viewport and scissor rect be controlled by the application. We use references
+	// here because neither of these should ever be allowed to be null
+	D3D12_VIEWPORT& m_viewport;
+	D3D12_RECT& m_scissorRect;
 
 	std::vector<RenderPass> m_renderPasses;
 };
