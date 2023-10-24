@@ -11,7 +11,6 @@ Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources,
 	m_viewport(viewport),
 	m_scissorRect(scissorRect)
 {
-	//m_camera.SetPosition(0.0f, 2.0f, -15.0f);
 	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
 

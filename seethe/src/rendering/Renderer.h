@@ -16,6 +16,23 @@ class Renderer
 {
 public:
 	Renderer(std::shared_ptr<DeviceResources> deviceResources, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect);
+	Renderer(Renderer&& rhs) noexcept :
+		m_deviceResources(rhs.m_deviceResources),
+		m_camera(std::move(rhs.m_camera)),
+		m_viewport(rhs.m_viewport),
+		m_scissorRect(rhs.m_scissorRect),
+		m_renderPasses(std::move(rhs.m_renderPasses))
+	{}
+	Renderer& operator=(Renderer&& rhs) noexcept
+	{
+		m_deviceResources = rhs.m_deviceResources;
+		m_camera = std::move(rhs.m_camera);
+		m_viewport = rhs.m_viewport;
+		m_scissorRect = rhs.m_scissorRect;
+		m_renderPasses = std::move(rhs.m_renderPasses);
+		return *this;
+	}
+	~Renderer() noexcept = default;
 
 	void Update(const Timer& timer, int frameIndex);
 	void Render(const Simulation& simulation, int frameIndex);
@@ -23,14 +40,18 @@ public:
 	ND constexpr inline Camera& GetCamera() noexcept { return m_camera; }
 	ND constexpr inline const Camera& GetCamera() const noexcept { return m_camera; }
 
-	inline void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
-	inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
+	constexpr inline void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
+	constexpr inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
 
 	constexpr void PushBackRenderPass(RenderPass&& pass) noexcept { m_renderPasses.push_back(std::move(pass)); }
 	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
 	RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
 
 private:
+	// There is too much state to worry about copying (and expensive ?), so just delete copy operations until we find a good use case
+	Renderer(const Renderer&) = delete;
+	Renderer& operator=(const Renderer&) = delete;
+
 	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer, int frameIndex);
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
