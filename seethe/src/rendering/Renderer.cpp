@@ -5,7 +5,7 @@ namespace seethe
 {
 Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources, 
 				   D3D12_VIEWPORT& viewport, 
-				   D3D12_RECT& scissorRect) :
+				   D3D12_RECT& scissorRect) noexcept :
 	m_deviceResources(deviceResources),
 	m_camera(),
 	m_viewport(viewport),

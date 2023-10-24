@@ -44,9 +44,9 @@ public:
     }
     ~DescriptorVector() noexcept {}
 
-    ND inline unsigned int Count() const noexcept { return m_count; }
-    ND inline unsigned int Capacity() const noexcept { return m_capacity; }
-    ND inline D3D12_DESCRIPTOR_HEAP_TYPE Type() const noexcept { return m_type; }
+    ND constexpr inline unsigned int Count() const noexcept { return m_count; }
+    ND constexpr inline unsigned int Capacity() const noexcept { return m_capacity; }
+    ND constexpr inline D3D12_DESCRIPTOR_HEAP_TYPE Type() const noexcept { return m_type; }
 
     ND D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleAt(UINT index) const noexcept;
     ND D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleAt(UINT index) const noexcept;
@@ -56,8 +56,8 @@ public:
     unsigned int EmplaceBackConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC* desc);
     unsigned int EmplaceBackUnorderedAccessView(ID3D12Resource* pResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc);
 
-    inline void IncrementCount() noexcept { ++m_count; }
-    inline void DecrementCount() noexcept { --m_count; }
+    constexpr inline void IncrementCount() noexcept { ++m_count; }
+    constexpr inline void DecrementCount() noexcept { --m_count; }
 
     void ReleaseAt(unsigned int index) noexcept;
 

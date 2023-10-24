@@ -15,7 +15,7 @@ namespace seethe
 class Renderer
 {
 public:
-	Renderer(std::shared_ptr<DeviceResources> deviceResources, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect);
+	Renderer(std::shared_ptr<DeviceResources> deviceResources, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) noexcept;
 	Renderer(Renderer&& rhs) noexcept :
 		m_deviceResources(rhs.m_deviceResources),
 		m_camera(std::move(rhs.m_camera)),
