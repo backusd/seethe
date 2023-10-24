@@ -344,7 +344,178 @@ MeshData SimulationWindow::SphereMesh(float radius, uint32_t sliceCount, uint32_
 	return mesh;
 }
 
+void SimulationWindow::Update(const Timer& timer, int frameIndex)
+{ 
+	m_renderer->Update(timer, frameIndex); 
+}
+
+bool SimulationWindow::OnLButtonDown(float x, float y) noexcept
+{
+	// Don't set the LButtonDown flag if any of the other buttons are down
+	if (!m_mouseMButtonDown && !m_mouseRButtonDown)
+	{	
+		if (m_mouseLButtonDown = ContainsPoint(x, y))
+			HandleLButtonDown();
+	}
+
+	// Return true only if the user is dragging something or the mouse is hovering the window
+	return Dragging() || ContainsPoint(x, y);
+}
+bool SimulationWindow::OnLButtonUp(float x, float y) noexcept
+{
+	if (m_mouseLButtonDown)
+	{
+		m_mouseLButtonDown = false;
+		HandleLButtonUp();
+	}
+
+	// Return true only if the user is dragging something or the mouse is hovering the window
+	return Dragging() || ContainsPoint(x, y);
+}
+bool SimulationWindow::OnMouseMove(float x, float y) noexcept
+{
+	// If we are dragging, then continue to track the mouse
+	if (Dragging() || ContainsPoint(x, y))
+	{
+		m_mouseLastPos = { x, y };
+		HandleMouseMove();
+		return true;
+	}
+
+	return false;
+}
+bool SimulationWindow::OnLButtonDoubleClick(float x, float y) noexcept
+{
+	HandleLButtonDoubleClick();
+	return false;
+}
+bool SimulationWindow::OnMButtonDown(float x, float y) noexcept
+{
+	HandleMButtonDown();
+	return false;
+}
+bool SimulationWindow::OnMButtonUp(float x, float y) noexcept
+{
+	HandleMButtonUp();
+	return false;
+}
+bool SimulationWindow::OnMButtonDoubleClick(float x, float y) noexcept
+{
+	HandleMButtonDoubleClick();
+	return false;
+}
+bool SimulationWindow::OnRButtonDown(float x, float y) noexcept
+{
+	HandleRButtonDown();
+	return false;
+}
+bool SimulationWindow::OnRButtonUp(float x, float y) noexcept
+{
+	HandleRButtonUp();
+	return false;
+}
+bool SimulationWindow::OnRButtonDoubleClick(float x, float y) noexcept
+{
+	HandleRButtonDoubleClick();
+	return false;
+}
+bool SimulationWindow::OnX1ButtonDown(float x, float y) noexcept
+{
+	HandleX1ButtonDown();
+	return false;
+}
+bool SimulationWindow::OnX1ButtonUp(float x, float y) noexcept
+{
+	HandleX1ButtonUp();
+	return false;
+}
+bool SimulationWindow::OnX1ButtonDoubleClick(float x, float y) noexcept
+{
+	HandleX1ButtonDoubleClick();
+	return false;
+}
+bool SimulationWindow::OnX2ButtonDown(float x, float y) noexcept
+{
+	HandleX2ButtonDown();
+	return false;
+}
+bool SimulationWindow::OnX2ButtonUp(float x, float y) noexcept
+{
+	HandleX2ButtonUp();
+	return false;
+}
+bool SimulationWindow::OnX2ButtonDoubleClick(float x, float y) noexcept
+{
+	HandleX2ButtonDoubleClick();
+	return false;
+}
 
 
+
+
+void SimulationWindow::HandleLButtonDown() noexcept
+{
+	LOG_INFO("{}", "HandleLButtonDown");
+}
+void SimulationWindow::HandleLButtonUp() noexcept
+{
+	LOG_INFO("{}", "HandleLButtonUp");
+}
+void SimulationWindow::HandleLButtonDoubleClick() noexcept
+{
+	LOG_INFO("{}", "HandleLButtonDoubleClick");
+}
+void SimulationWindow::HandleMButtonDown() noexcept
+{
+	LOG_INFO("{}", "HandleMButtonDown");
+}
+void SimulationWindow::HandleMButtonUp() noexcept
+{
+	LOG_INFO("{}", "HandleMButtonUp");
+}
+void SimulationWindow::HandleMButtonDoubleClick() noexcept
+{
+	LOG_INFO("{}", "HandleMButtonDoubleClick");
+}
+void SimulationWindow::HandleRButtonDown() noexcept
+{
+	LOG_INFO("{}", "HandleRButtonDown");
+}
+void SimulationWindow::HandleRButtonUp() noexcept
+{
+	LOG_INFO("{}", "HandleRButtonUp");
+}
+void SimulationWindow::HandleRButtonDoubleClick() noexcept
+{
+	LOG_INFO("{}", "HandleRButtonDoubleClick");
+}
+void SimulationWindow::HandleX1ButtonDown() noexcept
+{
+	LOG_INFO("{}", "HandleX1ButtonDown");
+}
+void SimulationWindow::HandleX1ButtonUp() noexcept
+{
+	LOG_INFO("{}", "HandleX1ButtonUp");
+}
+void SimulationWindow::HandleX1ButtonDoubleClick() noexcept
+{
+	LOG_INFO("{}", "HandleX1ButtonDoubleClick");
+}
+void SimulationWindow::HandleX2ButtonDown() noexcept
+{
+	LOG_INFO("{}", "HandleX2ButtonDown");
+}
+void SimulationWindow::HandleX2ButtonUp() noexcept
+{
+	LOG_INFO("{}", "HandleX2ButtonUp");
+}
+void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
+{
+	LOG_INFO("{}", "HandleX2ButtonDoubleClick");
+}
+void SimulationWindow::HandleMouseMove() noexcept
+{
+	LOG_INFO("{}", "HandleMouseMove");
+}
 
 }

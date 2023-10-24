@@ -1,6 +1,8 @@
 #include "Application.h"
 #include "utils/Log.h"
 
+#include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
+
 // Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function on Simulation
 #pragma push_macro("AddAtom")
 #undef AddAtom
@@ -369,7 +371,38 @@ void Application::Present()
 	m_deviceResources->CleanupResources();
 }
 
-LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+void Application::ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn)
+{
+	// If there is a window that is selected/being interacted with, then pass the event to that window first
+	// Otherwise, pass it to all windows, but if one of them returns true, then we know that window wants to be selected
+	if (m_simulationWindowSelected.has_value())
+	{
+		if (fn(m_simulationWindowSelected.value()))
+			return;
+
+		for (SimulationWindow& window : m_simulationWindows)
+		{
+			if (m_simulationWindowSelected.value() != &window && fn(&window))
+			{
+				m_simulationWindowSelected = &window;
+				return;
+			}
+		}
+	}
+	else
+	{
+		for (SimulationWindow& window : m_simulationWindows)
+		{
+			if (fn(&window))
+			{
+				m_simulationWindowSelected = &window;
+				return;
+			}
+		}
+	}
+}
+
+LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
 
@@ -379,28 +412,30 @@ LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-LRESULT Application::MainWindowOnClose(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnClose(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	PostQuitMessage(0);
 	return 0;
 }
-LRESULT Application::MainWindowOnLButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnLButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton Down event ...
-
-
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonDown(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-lbuttondown
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnLButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnLButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton Up event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonUp(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -415,53 +450,61 @@ LRESULT Application::MainWindowOnLButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnLButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnLButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton DblClck event ...
-
-
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonDoubleClick(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn)); 
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-lbuttondblclk
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnRButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnRButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton DblClck event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonDoubleClick(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-rbuttondblclk
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton DblClck event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonDoubleClick(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mbuttondblclk
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton Down event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonDown(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mbuttondown
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton Up event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonUp(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -476,21 +519,25 @@ LRESULT Application::MainWindowOnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnRButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnRButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton Down event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonDown(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-rbuttondown
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	const POINTS pt = MAKEPOINTS(lParam);
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton Up event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonUp(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -505,6 +552,96 @@ LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
+LRESULT Application::MainWindowOnX1ButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton1 Down event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDown(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondown
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
+LRESULT Application::MainWindowOnX2ButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton2 Down event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDown(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondown
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
+LRESULT Application::MainWindowOnX1ButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton1 Up event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonUp(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
+	{
+		ReleaseCapture();
+
+		// ... Mouse Leave event ...
+	}
+
+	m_mainWindow->BringToForeground();
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttonup
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
+LRESULT Application::MainWindowOnX2ButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton2 Up event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonUp(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
+	{
+		ReleaseCapture();
+
+		// ... Mouse Leave event ...
+	}
+
+	m_mainWindow->BringToForeground();
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttonup
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
+LRESULT Application::MainWindowOnX1ButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton1 DblClck event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDoubleClick(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondblclk
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
+LRESULT Application::MainWindowOnX2ButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+	// ... Mouse XButton2 DblClck event ...
+	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDoubleClick(pt.x, pt.y); };
+	ForwardMessageToWindows(std::move(fn));
+
+	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondblclk
+	// --> "If an application processes this message, it should return TRUE."
+	return true;
+}
 LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// NOTE: Do not update the viewport here. The viewport gets updated every frame in RenderUI() 
@@ -516,7 +653,7 @@ LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// ... Mouse Move event ...
 	 
@@ -525,7 +662,7 @@ LRESULT Application::MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, L
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMouseEnter(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMouseEnter(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// NOTE: MouseEnter is not a real Win32 event. It is really just a WM_MOVE event that we are calling an "enter" event
 	//       when the mouse enters a window. Therefore, it should mostly be treated like a WM_MOVE event
@@ -534,7 +671,7 @@ LRESULT Application::MainWindowOnMouseEnter(HWND hWnd, UINT msg, WPARAM wParam, 
 
 	return 0;
 }
-LRESULT Application::MainWindowOnMouseLeave(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMouseLeave(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// NOTE: There is such a thing as a Win32 mouse leave event, however, they don't seem as reliable as just
 	//       testing for leaving when the mouse moves. Therefore, this is really just a WM_MOVE event that we are calling a "leave" event
@@ -544,7 +681,7 @@ LRESULT Application::MainWindowOnMouseLeave(HWND hWnd, UINT msg, WPARAM wParam, 
 
 	return 0;
 }
-LRESULT Application::MainWindowOnMouseWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMouseWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// Kind of weird behavior, but the mouse location stored in the lParam does not exactly match
 	// the actual location of the mouse on the screen. So instead of calling MAKEPOINTS(lParam), we are
@@ -558,7 +695,7 @@ LRESULT Application::MainWindowOnMouseWheel(HWND hWnd, UINT msg, WPARAM wParam, 
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnMouseHWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnMouseHWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// Kind of weird behavior, but the mouse location stored in the lParam does not exactly match
 	// the actual location of the mouse on the screen. So instead of calling MAKEPOINTS(lParam), we are
@@ -572,7 +709,7 @@ LRESULT Application::MainWindowOnMouseHWheel(HWND hWnd, UINT msg, WPARAM wParam,
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// wParam - Contains the keycode
 	// lParam - Bits 0-15 contain the repeat count
@@ -585,7 +722,7 @@ LRESULT Application::MainWindowOnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// wParam - Contains the keycode
 	char keycode = static_cast<char>(wParam);
@@ -596,7 +733,7 @@ LRESULT Application::MainWindowOnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARA
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// wParam - Contains the keycode
 	// lParam - Bits 0-15 contain the repeat count
@@ -611,7 +748,7 @@ LRESULT Application::MainWindowOnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPA
 	// --> "An application should return zero if it processes this message."
 	return 0;
 }
-LRESULT Application::MainWindowOnKillFocus(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+LRESULT Application::MainWindowOnKillFocus(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }

@@ -6,6 +6,7 @@
 
 
 
+
 #define MAX_INSTANCES 100
 #define NUM_MATERIALS 10
 
@@ -105,7 +106,7 @@ public:
 		Simulation& simulation,
 		float top, float left, float height, float width) noexcept;
 
-	inline void Update(const Timer& timer, int frameIndex) { m_renderer->Update(timer, frameIndex); }
+	void Update(const Timer& timer, int frameIndex);
 	inline void Render(int frameIndex) { m_renderer->Render(m_simulation, frameIndex); }
 	inline void SetWindow(float top, float left, float height, float width) noexcept
 	{
@@ -113,7 +114,49 @@ public:
 		m_scissorRect = { static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) };
 	}
 
+	ND bool OnLButtonDown(float x, float y) noexcept;
+	ND bool OnLButtonUp(float x, float y) noexcept;
+	ND bool OnLButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnMButtonDown(float x, float y) noexcept;
+	ND bool OnMButtonUp(float x, float y) noexcept;
+	ND bool OnMButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnRButtonDown(float x, float y) noexcept;
+	ND bool OnRButtonUp(float x, float y) noexcept;
+	ND bool OnRButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnX1ButtonDown(float x, float y) noexcept;
+	ND bool OnX1ButtonUp(float x, float y) noexcept;
+	ND bool OnX1ButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnX2ButtonDown(float x, float y) noexcept;
+	ND bool OnX2ButtonUp(float x, float y) noexcept;
+	ND bool OnX2ButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnMouseMove(float x, float y) noexcept;
+
+	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
+	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown; }
+
 private:
+	void HandleLButtonDown() noexcept;
+	void HandleLButtonUp() noexcept;
+	void HandleLButtonDoubleClick() noexcept;
+	void HandleMButtonDown() noexcept;
+	void HandleMButtonUp() noexcept;
+	void HandleMButtonDoubleClick() noexcept;
+	void HandleRButtonDown() noexcept;
+	void HandleRButtonUp() noexcept;
+	void HandleRButtonDoubleClick() noexcept;
+	void HandleX1ButtonDown() noexcept;
+	void HandleX1ButtonUp() noexcept;
+	void HandleX1ButtonDoubleClick() noexcept;
+	void HandleX2ButtonDown() noexcept;
+	void HandleX2ButtonUp() noexcept;
+	void HandleX2ButtonDoubleClick() noexcept;
+	void HandleMouseMove() noexcept;
+
+
+
+
+
+
 	void InitializeRenderPasses();
 
 
@@ -141,5 +184,13 @@ private:
 
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
 	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;
+
+
+	// Mouse Tracking
+	bool m_mouseLButtonDown = false;
+	bool m_mouseMButtonDown = false;
+	bool m_mouseRButtonDown = false;
+	DirectX::XMFLOAT2 m_mouseLastPos = DirectX::XMFLOAT2();
+
 };
 }

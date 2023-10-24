@@ -7,6 +7,8 @@
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx12.h"
 
+#include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
+
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -112,13 +114,25 @@ namespace seethe
 		case WM_MBUTTONUP:		return m_app->MainWindowOnMButtonUp(hWnd, msg, wParam, lParam);
 		case WM_RBUTTONDOWN:	return m_app->MainWindowOnRButtonDown(hWnd, msg, wParam, lParam);
 		case WM_RBUTTONUP:		return m_app->MainWindowOnRButtonUp(hWnd, msg, wParam, lParam);
-		case WM_SIZE:			
+		case WM_XBUTTONDOWN:	
+			return GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ?
+				m_app->MainWindowOnX1ButtonDown(hWnd, msg, wParam, lParam) :
+				m_app->MainWindowOnX2ButtonDown(hWnd, msg, wParam, lParam);
+		case WM_XBUTTONUP:		
+			return GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ?
+				m_app->MainWindowOnX1ButtonUp(hWnd, msg, wParam, lParam) :
+				m_app->MainWindowOnX2ButtonUp(hWnd, msg, wParam, lParam);
+		case WM_XBUTTONDBLCLK:	
+			return GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ?
+				m_app->MainWindowOnX1ButtonDoubleClick(hWnd, msg, wParam, lParam) :
+				m_app->MainWindowOnX2ButtonDoubleClick(hWnd, msg, wParam, lParam);
+		case WM_SIZE:
 			m_width = LOWORD(lParam);
 			m_height = HIWORD(lParam);
 			return m_app->MainWindowOnResize(hWnd, msg, wParam, lParam);
 		case WM_MOUSEMOVE:		
 		{
-			const POINTS pt = MAKEPOINTS(lParam); 
+			const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 			m_mouseX = pt.x; 
 			m_mouseY = pt.y; 
 
