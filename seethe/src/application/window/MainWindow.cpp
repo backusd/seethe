@@ -91,8 +91,13 @@ namespace seethe
 		//static seethe::WindowMessageMap mm;
 		//LOG_TRACE("{}", mm(msg, wParam, lParam));
 
-		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) 
+		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+		{
+			// In my testing so far, the ImGui_ImplWin32_WndProcHandler only actually returns true for
+			// WM_SETCURSOR. When dragging around windows, entering text, clicking, etc., you will still
+			// get sent all those messages
 			return true;
+		}
 
 		switch (msg)
 		{

@@ -78,6 +78,7 @@
   <ItemGroup>
     <ClCompile Include="src\application\Application.cpp" />
     <ClCompile Include="src\application\EntryPoint.cpp" />
+    <ClCompile Include="src\application\ui\SimulationWindow.cpp" />
     <ClCompile Include="src\application\window\MainWindow.cpp" />
     <ClCompile Include="src\application\window\WindowMessageMap.cpp" />
     <ClCompile Include="src\pch.cpp" />
@@ -104,6 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\application\Application.h" />
+    <ClInclude Include="src\application\ui\SimulationWindow.h" />
     <ClInclude Include="src\application\window\MainWindow.h" />
     <ClInclude Include="src\application\window\WindowMessageMap.h" />
     <ClInclude Include="src\application\window\WindowTemplate.h" />
