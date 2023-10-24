@@ -76,12 +76,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> MeshGroup::CreateDefaultBuffer(const void
 	auto commandList = m_deviceResources->GetCommandList();
 
 	auto _b = CD3DX12_RESOURCE_BARRIER::Transition(defaultBuffer.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
-	commandList->ResourceBarrier(1, &_b);
+	GFX_THROW_INFO_ONLY(commandList->ResourceBarrier(1, &_b));
 
-	UpdateSubresources<1>(commandList, defaultBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subResourceData);
+	GFX_THROW_INFO_ONLY(UpdateSubresources<1>(commandList, defaultBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subResourceData));
 
 	auto _b2 = CD3DX12_RESOURCE_BARRIER::Transition(defaultBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
-	commandList->ResourceBarrier(1, &_b2);
+	GFX_THROW_INFO_ONLY(commandList->ResourceBarrier(1, &_b2));
 
 	// MUST delete the upload buffer AFTER it is done being referenced by the GPU
 	m_deviceResources->DelayedDelete(uploadBuffer);

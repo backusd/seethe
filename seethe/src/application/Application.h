@@ -68,5 +68,22 @@ private:
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
+
+
+
+
+
+
+	void InitializeRenderPasses();
+
+	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
+
+	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
+	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
+	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
+	std::unique_ptr<ConstantBuffer<InstanceDataArray>> m_instanceConstantBuffer;
+
+	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
+	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;
 };
 }

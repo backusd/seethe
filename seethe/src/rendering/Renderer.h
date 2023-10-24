@@ -101,42 +101,29 @@ namespace seethe
 class Renderer
 {
 public:
-	Renderer(std::shared_ptr<DeviceResources> deviceResources, Simulation& simulation);
+	Renderer(std::shared_ptr<DeviceResources> deviceResources);
 
 	void Update(const Timer& timer, int frameIndex, const D3D12_VIEWPORT& vp);
 	void Render(const Simulation& simulation, int frameIndex);
 	void OnResize();
 
+	ND constexpr inline Camera& GetCamera() noexcept { return m_camera; }
+	ND constexpr inline const Camera& GetCamera() const noexcept { return m_camera; }
+
 	inline void SetViewport(const D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
 	inline void SetScissorRect(const D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
 
+	constexpr void PushBackRenderPass(RenderPass&& pass) noexcept { m_renderPasses.push_back(std::move(pass)); }
+	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
+	RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
+
 private:
-	void InitializeRenderPasses();
-
-	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
-
+	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer, int frameIndex);
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	Camera m_camera;
 
-
-	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
-	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
-	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	std::unique_ptr<ConstantBuffer<InstanceDataArray>> m_instanceConstantBuffer;
-
-	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;
-
-	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
-
-
-	// =======================================================================
-	
-	void RunComputeLayer(const ComputeLayer& layer, const Timer* timer, int frameIndex);
-
-	Simulation& m_simulation; // GET RID OF THIS!! The code that references the simulation should be oustide this class
-
+	// !!! MAKE VIEWPORT A REFERENCE !!!
 	D3D12_VIEWPORT m_viewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f }; // Dummy values
 	D3D12_RECT m_scissorRect = { 0, 0, 1, 1 }; // Dummy values
 
