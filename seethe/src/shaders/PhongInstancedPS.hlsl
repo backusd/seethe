@@ -22,6 +22,7 @@
 
 // Constant data that varies per frame.
 
+#define MAX_INSTANCES 100
 #define NUM_MATERIALS 10
 
 struct MaterialIn
@@ -31,10 +32,19 @@ struct MaterialIn
     float Roughness;
 };
 
-cbuffer cbPerObject : register(b0)
+struct InstanceData
 {
-    float4x4 gWorld;
+    float4x4 World;
+    uint MaterialIndex;
+    uint Pad0;
+    uint Pad1;
+    uint Pad2;
 };
+
+cbuffer cbInstanceData : register(b0)
+{
+    InstanceData gInstanceDataArray[MAX_INSTANCES];
+}
 
 cbuffer cbMaterial : register(b1)
 {

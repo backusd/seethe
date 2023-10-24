@@ -219,5 +219,7 @@
     <FxCompile Include="src\shaders\PhongPS.hlsl" />
     <FxCompile Include="src\shaders\PhongInstancedVS.hlsl" />
     <FxCompile Include="src\shaders\PhongInstancedPS.hlsl" />
+    <FxCompile Include="src\shaders\SolidVS.hlsl" />
+    <FxCompile Include="src\shaders\SolidPS.hlsl" />
   </ItemGroup>
 </Project>

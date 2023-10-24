@@ -39,6 +39,11 @@ struct Vertex
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT3 Normal;
 };
+struct SolidColorVertex
+{
+	DirectX::XMFLOAT4 Pos;
+	DirectX::XMFLOAT4 Color;
+};
 
 struct MeshData
 {
@@ -167,6 +172,12 @@ private:
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
 	std::unique_ptr<ConstantBuffer<InstanceDataArray>> m_instanceConstantBuffer;
+
+	// Box
+	std::unique_ptr<Shader> m_solidVS = nullptr;
+	std::unique_ptr<Shader> m_solidPS = nullptr;
+	std::unique_ptr<InputLayout> m_solidInputLayout = nullptr;
+	std::unique_ptr<ConstantBuffer<DirectX::XMFLOAT4X4>> m_boxConstantBuffer;
 
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
 	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;

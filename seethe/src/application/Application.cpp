@@ -175,6 +175,7 @@ void Application::InitializeRenderPasses()
 		};
 
 
+	// Beginning of Layer #1 -----------------------------------------------------------------------
 
 	MeshData sphereMesh = SphereMesh(0.5f, 20, 20);
 
@@ -242,6 +243,86 @@ void Application::InitializeRenderPasses()
 			}
 
 			m_instanceConstantBuffer->CopyData(frameIndex, d);
+		};
+
+
+	// Beginning of Layer #2 -----------------------------------------------------------------------
+	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	std::vector<SolidColorVertex> boxVertices = { 
+		{ { 1.0f, 1.0f, 1.0f, 1.0f }, color },		// 0:  x  y  z
+		{ { -1.0f, 1.0f, 1.0f, 1.0f }, color },		// 1: -x  y  z
+		{ { 1.0f, -1.0f, 1.0f, 1.0f }, color },		// 2:  x -y  z
+		{ { 1.0f, 1.0f, -1.0f, 1.0f }, color },		// 3:  x  y -z
+		{ { -1.0f, -1.0f, 1.0f, 1.0f }, color },	// 4: -x -y  z
+		{ { -1.0f, 1.0f, -1.0f, 1.0f }, color },	// 5: -x  y -z
+		{ { 1.0f, -1.0f, -1.0f, 1.0f }, color },	// 6:  x -y -z
+		{ { -1.0f, -1.0f, -1.0f, 1.0f }, color }	// 7: -x -y -z
+	};
+	std::vector<std::uint16_t> boxIndices = {
+		// Positive z face
+		0, 1,
+		0, 2,
+		1, 4,
+		2, 4,
+		// Negative z face
+		3, 5,
+		3, 6,
+		5, 7,
+		6, 7,
+		// Connecting postive to negative z
+		1, 5,
+		0, 3,
+		2, 6,
+		4, 7
+	};
+	
+	std::vector<std::vector<SolidColorVertex>> boxVerticesList;
+	boxVerticesList.push_back(std::move(boxVertices));
+
+	std::vector<std::vector<std::uint16_t>> boxIndicesList;
+	boxIndicesList.push_back(std::move(boxIndices));
+
+	std::shared_ptr<MeshGroupT<SolidColorVertex>> boxMeshGroup = std::make_shared<MeshGroupT<SolidColorVertex>>(m_deviceResources, boxVerticesList, boxIndicesList);
+
+	m_solidVS = std::make_unique<Shader>("src/shaders/output/SolidVS.cso");
+	m_solidPS = std::make_unique<Shader>("src/shaders/output/SolidPS.cso");
+
+	m_solidInputLayout = std::make_unique<InputLayout>(
+		std::vector<D3D12_INPUT_ELEMENT_DESC>{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		}
+	);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC boxDesc;
+	ZeroMemory(&boxDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	boxDesc.InputLayout = m_solidInputLayout->GetInputLayoutDesc();
+	boxDesc.pRootSignature = rootSig1->Get();
+	boxDesc.VS = m_solidVS->GetShaderByteCode();
+	boxDesc.PS = m_solidPS->GetShaderByteCode();
+	boxDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	boxDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	boxDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	boxDesc.SampleMask = UINT_MAX;
+	boxDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+	boxDesc.NumRenderTargets = 1;
+	boxDesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
+	boxDesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
+	boxDesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	boxDesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
+
+	RenderPassLayer& layer2 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxMeshGroup, boxDesc, D3D_PRIMITIVE_TOPOLOGY_LINELIST, "Layer #2");
+
+	m_boxConstantBuffer = std::make_unique<ConstantBuffer<DirectX::XMFLOAT4X4>>(m_deviceResources);
+
+	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
+	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
+	boxCBV.Update = [this](const Timer& timer, int frameIndex)
+		{
+			DirectX::XMFLOAT4X4 world;
+			DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f)));
+
+			m_boxConstantBuffer->CopyData(frameIndex, world);
 		};
 }
 MeshData Application::SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount)
