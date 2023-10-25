@@ -349,28 +349,40 @@ void SimulationWindow::Update(const Timer& timer, int frameIndex)
 	m_renderer->Update(timer, frameIndex); 
 }
 
-bool SimulationWindow::OnLButtonDown(float x, float y) noexcept
+
+
+bool SimulationWindow::OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)
 {
-	// Don't set the LButtonDown flag if any of the other buttons are down
-	if (!m_mouseMButtonDown && !m_mouseRButtonDown)
-	{	
-		if (m_mouseLButtonDown = ContainsPoint(x, y))
-			HandleLButtonDown();
+	// Don't set the buttonDownFlag if any of the other buttons are down
+	bool dragging = Dragging();
+	if (!dragging)
+	{
+		if (buttonFlag = ContainsPoint(x, y))
+			handler();
+	}
+
+	// Return true only if the user is dragging something or the mouse is hovering the window
+	return dragging || ContainsPoint(x, y);
+}
+bool SimulationWindow::OnButtonUpImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)
+{
+	if (buttonFlag)
+	{
+		buttonFlag = false;
+		handler(); 
 	}
 
 	// Return true only if the user is dragging something or the mouse is hovering the window
 	return Dragging() || ContainsPoint(x, y);
 }
-bool SimulationWindow::OnLButtonUp(float x, float y) noexcept
+bool SimulationWindow::OnButtonDoubleClickImpl(float x, float y, std::function<void()>&& handler)
 {
-	if (m_mouseLButtonDown)
+	if (ContainsPoint(x, y)) 
 	{
-		m_mouseLButtonDown = false;
-		HandleLButtonUp();
+		handler(); 
+		return true;
 	}
-
-	// Return true only if the user is dragging something or the mouse is hovering the window
-	return Dragging() || ContainsPoint(x, y);
+	return false;
 }
 bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 {
@@ -382,71 +394,6 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 		return true;
 	}
 
-	return false;
-}
-bool SimulationWindow::OnLButtonDoubleClick(float x, float y) noexcept
-{
-	HandleLButtonDoubleClick();
-	return false;
-}
-bool SimulationWindow::OnMButtonDown(float x, float y) noexcept
-{
-	HandleMButtonDown();
-	return false;
-}
-bool SimulationWindow::OnMButtonUp(float x, float y) noexcept
-{
-	HandleMButtonUp();
-	return false;
-}
-bool SimulationWindow::OnMButtonDoubleClick(float x, float y) noexcept
-{
-	HandleMButtonDoubleClick();
-	return false;
-}
-bool SimulationWindow::OnRButtonDown(float x, float y) noexcept
-{
-	HandleRButtonDown();
-	return false;
-}
-bool SimulationWindow::OnRButtonUp(float x, float y) noexcept
-{
-	HandleRButtonUp();
-	return false;
-}
-bool SimulationWindow::OnRButtonDoubleClick(float x, float y) noexcept
-{
-	HandleRButtonDoubleClick();
-	return false;
-}
-bool SimulationWindow::OnX1ButtonDown(float x, float y) noexcept
-{
-	HandleX1ButtonDown();
-	return false;
-}
-bool SimulationWindow::OnX1ButtonUp(float x, float y) noexcept
-{
-	HandleX1ButtonUp();
-	return false;
-}
-bool SimulationWindow::OnX1ButtonDoubleClick(float x, float y) noexcept
-{
-	HandleX1ButtonDoubleClick();
-	return false;
-}
-bool SimulationWindow::OnX2ButtonDown(float x, float y) noexcept
-{
-	HandleX2ButtonDown();
-	return false;
-}
-bool SimulationWindow::OnX2ButtonUp(float x, float y) noexcept
-{
-	HandleX2ButtonUp();
-	return false;
-}
-bool SimulationWindow::OnX2ButtonDoubleClick(float x, float y) noexcept
-{
-	HandleX2ButtonDoubleClick();
 	return false;
 }
 

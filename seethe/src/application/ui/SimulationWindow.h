@@ -114,27 +114,31 @@ public:
 		m_scissorRect = { static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) };
 	}
 
-	ND bool OnLButtonDown(float x, float y) noexcept;
-	ND bool OnLButtonUp(float x, float y) noexcept;
-	ND bool OnLButtonDoubleClick(float x, float y) noexcept;
-	ND bool OnMButtonDown(float x, float y) noexcept;
-	ND bool OnMButtonUp(float x, float y) noexcept;
-	ND bool OnMButtonDoubleClick(float x, float y) noexcept;
-	ND bool OnRButtonDown(float x, float y) noexcept;
-	ND bool OnRButtonUp(float x, float y) noexcept;
-	ND bool OnRButtonDoubleClick(float x, float y) noexcept;
-	ND bool OnX1ButtonDown(float x, float y) noexcept;
-	ND bool OnX1ButtonUp(float x, float y) noexcept;
-	ND bool OnX1ButtonDoubleClick(float x, float y) noexcept;
-	ND bool OnX2ButtonDown(float x, float y) noexcept;
-	ND bool OnX2ButtonUp(float x, float y) noexcept;
-	ND bool OnX2ButtonDoubleClick(float x, float y) noexcept;
+	ND bool OnLButtonDown(float x, float y) noexcept { return OnButtonDownImpl(m_mouseLButtonDown, x, y, [this]() { HandleLButtonDown(); }); }
+	ND bool OnLButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseLButtonDown, x, y, [this]() { HandleLButtonUp(); }); }
+	ND bool OnLButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleLButtonDoubleClick(); }); }
+	ND bool OnMButtonDown(float x, float y) noexcept { return OnButtonDownImpl(m_mouseMButtonDown, x, y, [this]() { HandleMButtonDown(); }); }
+	ND bool OnMButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseMButtonDown, x, y, [this]() { HandleMButtonUp(); }); }
+	ND bool OnMButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleMButtonDoubleClick(); }); }
+	ND bool OnRButtonDown(float x, float y) noexcept { return OnButtonDownImpl(m_mouseRButtonDown, x, y, [this]() { HandleRButtonDown(); }); }
+	ND bool OnRButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseRButtonDown, x, y, [this]() { HandleRButtonUp(); }); }
+	ND bool OnRButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleRButtonDoubleClick(); }); }
+	ND bool OnX1ButtonDown(float x, float y) noexcept { return OnButtonDownImpl(m_mouseX1ButtonDown, x, y, [this]() { HandleX1ButtonDown(); }); }
+	ND bool OnX1ButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseX1ButtonDown, x, y, [this]() { HandleX1ButtonUp(); }); }
+	ND bool OnX1ButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleX1ButtonDoubleClick(); }); }
+	ND bool OnX2ButtonDown(float x, float y) noexcept { return OnButtonDownImpl(m_mouseX2ButtonDown, x, y, [this]() { HandleX2ButtonDown(); }); }
+	ND bool OnX2ButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseX2ButtonDown, x, y, [this]() { HandleX2ButtonUp(); }); }
+	ND bool OnX2ButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleX2ButtonDoubleClick(); }); }
 	ND bool OnMouseMove(float x, float y) noexcept;
 
 	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
-	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown; }
+	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
 
 private:
+	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
+	bool OnButtonUpImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
+	bool OnButtonDoubleClickImpl(float x, float y, std::function<void()>&& handler);
+
 	void HandleLButtonDown() noexcept;
 	void HandleLButtonUp() noexcept;
 	void HandleLButtonDoubleClick() noexcept;
@@ -190,6 +194,8 @@ private:
 	bool m_mouseLButtonDown = false;
 	bool m_mouseMButtonDown = false;
 	bool m_mouseRButtonDown = false;
+	bool m_mouseX1ButtonDown = false;
+	bool m_mouseX2ButtonDown = false;
 	DirectX::XMFLOAT2 m_mouseLastPos = DirectX::XMFLOAT2();
 
 };
