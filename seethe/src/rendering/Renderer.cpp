@@ -11,12 +11,17 @@ Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources,
 	m_viewport(viewport),
 	m_scissorRect(scissorRect)
 {
-	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+	DirectX::XMFLOAT3 pos = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
+	DirectX::XMFLOAT3 at = DirectX::XMFLOAT3(2.0f, 2.0f, 2.0f);
+	DirectX::XMVECTOR up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&pos), DirectX::XMLoadFloat3(&at)));
+	DirectX::XMStoreFloat3(&pos, up);
+	//m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), at, pos);
 }
 
 void Renderer::Update(const Timer& timer, int frameIndex)
 {
-	m_camera.UpdateViewMatrix();
+	m_camera.Update(timer);
 	m_camera.SetLens(0.25f * MathHelper::Pi, m_viewport.Width / m_viewport.Height, 1.0f, 1000.0f);
 
 	for (RenderPass& pass : m_renderPasses)

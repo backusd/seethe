@@ -396,7 +396,26 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 
 	return false;
 }
-
+bool SimulationWindow::OnMouseWheelVertical(int wheelDelta) noexcept
+{
+	// Only handle wheel input if we are not currently dragging and the mouse is over the window
+	if (!Dragging() && ContainsPoint(m_mouseLastPos.x, m_mouseLastPos.y))
+	{
+		HandleMouseWheelVertical(wheelDelta);
+		return true;
+	}
+	return false;
+}
+bool SimulationWindow::OnMouseWheelHorizontal(int wheelDelta) noexcept
+{
+	// Only handle wheel input if we are not currently dragging and the mouse is over the window
+	if (!Dragging() && ContainsPoint(m_mouseLastPos.x, m_mouseLastPos.y))
+	{
+		HandleMouseWheelHorizontal(wheelDelta);
+		return true;
+	}
+	return false;
+}
 
 
 
@@ -462,21 +481,32 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
-	LOG_INFO("{}", "HandleMouseMove");
-
 	if (m_mouseLButtonDown)
 	{
 		// If the pointer were to move from the middle of the screen to the far right,
 		// that should produce one full rotation. Therefore, set a rotationFactor = 2
-		float rotationFactor = 2.0f; 
-		float radiansPerPixelX = (DirectX::XM_2PI / m_viewport.Width) * rotationFactor;
-		float radiansPerPixelY = (DirectX::XM_2PI / m_viewport.Height) * rotationFactor;
+		const float rotationFactor = 2.0f; 
+		const float radiansPerPixelX = (DirectX::XM_2PI / m_viewport.Width) * rotationFactor;
+		const float radiansPerPixelY = (DirectX::XM_2PI / m_viewport.Height) * rotationFactor;
 
-		float thetaX = radiansPerPixelX * (x - m_mouseLastPos.x);
-		float thetaY = radiansPerPixelY * (y - m_mouseLastPos.y);
+		const float thetaX = radiansPerPixelX * (x - m_mouseLastPos.x);
+		const float thetaY = radiansPerPixelY * (y - m_mouseLastPos.y);
 
 		m_renderer->GetCamera().RotateAroundLookAtPoint(thetaX, thetaY);
 	}
+
+}
+void SimulationWindow::HandleMouseWheelVertical(int wheelDelta) noexcept
+{
+	LOG_INFO("Delta Vertical: {}", wheelDelta);
+
+	Camera& camera = m_renderer->GetCamera();
+	DirectX::XMFLOAT3 pos = camera.GetPosition3f();
+	camera.StartAnimatedMove(2.0f, { pos.x * 2, pos.y * 2, pos.z * 2 });
+}
+void SimulationWindow::HandleMouseWheelHorizontal(int wheelDelta) noexcept
+{
+	LOG_INFO("Delta Horizontal: {}", wheelDelta);
 
 }
 

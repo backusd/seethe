@@ -679,6 +679,8 @@ LRESULT Application::MainWindowOnMouseWheel(HWND hWnd, UINT msg, WPARAM wParam, 
 	const int delta = GET_WHEEL_DELTA_WPARAM(wParam); 
 
 	// ... Mouse Wheel event ...
+	ForwardMessageToWindows([&delta](SimulationWindow* window) -> bool { return window->OnMouseWheelVertical(delta); });
+
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
 	// --> "An application should return zero if it processes this message."
@@ -693,6 +695,8 @@ LRESULT Application::MainWindowOnMouseHWheel(HWND hWnd, UINT msg, WPARAM wParam,
 	const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 	// ... Mouse H Wheel event ...
+	ForwardMessageToWindows([&delta](SimulationWindow* window) -> bool { return window->OnMouseWheelHorizontal(delta); }); 
+
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousehwheel
 	// --> "An application should return zero if it processes this message."

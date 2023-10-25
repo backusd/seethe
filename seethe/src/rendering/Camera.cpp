@@ -35,27 +35,31 @@ void Camera::SetLens(float fovY, float aspect, float zn, float zf) noexcept
 	XMStoreFloat4x4(&m_proj, P);
 }
 
-void Camera::LookAt(FXMVECTOR pos, FXMVECTOR target, FXMVECTOR worldUp) noexcept
-{
-	XMVECTOR L = XMVector3Normalize(XMVectorSubtract(target, pos));
-	XMVECTOR R = XMVector3Normalize(XMVector3Cross(worldUp, L));
-	XMVECTOR U = XMVector3Cross(L, R);
-
-	XMStoreFloat3(&m_position, pos);
-	XMStoreFloat3(&m_look, L);
-	XMStoreFloat3(&m_right, R);
-	XMStoreFloat3(&m_up, U);
-
-	m_viewDirty = true;
-}
+//void Camera::LookAt(FXMVECTOR pos, FXMVECTOR target, FXMVECTOR worldUp) noexcept
+//{
+//	XMVECTOR L = XMVector3Normalize(XMVectorSubtract(target, pos));
+//	XMVECTOR R = XMVector3Normalize(XMVector3Cross(worldUp, L));
+//	XMVECTOR U = XMVector3Cross(L, R);
+//
+//	XMStoreFloat3(&m_position, pos);
+//	XMStoreFloat3(&m_lookAt, L);
+//	XMStoreFloat3(&m_right, R);
+//	XMStoreFloat3(&m_up, U);
+//
+//	m_viewDirty = true;
+//}
 
 void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3& up) noexcept
 {
-	XMVECTOR P = XMLoadFloat3(&pos);
-	XMVECTOR T = XMLoadFloat3(&target);
-	XMVECTOR U = XMLoadFloat3(&up);
+//	XMVECTOR P = XMLoadFloat3(&pos);
+//	XMVECTOR T = XMLoadFloat3(&target);
+//	XMVECTOR U = XMLoadFloat3(&up);
+//
+//	LookAt(P, T, U);
 
-	LookAt(P, T, U);
+	m_position = pos;
+	m_lookAt = target;
+	m_up = up;
 
 	m_viewDirty = true;
 }
@@ -74,9 +78,9 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 //
 //void Camera::Walk(float d) noexcept
 //{
-//	// m_position += d*m_look
+//	// m_position += d*m_lookAt
 //	XMVECTOR s = XMVectorReplicate(d);
-//	XMVECTOR l = XMLoadFloat3(&m_look);
+//	XMVECTOR l = XMLoadFloat3(&m_lookAt);
 //	XMVECTOR p = XMLoadFloat3(&m_position);
 //	XMStoreFloat3(&m_position, XMVectorMultiplyAdd(s, l, p));
 //
@@ -90,7 +94,7 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 //	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&m_right), angle);
 //
 //	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
-//	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
+//	XMStoreFloat3(&m_lookAt, XMVector3TransformNormal(XMLoadFloat3(&m_lookAt), R));
 //
 //	m_viewDirty = true;
 //}
@@ -103,7 +107,7 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 //
 //	XMStoreFloat3(&m_right, XMVector3TransformNormal(XMLoadFloat3(&m_right), R));
 //	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
-//	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
+//	XMStoreFloat3(&m_lookAt, XMVector3TransformNormal(XMLoadFloat3(&m_lookAt), R));
 //
 //	m_viewDirty = true;
 //}
@@ -118,9 +122,13 @@ void Camera::RotateAroundLookAtPointX(float thetaX) noexcept
 	//     k     : unit vector representing axis of rotation
 	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
 
-	XMVECTOR v = XMLoadFloat3(&m_position);
-	XMVECTOR k = XMLoadFloat3(&m_up);
+	// NOTE: We subtract the LookAt vector and then add it back at the end. This way we can rotate around LookAt points other than the origin
+
+	XMVECTOR l = XMLoadFloat3(&m_lookAt);
+	XMVECTOR v = XMLoadFloat3(&m_position) - l;
+	XMVECTOR k = XMVector3Normalize(XMLoadFloat3(&m_up));
 	v = v * cos(thetaX) + XMVector3Cross(k, v) * sin(thetaX) + k * XMVector3Dot(k, v) * (1 - cos(thetaX));
+	v += l;
 	XMStoreFloat3(&m_position, v);
 
 	m_viewDirty = true;
@@ -135,16 +143,19 @@ void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 	//     k     : unit vector representing axis of rotation
 	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
 	
+	// NOTE: We subtract the LookAt vector and then add it back at the end. This way we can rotate around LookAt points other than the origin
 	
 	// The axis of rotation vector for up/down rotation will be the cross product 
 	// between the eye-vector and the up-vector (must make it a unit vector)
-	XMVECTOR v = XMLoadFloat3(&m_position); 
+	XMVECTOR l = XMLoadFloat3(&m_lookAt);
+	XMVECTOR v = XMLoadFloat3(&m_position) - l; 
 	XMVECTOR u = XMLoadFloat3(&m_up);
 	XMVECTOR k = XMVector3Normalize(XMVector3Cross(v, u));
 	v = v * cos(thetaY) + XMVector3Cross(k, v) * sin(thetaY) + k * XMVector3Dot(k, v) * (1 - cos(thetaY)); 
+	v += l;
 	XMStoreFloat3(&m_position, v); 
 
-	// Now update the new up-vector should be the cross product between the k-vector and the new eye-vector
+	// Now update the new up-vector should be the cross product between the k-vector and the new position vector
 	u = XMVector3Normalize(XMVector3Cross(k, v));
 	XMStoreFloat3(&m_up, u);
 
@@ -155,9 +166,9 @@ void Camera::UpdateViewMatrix() noexcept
 {
 	if (m_viewDirty)
 	{
-		XMVECTOR R = XMLoadFloat3(&m_right);
+//		XMVECTOR R = XMLoadFloat3(&m_right);
 		XMVECTOR U = XMLoadFloat3(&m_up);
-		XMVECTOR L = XMLoadFloat3(&m_look);
+		XMVECTOR L = XMLoadFloat3(&m_lookAt);
 		XMVECTOR P = XMLoadFloat3(&m_position);
 
 		XMMATRIX view = XMMatrixLookAtLH(P, L, U);
@@ -179,7 +190,7 @@ void Camera::UpdateViewMatrix() noexcept
 //
 //		XMStoreFloat3(&m_right, R);
 //		XMStoreFloat3(&m_up, U);
-//		XMStoreFloat3(&m_look, L);
+//		XMStoreFloat3(&m_lookAt, L);
 //
 //		m_view(0, 0) = m_right.x;
 //		m_view(1, 0) = m_right.y;
@@ -191,9 +202,9 @@ void Camera::UpdateViewMatrix() noexcept
 //		m_view(2, 1) = m_up.z;
 //		m_view(3, 1) = y;
 //
-//		m_view(0, 2) = m_look.x;
-//		m_view(1, 2) = m_look.y;
-//		m_view(2, 2) = m_look.z;
+//		m_view(0, 2) = m_lookAt.x;
+//		m_view(1, 2) = m_lookAt.y;
+//		m_view(2, 2) = m_lookAt.z;
 //		m_view(3, 2) = z;
 //
 //		m_view(0, 3) = 0.0f;
@@ -204,4 +215,77 @@ void Camera::UpdateViewMatrix() noexcept
 //		m_viewDirty = false;
 	}
 }
+
+void Camera::Update(const Timer& timer) noexcept
+{
+	if (m_performingAnimatedMove)
+	{
+		float totalTime = timer.TotalTime();
+
+		if (m_movementStartTime < 0)
+			m_movementStartTime = totalTime - timer.DeltaTime();
+
+		// Compute the ratio of elapsed time / allowed time to complete
+		float timeRatio = (totalTime - m_movementStartTime) / m_movementDuration;
+
+		// if the current time is beyond the given duration, assign all vectors to their target values
+		if (timeRatio >= 1.0f)
+		{
+			m_performingAnimatedMove = false;
+			XMStoreFloat3(&m_position, m_targetPosition);
+			XMStoreFloat3(&m_up, m_targetUp);
+			XMStoreFloat3(&m_lookAt, m_targetLook);
+		}
+		else
+		{
+			// Using the time ratio, compute the intermediate position/up/look vector values
+			XMVECTOR pos = m_initialPosition + ((m_targetPosition - m_initialPosition) * timeRatio);
+			XMStoreFloat3(&m_position, pos);
+
+			XMVECTOR up = m_initialUp + ((m_targetUp - m_initialUp) * timeRatio);
+			XMStoreFloat3(&m_up, up);
+
+			XMVECTOR look = m_initialLook + ((m_targetLook - m_initialLook) * timeRatio);
+			XMStoreFloat3(&m_lookAt, look);
+		}
+
+		m_viewDirty = true;
+	}
+
+	// Make sure to try to update the view matrix in case anything changed
+	UpdateViewMatrix();
+}
+
+void Camera::StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp, const DirectX::XMFLOAT3& finalLookAt) noexcept
+{
+	ASSERT(duration > 0.0, "Animated duration must not be negative");
+	m_performingAnimatedMove = true;
+	m_targetPosition = XMLoadFloat3(&finalPosition);
+	m_targetUp = XMLoadFloat3(&finalUp);
+	m_targetLook = XMLoadFloat3(&finalLookAt);
+	m_initialPosition = XMLoadFloat3(&m_position);
+	m_initialUp = XMLoadFloat3(&m_up);
+	m_initialLook = XMLoadFloat3(&m_lookAt);
+	m_movementDuration = duration;
+	m_movementStartTime = -1.0;
+	m_viewDirty = true;
+}
+
+void Camera::ZoomInFixed(float fixedDistance, float duration) noexcept
+{
+
+}
+void Camera::ZoomOutFixed(float fixedDistance, float duration) noexcept
+{
+
+}
+void Camera::ZoomInPercent(float fixedDistance, float duration) noexcept
+{
+
+}
+void Camera::ZoomOutPercent(float fixedDistance, float duration) noexcept
+{
+
+}
+
 }

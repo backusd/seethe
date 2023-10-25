@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "utils/Log.h"
 #include "utils/MathHelper.h"
+#include "utils/Timer.h"
 
 
 namespace seethe
@@ -16,6 +17,8 @@ public:
 	Camera& operator=(Camera&&) noexcept = default;
 	~Camera() noexcept {}
 
+	void Update(const Timer& timer) noexcept;
+
 	// Get/Set world camera position.
 	ND inline DirectX::XMVECTOR GetPosition() const noexcept { return DirectX::XMLoadFloat3(&m_position); }
 	ND inline DirectX::XMFLOAT3 GetPosition3f() const noexcept { return m_position; }
@@ -23,12 +26,12 @@ public:
 	void SetPosition(const DirectX::XMFLOAT3& v) noexcept;
 
 	// Get camera basis vectors.
-	ND inline DirectX::XMVECTOR GetRight() const noexcept { return DirectX::XMLoadFloat3(&m_right); }
-	ND inline DirectX::XMFLOAT3 GetRight3f() const noexcept { return m_right; }
+//	ND inline DirectX::XMVECTOR GetRight() const noexcept { return DirectX::XMLoadFloat3(&m_right); }
+//	ND inline DirectX::XMFLOAT3 GetRight3f() const noexcept { return m_right; }
 	ND inline DirectX::XMVECTOR GetUp() const noexcept { return DirectX::XMLoadFloat3(&m_up); }
 	ND inline DirectX::XMFLOAT3 GetUp3f() const noexcept { return m_up; }
-	ND inline DirectX::XMVECTOR GetLook() const noexcept { return DirectX::XMLoadFloat3(&m_look); }
-	ND inline DirectX::XMFLOAT3 GetLook3f() const noexcept { return m_look; }
+	ND inline DirectX::XMVECTOR GetLook() const noexcept { return DirectX::XMLoadFloat3(&m_lookAt); }
+	ND inline DirectX::XMFLOAT3 GetLook3f() const noexcept { return m_lookAt; }
 
 	// Get frustum properties.
 	ND inline float GetNearZ() const noexcept { return m_nearZ; }
@@ -51,7 +54,7 @@ public:
 	void SetLens(float fovY, float aspect, float zn, float zf) noexcept;
 
 	// Define camera space via LookAt parameters.
-	void LookAt(DirectX::FXMVECTOR pos, DirectX::FXMVECTOR target, DirectX::FXMVECTOR worldUp) noexcept;
+//	void LookAt(DirectX::FXMVECTOR pos, DirectX::FXMVECTOR target, DirectX::FXMVECTOR worldUp) noexcept;
 	void LookAt(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& target, const DirectX::XMFLOAT3& up) noexcept;
 
 	// Get View/Proj matrices.
@@ -82,6 +85,15 @@ public:
 	void RotateAroundLookAtPointX(float thetaX) noexcept;
 	void RotateAroundLookAtPointY(float thetaY) noexcept;
 
+	// Methods to initiate an animation (so the camera continually moves until it reaches a final destination)
+	inline void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition) noexcept { StartAnimatedMove(duration, finalPosition, m_up, m_lookAt); }
+	inline void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp) noexcept { StartAnimatedMove(duration, finalPosition, finalUp, m_lookAt); }
+	void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp, const DirectX::XMFLOAT3& finalLookAt) noexcept;
+	void ZoomInFixed(float fixedDistance, float duration) noexcept;
+	void ZoomOutFixed(float fixedDistance, float duration) noexcept;
+	void ZoomInPercent(float fixedDistance, float duration) noexcept;
+	void ZoomOutPercent(float fixedDistance, float duration) noexcept;
+
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
 
@@ -90,9 +102,9 @@ private:
 
 	// Camera coordinate system with coordinates relative to world space.
 	DirectX::XMFLOAT3 m_position = { 0.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 m_right = { 1.0f, 0.0f, 0.0f };
+//	DirectX::XMFLOAT3 m_right = { 1.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 m_up = { 0.0f, 1.0f, 0.0f };
-	DirectX::XMFLOAT3 m_look = { 0.0f, 0.0f, 1.0f };
+	DirectX::XMFLOAT3 m_lookAt = { 0.0f, 0.0f, 1.0f };
 
 	// Cache frustum properties.
 	float m_nearZ = 0.0f;
@@ -107,5 +119,16 @@ private:
 	// Cache View/Proj matrices.
 	DirectX::XMFLOAT4X4 m_view = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 m_proj = MathHelper::Identity4x4();
+
+	// Animated move variables
+	bool m_performingAnimatedMove = false;
+	DirectX::XMVECTOR m_targetPosition;
+	DirectX::XMVECTOR m_targetUp;
+	DirectX::XMVECTOR m_targetLook;
+	DirectX::XMVECTOR m_initialPosition;
+	DirectX::XMVECTOR m_initialUp;
+	DirectX::XMVECTOR m_initialLook;
+	float m_movementDuration = 0.0f;
+	float m_movementStartTime = -1.0f;
 };
 }

@@ -130,6 +130,8 @@ public:
 	ND bool OnX2ButtonUp(float x, float y) noexcept { return OnButtonUpImpl(m_mouseX2ButtonDown, x, y, [this]() { HandleX2ButtonUp(); }); }
 	ND bool OnX2ButtonDoubleClick(float x, float y) noexcept { return OnButtonDoubleClickImpl(x, y, [this]() { HandleX2ButtonDoubleClick(); }); }
 	ND bool OnMouseMove(float x, float y) noexcept;
+	ND bool OnMouseWheelVertical(int wheelDelta) noexcept;
+	ND bool OnMouseWheelHorizontal(int wheelDelta) noexcept;
 
 	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
 	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
@@ -155,6 +157,8 @@ private:
 	void HandleX2ButtonUp() noexcept;
 	void HandleX2ButtonDoubleClick() noexcept;
 	void HandleMouseMove(float x, float y) noexcept;
+	void HandleMouseWheelVertical(int wheelDelta) noexcept;
+	void HandleMouseWheelHorizontal(int wheelDelta) noexcept;
 
 
 
