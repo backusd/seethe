@@ -389,8 +389,8 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 	// If we are dragging, then continue to track the mouse
 	if (Dragging() || ContainsPoint(x, y))
 	{
-		m_mouseLastPos = { x, y };
-		HandleMouseMove();
+		HandleMouseMove(x, y);
+		m_mouseLastPos = { x, y }; // Make sure this gets updated AFTER calling HandleMouseMove() so we don't lose the previous position data
 		return true;
 	}
 
@@ -460,9 +460,24 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 {
 	LOG_INFO("{}", "HandleX2ButtonDoubleClick");
 }
-void SimulationWindow::HandleMouseMove() noexcept
+void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
 	LOG_INFO("{}", "HandleMouseMove");
+
+	if (m_mouseLButtonDown)
+	{
+		// If the pointer were to move from the middle of the screen to the far right,
+		// that should produce one full rotation. Therefore, set a rotationFactor = 2
+		float rotationFactor = 2.0f; 
+		float radiansPerPixelX = (DirectX::XM_2PI / m_viewport.Width) * rotationFactor;
+		float radiansPerPixelY = (DirectX::XM_2PI / m_viewport.Height) * rotationFactor;
+
+		float thetaX = radiansPerPixelX * (x - m_mouseLastPos.x);
+		float thetaY = radiansPerPixelY * (y - m_mouseLastPos.y);
+
+		m_renderer->GetCamera().RotateAroundLookAtPoint(thetaX, thetaY);
+	}
+
 }
 
 }

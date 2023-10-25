@@ -61,49 +61,92 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 }
 
 
-void Camera::Strafe(float d) noexcept
+//void Camera::Strafe(float d) noexcept
+//{
+//	// m_position += d*m_right
+//	XMVECTOR s = XMVectorReplicate(d);
+//	XMVECTOR r = XMLoadFloat3(&m_right);
+//	XMVECTOR p = XMLoadFloat3(&m_position);
+//	XMStoreFloat3(&m_position, XMVectorMultiplyAdd(s, r, p));
+//
+//	m_viewDirty = true;
+//}
+//
+//void Camera::Walk(float d) noexcept
+//{
+//	// m_position += d*m_look
+//	XMVECTOR s = XMVectorReplicate(d);
+//	XMVECTOR l = XMLoadFloat3(&m_look);
+//	XMVECTOR p = XMLoadFloat3(&m_position);
+//	XMStoreFloat3(&m_position, XMVectorMultiplyAdd(s, l, p));
+//
+//	m_viewDirty = true;
+//}
+//
+//void Camera::Pitch(float angle) noexcept
+//{
+//	// Rotate up and look vector about the right vector.
+//
+//	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&m_right), angle);
+//
+//	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
+//	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
+//
+//	m_viewDirty = true;
+//}
+//
+//void Camera::RotateY(float angle) noexcept
+//{
+//	// Rotate the basis vectors about the world y-axis.
+//
+//	XMMATRIX R = XMMatrixRotationY(angle);
+//
+//	XMStoreFloat3(&m_right, XMVector3TransformNormal(XMLoadFloat3(&m_right), R));
+//	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
+//	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
+//
+//	m_viewDirty = true;
+//}
+
+void Camera::RotateAroundLookAtPointX(float thetaX) noexcept
 {
-	// m_position += d*m_right
-	XMVECTOR s = XMVectorReplicate(d);
-	XMVECTOR r = XMLoadFloat3(&m_right);
-	XMVECTOR p = XMLoadFloat3(&m_position);
-	XMStoreFloat3(&m_position, XMVectorMultiplyAdd(s, r, p));
+	// Use Rodrigue's Rotation Formula
+	//     See here: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+	//     v_rot : vector after rotation
+	//     v     : vector before rotation
+	//     theta : angle of rotation
+	//     k     : unit vector representing axis of rotation
+	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
+
+	XMVECTOR v = XMLoadFloat3(&m_position);
+	XMVECTOR k = XMLoadFloat3(&m_up);
+	v = v * cos(thetaX) + XMVector3Cross(k, v) * sin(thetaX) + k * XMVector3Dot(k, v) * (1 - cos(thetaX));
+	XMStoreFloat3(&m_position, v);
 
 	m_viewDirty = true;
 }
-
-void Camera::Walk(float d) noexcept
+void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 {
-	// m_position += d*m_look
-	XMVECTOR s = XMVectorReplicate(d);
-	XMVECTOR l = XMLoadFloat3(&m_look);
-	XMVECTOR p = XMLoadFloat3(&m_position);
-	XMStoreFloat3(&m_position, XMVectorMultiplyAdd(s, l, p));
+	// Use Rodrigue's Rotation Formula
+	//     See here: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+	//     v_rot : vector after rotation
+	//     v     : vector before rotation
+	//     theta : angle of rotation
+	//     k     : unit vector representing axis of rotation
+	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
+	
+	
+	// The axis of rotation vector for up/down rotation will be the cross product 
+	// between the eye-vector and the up-vector (must make it a unit vector)
+	XMVECTOR v = XMLoadFloat3(&m_position); 
+	XMVECTOR u = XMLoadFloat3(&m_up);
+	XMVECTOR k = XMVector3Normalize(XMVector3Cross(v, u));
+	v = v * cos(thetaY) + XMVector3Cross(k, v) * sin(thetaY) + k * XMVector3Dot(k, v) * (1 - cos(thetaY)); 
+	XMStoreFloat3(&m_position, v); 
 
-	m_viewDirty = true;
-}
-
-void Camera::Pitch(float angle) noexcept
-{
-	// Rotate up and look vector about the right vector.
-
-	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&m_right), angle);
-
-	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
-	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
-
-	m_viewDirty = true;
-}
-
-void Camera::RotateY(float angle) noexcept
-{
-	// Rotate the basis vectors about the world y-axis.
-
-	XMMATRIX R = XMMatrixRotationY(angle);
-
-	XMStoreFloat3(&m_right, XMVector3TransformNormal(XMLoadFloat3(&m_right), R));
-	XMStoreFloat3(&m_up, XMVector3TransformNormal(XMLoadFloat3(&m_up), R));
-	XMStoreFloat3(&m_look, XMVector3TransformNormal(XMLoadFloat3(&m_look), R));
+	// Now update the new up-vector should be the cross product between the k-vector and the new eye-vector
+	u = XMVector3Normalize(XMVector3Cross(k, v));
+	XMStoreFloat3(&m_up, u);
 
 	m_viewDirty = true;
 }
@@ -117,43 +160,48 @@ void Camera::UpdateViewMatrix() noexcept
 		XMVECTOR L = XMLoadFloat3(&m_look);
 		XMVECTOR P = XMLoadFloat3(&m_position);
 
-		// Keep camera's axes orthogonal to each other and of unit length.
-		L = XMVector3Normalize(L);
-		U = XMVector3Normalize(XMVector3Cross(L, R));
-
-		// U, L already ortho-normal, so no need to normalize cross product.
-		R = XMVector3Cross(U, L);
-
-		// Fill in the view matrix entries.
-		float x = -XMVectorGetX(XMVector3Dot(P, R));
-		float y = -XMVectorGetX(XMVector3Dot(P, U));
-		float z = -XMVectorGetX(XMVector3Dot(P, L));
-
-		XMStoreFloat3(&m_right, R);
-		XMStoreFloat3(&m_up, U);
-		XMStoreFloat3(&m_look, L);
-
-		m_view(0, 0) = m_right.x;
-		m_view(1, 0) = m_right.y;
-		m_view(2, 0) = m_right.z;
-		m_view(3, 0) = x;
-
-		m_view(0, 1) = m_up.x;
-		m_view(1, 1) = m_up.y;
-		m_view(2, 1) = m_up.z;
-		m_view(3, 1) = y;
-
-		m_view(0, 2) = m_look.x;
-		m_view(1, 2) = m_look.y;
-		m_view(2, 2) = m_look.z;
-		m_view(3, 2) = z;
-
-		m_view(0, 3) = 0.0f;
-		m_view(1, 3) = 0.0f;
-		m_view(2, 3) = 0.0f;
-		m_view(3, 3) = 1.0f;
+		XMMATRIX view = XMMatrixLookAtLH(P, L, U);
+		XMStoreFloat4x4(&m_view, view);
 
 		m_viewDirty = false;
+
+//		// Keep camera's axes orthogonal to each other and of unit length.
+//		L = XMVector3Normalize(L);
+//		U = XMVector3Normalize(XMVector3Cross(L, R));
+//
+//		// U, L already ortho-normal, so no need to normalize cross product.
+//		R = XMVector3Cross(U, L);
+//
+//		// Fill in the view matrix entries.
+//		float x = -XMVectorGetX(XMVector3Dot(P, R));
+//		float y = -XMVectorGetX(XMVector3Dot(P, U));
+//		float z = -XMVectorGetX(XMVector3Dot(P, L));
+//
+//		XMStoreFloat3(&m_right, R);
+//		XMStoreFloat3(&m_up, U);
+//		XMStoreFloat3(&m_look, L);
+//
+//		m_view(0, 0) = m_right.x;
+//		m_view(1, 0) = m_right.y;
+//		m_view(2, 0) = m_right.z;
+//		m_view(3, 0) = x;
+//
+//		m_view(0, 1) = m_up.x;
+//		m_view(1, 1) = m_up.y;
+//		m_view(2, 1) = m_up.z;
+//		m_view(3, 1) = y;
+//
+//		m_view(0, 2) = m_look.x;
+//		m_view(1, 2) = m_look.y;
+//		m_view(2, 2) = m_look.z;
+//		m_view(3, 2) = z;
+//
+//		m_view(0, 3) = 0.0f;
+//		m_view(1, 3) = 0.0f;
+//		m_view(2, 3) = 0.0f;
+//		m_view(3, 3) = 1.0f;
+//
+//		m_viewDirty = false;
 	}
 }
 }

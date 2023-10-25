@@ -154,7 +154,7 @@ private:
 	void HandleX2ButtonDown() noexcept;
 	void HandleX2ButtonUp() noexcept;
 	void HandleX2ButtonDoubleClick() noexcept;
-	void HandleMouseMove() noexcept;
+	void HandleMouseMove(float x, float y) noexcept;
 
 
 

@@ -69,18 +69,24 @@ public:
 	}
 	ND inline DirectX::XMFLOAT4X4 GetProj4x4f() const noexcept { return m_proj; }
 
-	// Strafe/Walk the camera a distance d.
-	void Strafe(float d) noexcept;
-	void Walk(float d) noexcept;
+//	// Strafe/Walk the camera a distance d.
+//	void Strafe(float d) noexcept;
+//	void Walk(float d) noexcept;
+//
+//	// Rotate the camera in place (meaning the camera does not change location, just what it is looking at)
+//	void Pitch(float angle) noexcept;
+//	void RotateY(float angle) noexcept;
 
-	// Rotate the camera.
-	void Pitch(float angle) noexcept;
-	void RotateY(float angle) noexcept;
+	// Rotate the camera relative to the look at point (meaning the look at point stays the same, but the camera changes location)
+	inline void RotateAroundLookAtPoint(float thetaX, float thetaY) noexcept { RotateAroundLookAtPointX(thetaX); RotateAroundLookAtPointY(thetaY); }
+	void RotateAroundLookAtPointX(float thetaX) noexcept;
+	void RotateAroundLookAtPointY(float thetaY) noexcept;
 
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
 
 private:
+	
 
 	// Camera coordinate system with coordinates relative to world space.
 	DirectX::XMFLOAT3 m_position = { 0.0f, 0.0f, 0.0f };

@@ -422,8 +422,7 @@ LRESULT Application::MainWindowOnLButtonDown(HWND hWnd, UINT msg, WPARAM wParam,
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton Down event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonDown(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnLButtonDown(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-lbuttondown
 	// --> "An application should return zero if it processes this message."
@@ -434,8 +433,7 @@ LRESULT Application::MainWindowOnLButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton Up event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonUp(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnLButtonUp(pt.x, pt.y); });
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -455,8 +453,7 @@ LRESULT Application::MainWindowOnLButtonDoubleClick(HWND hWnd, UINT msg, WPARAM 
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse LButton DblClck event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnLButtonDoubleClick(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn)); 
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnLButtonDoubleClick(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-lbuttondblclk
 	// --> "An application should return zero if it processes this message."
@@ -467,8 +464,7 @@ LRESULT Application::MainWindowOnRButtonDoubleClick(HWND hWnd, UINT msg, WPARAM 
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton DblClck event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonDoubleClick(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnRButtonDoubleClick(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-rbuttondblclk
 	// --> "An application should return zero if it processes this message."
@@ -479,8 +475,7 @@ LRESULT Application::MainWindowOnMButtonDoubleClick(HWND hWnd, UINT msg, WPARAM 
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton DblClck event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonDoubleClick(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnMButtonDoubleClick(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mbuttondblclk
 	// --> "An application should return zero if it processes this message."
@@ -491,8 +486,7 @@ LRESULT Application::MainWindowOnMButtonDown(HWND hWnd, UINT msg, WPARAM wParam,
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton Down event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonDown(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnMButtonDown(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mbuttondown
 	// --> "An application should return zero if it processes this message."
@@ -503,8 +497,7 @@ LRESULT Application::MainWindowOnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse MButton Up event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnMButtonUp(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnMButtonUp(pt.x, pt.y); });
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -524,8 +517,7 @@ LRESULT Application::MainWindowOnRButtonDown(HWND hWnd, UINT msg, WPARAM wParam,
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton Down event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonDown(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnRButtonDown(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-rbuttondown
 	// --> "An application should return zero if it processes this message."
@@ -536,8 +528,7 @@ LRESULT Application::MainWindowOnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, L
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse RButton Up event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnRButtonUp(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnRButtonUp(pt.x, pt.y); });
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -557,8 +548,7 @@ LRESULT Application::MainWindowOnX1ButtonDown(HWND hWnd, UINT msg, WPARAM wParam
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton1 Down event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDown(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDown(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondown
 	// --> "If an application processes this message, it should return TRUE."
@@ -569,8 +559,7 @@ LRESULT Application::MainWindowOnX2ButtonDown(HWND hWnd, UINT msg, WPARAM wParam
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton2 Down event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDown(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDown(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondown
 	// --> "If an application processes this message, it should return TRUE."
@@ -581,8 +570,7 @@ LRESULT Application::MainWindowOnX1ButtonUp(HWND hWnd, UINT msg, WPARAM wParam, 
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton1 Up event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonUp(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonUp(pt.x, pt.y); });
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -602,8 +590,7 @@ LRESULT Application::MainWindowOnX2ButtonUp(HWND hWnd, UINT msg, WPARAM wParam, 
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton2 Up event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonUp(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonUp(pt.x, pt.y); });
 
 	if (pt.x < 0 || pt.x >= m_mainWindow->GetWidth() || pt.y < 0 || pt.y >= m_mainWindow->GetHeight())
 	{
@@ -623,8 +610,7 @@ LRESULT Application::MainWindowOnX1ButtonDoubleClick(HWND hWnd, UINT msg, WPARAM
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton1 DblClck event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDoubleClick(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX1ButtonDoubleClick(pt.x, pt.y); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondblclk
 	// --> "If an application processes this message, it should return TRUE."
@@ -635,8 +621,7 @@ LRESULT Application::MainWindowOnX2ButtonDoubleClick(HWND hWnd, UINT msg, WPARAM
 	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	// ... Mouse XButton2 DblClck event ...
-	auto fn = [&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDoubleClick(pt.x, pt.y); };
-	ForwardMessageToWindows(std::move(fn));
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnX2ButtonDoubleClick(pt.x, pt.y); }); 
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondblclk
 	// --> "If an application processes this message, it should return TRUE."
@@ -655,8 +640,12 @@ LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 }
 LRESULT Application::MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	const POINTS pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
 	// ... Mouse Move event ...
-	 
+	ForwardMessageToWindows([&pt](SimulationWindow* window) -> bool { return window->OnMouseMove(pt.x, pt.y); });
+
+
 	
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousemove
 	// --> "An application should return zero if it processes this message."
