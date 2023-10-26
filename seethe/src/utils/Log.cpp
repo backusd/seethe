@@ -27,22 +27,22 @@ std::string app_current_time_and_date()
 void error(const std::string& msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
-	std::cout << "[ERROR " << app_current_time_and_date() << "] " << msg << std::endl;
+	std::cout << "[ERROR " << app_current_time_and_date() << "] " << msg << '\n';
 }
 void warn(const std::string& msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6);
-	std::cout << "[WARN  " << app_current_time_and_date() << "] " << msg << std::endl;
+	std::cout << "[WARN  " << app_current_time_and_date() << "] " << msg << '\n';
 }
 void info(const std::string& msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-	std::cout << "[INFO  " << app_current_time_and_date() << "] " << msg << std::endl;
+	std::cout << "[INFO  " << app_current_time_and_date() << "] " << msg << '\n';
 }
 void trace(const std::string& msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
-	std::cout << "[TRACE " << app_current_time_and_date() << "] " << msg << std::endl;
+	std::cout << "[TRACE " << app_current_time_and_date() << "] " << msg << '\n';
 
 }
 

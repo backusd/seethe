@@ -114,26 +114,19 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 
 void Camera::RotateAroundLookAtPointX(float thetaX) noexcept
 {
-	// Use Rodrigue's Rotation Formula
-	//     See here: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-	//     v_rot : vector after rotation
-	//     v     : vector before rotation
-	//     theta : angle of rotation
-	//     k     : unit vector representing axis of rotation
-	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
-
-	// NOTE: We subtract the LookAt vector and then add it back at the end. This way we can rotate around LookAt points other than the origin
-
-	XMVECTOR l = XMLoadFloat3(&m_lookAt);
-	XMVECTOR v = XMLoadFloat3(&m_position) - l;
-	XMVECTOR k = XMVector3Normalize(XMLoadFloat3(&m_up));
-	v = v * cos(thetaX) + XMVector3Cross(k, v) * sin(thetaX) + k * XMVector3Dot(k, v) * (1 - cos(thetaX));
-	v += l;
-	XMStoreFloat3(&m_position, v);
-
+	m_position = ComputePositionAfterLeftRightRotation(thetaX);
 	m_viewDirty = true;
 }
 void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
+{
+	auto [position, up] = ComputePositionAndUpAfterUpDownRotation(thetaY);
+	m_position = position;
+	m_up = up;
+
+	m_viewDirty = true;
+}
+
+XMVECTOR Camera::RotateVector(XMVECTOR v, XMVECTOR k, float theta) const noexcept
 {
 	// Use Rodrigue's Rotation Formula
 	//     See here: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
@@ -142,24 +135,8 @@ void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 	//     theta : angle of rotation
 	//     k     : unit vector representing axis of rotation
 	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
-	
-	// NOTE: We subtract the LookAt vector and then add it back at the end. This way we can rotate around LookAt points other than the origin
-	
-	// The axis of rotation vector for up/down rotation will be the cross product 
-	// between the eye-vector and the up-vector (must make it a unit vector)
-	XMVECTOR l = XMLoadFloat3(&m_lookAt);
-	XMVECTOR v = XMLoadFloat3(&m_position) - l; 
-	XMVECTOR u = XMLoadFloat3(&m_up);
-	XMVECTOR k = XMVector3Normalize(XMVector3Cross(v, u));
-	v = v * cos(thetaY) + XMVector3Cross(k, v) * sin(thetaY) + k * XMVector3Dot(k, v) * (1 - cos(thetaY)); 
-	v += l;
-	XMStoreFloat3(&m_position, v); 
 
-	// Now update the new up-vector should be the cross product between the k-vector and the new position vector
-	u = XMVector3Normalize(XMVector3Cross(k, v));
-	XMStoreFloat3(&m_up, u);
-
-	m_viewDirty = true;
+	return v * cos(theta) + XMVector3Cross(k, v) * sin(theta) + k * XMVector3Dot(k, v) * (1 - cos(theta));
 }
 
 void Camera::UpdateViewMatrix() noexcept
@@ -247,18 +224,53 @@ void Camera::Update(const Timer& timer) noexcept
 
 			XMVECTOR look = m_initialLook + ((m_targetLook - m_initialLook) * timeRatio);
 			XMStoreFloat3(&m_lookAt, look);
+
+			// If all we did was implement the code above, we would be fine. However, when the lookAt point stays the same
+			// it would be ideal if the path the camera took from start to finish kept the same distance from the lookAt point,
+			// instead of getting closer and then subsequently further. Put another way, it would be better for the camera
+			// to move along an arc from start to finish rather than move in a straight line. Therefore, when the lookAt point
+			// does not change, we make the following adjustment to the camera movement
+			if (XMVectorGetX(XMVector3Length(m_targetLook - m_initialLook)) < 0.05f)
+			{
+				float distanceToMaintain = XMVectorGetX(XMVector3Length(m_initialPosition - m_initialLook));
+				XMVECTOR direction = pos - look;
+				float currentDistance = XMVectorGetX(XMVector3Length(direction));
+				pos += XMVector3Normalize(direction) * (distanceToMaintain - currentDistance);
+				XMStoreFloat3(&m_position, pos);
+			}
 		}
 
 		m_viewDirty = true;
+	}
+	else if (IsInConstantRotation())
+	{
+		// Compute the rotation
+		const float radiansPerSecond = 1.0;
+		const float theta = static_cast<float>(timer.DeltaTime() * radiansPerSecond);
+
+		if (m_isInConstantRotationLeft)
+			RotateAroundLookAtPointX(-theta);
+		else if (m_isInConstantRotationRight)
+			RotateAroundLookAtPointX(theta);
+
+		if (m_isInConstantRotationUp)
+			RotateAroundLookAtPointY(-theta);
+		else if (m_isInConstantRotationDown)
+			RotateAroundLookAtPointY(theta);
 	}
 
 	// Make sure to try to update the view matrix in case anything changed
 	UpdateViewMatrix();
 }
 
-void Camera::StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp, const DirectX::XMFLOAT3& finalLookAt) noexcept
+void Camera::StartAnimatedMove(float duration, const XMFLOAT3& finalPosition, const XMFLOAT3& finalUp, const XMFLOAT3& finalLookAt) noexcept
 {
 	ASSERT(duration > 0.0, "Animated duration must not be negative");
+
+	// Don't start an animation if we are in constant rotation
+	if (IsInConstantRotation())
+		return;
+
 	m_performingAnimatedMove = true;
 	m_targetPosition = XMLoadFloat3(&finalPosition);
 	m_targetUp = XMLoadFloat3(&finalUp);
@@ -269,6 +281,43 @@ void Camera::StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPos
 	m_movementDuration = duration;
 	m_movementStartTime = -1.0;
 	m_viewDirty = true;
+}
+
+void Camera::StartConstantLeftRotation() noexcept
+{
+	// Don't start a left rotation if we are already rotating right
+	if (!m_isInConstantRotationRight)
+	{
+		m_isInConstantRotationLeft = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
+}
+void Camera::StartConstantRightRotation() noexcept
+{
+	// Don't start a right rotation if we are already rotating left
+	if (!m_isInConstantRotationLeft)
+	{
+		m_isInConstantRotationRight = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
+}
+void Camera::StartConstantUpRotation() noexcept
+{
+	// Don't start an up rotation if we are already rotating down
+	if (!m_isInConstantRotationDown)
+	{
+		m_isInConstantRotationUp = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
+}
+void Camera::StartConstantDownRotation() noexcept
+{
+	// Don't start a down rotation if we are already rotating up
+	if (!m_isInConstantRotationUp)
+	{
+		m_isInConstantRotationDown = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
 }
 
 void Camera::ZoomInFixed(float fixedDistance) noexcept
@@ -387,5 +436,169 @@ void Camera::ZoomOutPercent(float percent, float duration) noexcept
 	// Make the percent negative. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
 	StartAnimatedMove(duration, ZoomPercentImpl(-percent));
 }
+
+void Camera::CenterOnFace() noexcept
+{
+	if (IsInConstantRotation())
+		return;
+
+	XMFLOAT3 newPos;
+	XMFLOAT3 newUp;
+
+	XMVECTOR position = XMLoadFloat3(&m_position);
+	XMVECTOR up = XMLoadFloat3(&m_up);
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
+
+	float length = XMVectorGetX(XMVector3Length(lookAt - position)); 
+
+	// Determine which element has the largest magnitude, set the others equal to 0 and set it to the current distance from position to lookAt point
+	float abs_x = std::abs(m_position.x);
+	float abs_y = std::abs(m_position.y);
+	float abs_z = std::abs(m_position.z);
+	newPos.x = (abs_x < abs_y || abs_x < abs_z) ? 0.0f : length;
+	newPos.y = (abs_y < abs_x || abs_y < abs_z) ? 0.0f : length; 
+	newPos.z = (abs_z < abs_x || abs_z < abs_y) ? 0.0f : length; 
+
+	newPos.x *= (m_position.x < 0.0f) ? -1.0f : 1.0f; 
+	newPos.y *= (m_position.y < 0.0f) ? -1.0f : 1.0f; 
+	newPos.z *= (m_position.z < 0.0f) ? -1.0f : 1.0f;
+
+	// Determine the coordinate with the max value and 0 out the other ones
+	// Whichever coordinate for the eye target is used must not be used for the up target, so zero it out
+	float xInit = (newPos.x == 0.0f) ? m_up.x : 0.0f;
+	float yInit = (newPos.y == 0.0f) ? m_up.y : 0.0f;
+	float zInit = (newPos.z == 0.0f) ? m_up.z : 0.0f;
+
+	length = XMVectorGetX(XMVector3Length(up));
+
+	abs_x = std::abs(xInit);
+	abs_y = std::abs(yInit);
+	abs_z = std::abs(zInit);
+	newUp.x = (abs_x < abs_y || abs_x < abs_z) ? 0.0f : length; 
+	newUp.y = (abs_y < abs_x || abs_y < abs_z) ? 0.0f : length; 
+	newUp.z = (abs_z < abs_x || abs_z < abs_y) ? 0.0f : length; 
+	
+	newUp.x *= (xInit < 0.0f) ? -1.0f : 1.0f; 
+	newUp.y *= (yInit < 0.0f) ? -1.0f : 1.0f; 
+	newUp.z *= (zInit < 0.0f) ? -1.0f : 1.0f; 
+
+	// Translate the position to account for when the lookAt point is not the origin
+	newPos.x += m_lookAt.x;
+	newPos.y += m_lookAt.y;
+	newPos.z += m_lookAt.z;
+
+	StartAnimatedMove(0.4f, newPos, newUp);
+}
+void Camera::Start90DegreeRotationLeft(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	XMFLOAT3 newPosition = ComputePositionAfterLeftRightRotation(DirectX::XM_PIDIV2);
+	StartAnimatedMove(duration, newPosition);
+}
+void Camera::Start90DegreeRotationRight(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	XMFLOAT3 newPosition = ComputePositionAfterLeftRightRotation(-DirectX::XM_PIDIV2);
+	StartAnimatedMove(duration, newPosition);
+}
+void Camera::Start90DegreeRotationUp(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	auto [position, up] = ComputePositionAndUpAfterUpDownRotation(DirectX::XM_PIDIV2);
+	StartAnimatedMove(duration, position, up);
+}
+void Camera::Start90DegreeRotationDown(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	auto [position, up] = ComputePositionAndUpAfterUpDownRotation(-DirectX::XM_PIDIV2);
+	StartAnimatedMove(duration, position, up);
+}
+void Camera::Start90DegreeRotationClockwise(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	XMFLOAT3 newUp;
+
+	XMVECTOR pos = XMLoadFloat3(&m_position);
+	XMVECTOR up = XMLoadFloat3(&m_up);
+	up = XMVector3Normalize(RotateVector(up, pos, -DirectX::XM_PIDIV2));
+	XMStoreFloat3(&newUp, up);
+
+	StartAnimatedMove(duration, m_position, newUp);
+}
+void Camera::Start90DegreeRotationCounterClockwise(float duration) noexcept
+{
+	ASSERT(duration > 0.0f, "When doing a 90 degree rotation, the duration should always be > 0");
+
+	if (IsInConstantRotation())
+		return;
+
+	XMFLOAT3 newUp;
+
+	XMVECTOR pos = XMLoadFloat3(&m_position);
+	XMVECTOR up = XMLoadFloat3(&m_up);
+	up = XMVector3Normalize(RotateVector(up, pos, DirectX::XM_PIDIV2));
+	XMStoreFloat3(&newUp, up);
+
+	StartAnimatedMove(duration, m_position, newUp);
+}
+
+
+XMFLOAT3 Camera::ComputePositionAfterLeftRightRotation(float theta) const noexcept
+{
+	XMFLOAT3 result; 
+
+	XMVECTOR newPos = XMLoadFloat3(&m_position); 
+	XMVECTOR up = XMLoadFloat3(&m_up); 
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt); 
+
+	newPos -= lookAt;
+	newPos = RotateVector(newPos, up, theta);
+	newPos += lookAt;
+
+	XMStoreFloat3(&result, newPos);
+	return result;
+}
+std::tuple<XMFLOAT3, XMFLOAT3> Camera::ComputePositionAndUpAfterUpDownRotation(float theta) const noexcept
+{
+	XMFLOAT3 newPosition, newUp; 
+
+	XMVECTOR newPos = XMLoadFloat3(&m_position); 
+	XMVECTOR up = XMLoadFloat3(&m_up); 
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt); 
+
+	newPos -= lookAt; 
+	XMVECTOR right = XMVector3Normalize(XMVector3Cross(newPos, up)); 
+
+	newPos = RotateVector(newPos, right, theta);
+	newPos += lookAt;
+
+	XMStoreFloat3(&newPosition, newPos);
+
+	up = XMVector3Normalize(XMVector3Cross(right, newPos)); 
+	XMStoreFloat3(&newUp, up);
+
+	return { newPosition, newUp };
+}
+
 
 }

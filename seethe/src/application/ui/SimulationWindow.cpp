@@ -394,7 +394,10 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 		return true;
 	}
 
-	return false;
+	m_mouseLastPos = { x, y }; // Make sure this gets updated AFTER calling HandleMouseMove() so we don't lose the previous position data
+	
+	// If a keyboard key is down, then return true so that this SimulationWindow can be the one to handle the key up event
+	return KeyboardKeyIsPressed(); 
 }
 bool SimulationWindow::OnMouseWheelVertical(int wheelDelta) noexcept
 {
@@ -412,6 +415,36 @@ bool SimulationWindow::OnMouseWheelHorizontal(int wheelDelta) noexcept
 	if (!Dragging() && ContainsPoint(m_mouseLastPos.x, m_mouseLastPos.y))
 	{
 		HandleMouseWheelHorizontal(wheelDelta);
+		return true;
+	}
+	return false;
+}
+bool SimulationWindow::OnKeyDown(unsigned int virtualKeyCode) noexcept
+{
+	// Only handle keyboard input if we are not currently dragging and the mouse is over the window
+	if (!Dragging() && ContainsPoint(m_mouseLastPos.x, m_mouseLastPos.y)) 
+	{
+		HandleKeyDown(virtualKeyCode);
+		return true;
+	}
+	return false;
+}
+bool SimulationWindow::OnKeyUp(unsigned int virtualKeyCode) noexcept
+{
+	// Only handle keyboard input if we are not currently dragging
+	if (!Dragging()) 
+	{
+		HandleKeyUp(virtualKeyCode); 
+		return true;
+	}
+	return false;
+}
+bool SimulationWindow::OnChar(char c) noexcept
+{
+	// Only handle keyboard input if we are not currently dragging and the mouse is over the window
+	if (!Dragging() && ContainsPoint(m_mouseLastPos.x, m_mouseLastPos.y)) 
+	{
+		HandleChar(c);
 		return true;
 	}
 	return false;
@@ -481,8 +514,14 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
+	Camera& camera = m_renderer->GetCamera();
+
 	if (m_mouseLButtonDown)
 	{
+		// If the camera is in a constant rotation (because arrow keys are down), disable dragging
+		if (camera.IsInConstantRotation())
+			return;
+
 		// If the pointer were to move from the middle of the screen to the far right,
 		// that should produce one full rotation. Therefore, set a rotationFactor = 2
 		const float rotationFactor = 2.0f; 
@@ -492,7 +531,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 		const float thetaX = radiansPerPixelX * (x - m_mouseLastPos.x);
 		const float thetaY = radiansPerPixelY * (y - m_mouseLastPos.y);
 
-		m_renderer->GetCamera().RotateAroundLookAtPoint(thetaX, thetaY);
+		camera.RotateAroundLookAtPoint(thetaX, thetaY);
 	}
 
 }
@@ -519,5 +558,98 @@ void SimulationWindow::HandleMouseWheelHorizontal(int wheelDelta) noexcept
 	LOG_INFO("Delta Horizontal: {}", wheelDelta);
 
 }
+void SimulationWindow::HandleKeyDown(unsigned int virtualKeyCode) noexcept
+{
+	Camera& camera = m_renderer->GetCamera();
+
+	switch (virtualKeyCode)
+	{
+	case VK_LEFT:
+		m_arrowLeftIsPressed = true;
+		camera.StartConstantLeftRotation();
+		break;
+
+	case VK_RIGHT:
+		m_arrowRightIsPressed = true;
+		camera.StartConstantRightRotation();
+		break;
+
+	case VK_UP:
+		m_arrowUpIsPressed = true;
+		camera.StartConstantUpRotation();
+		break;
+
+	case VK_DOWN:
+		m_arrowDownIsPressed = true;
+		camera.StartConstantDownRotation();
+		break;
+	}
+
+}
+void SimulationWindow::HandleKeyUp(unsigned int virtualKeyCode) noexcept
+{
+	Camera& camera = m_renderer->GetCamera();
+
+	switch (virtualKeyCode)
+	{
+	case VK_LEFT:
+		m_arrowLeftIsPressed = false;
+		camera.StopConstantLeftRotation();
+		break;
+
+	case VK_RIGHT:
+		m_arrowRightIsPressed = false;
+		camera.StopConstantRightRotation();
+		break;
+
+	case VK_UP:
+		m_arrowUpIsPressed = false;
+		camera.StopConstantUpRotation();
+		break;
+
+	case VK_DOWN:
+		m_arrowDownIsPressed = false;
+		camera.StopConstantDownRotation();
+		break;
+	}
+}
+void SimulationWindow::HandleChar(char c) noexcept
+{
+	Camera& camera = m_renderer->GetCamera();
+
+	switch (c)
+	{
+	case 'c':
+		camera.CenterOnFace();
+		break;
+
+	case 'w':
+		camera.Start90DegreeRotationUp();
+		break;
+
+	case 'a':
+		camera.Start90DegreeRotationLeft();
+		break;
+
+	case 's':
+		camera.Start90DegreeRotationDown();
+		break;
+
+	case 'd':
+		camera.Start90DegreeRotationRight();
+		break;
+
+	case 'q':
+		camera.Start90DegreeRotationCounterClockwise();
+		break;
+
+	case 'e':
+		camera.Start90DegreeRotationClockwise();
+		break;
+	}
+}
+
+
+
 
 }

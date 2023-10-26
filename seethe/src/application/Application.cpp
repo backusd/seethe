@@ -710,6 +710,7 @@ LRESULT Application::MainWindowOnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 	int repeats = static_cast<int>(LOWORD(lParam));
 
 	// ... Char event ...
+	ForwardMessageToWindows([&keycode](SimulationWindow* window) -> bool { return window->OnChar(keycode); });
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-char
 	// --> "An application should return zero if it processes this message."
@@ -718,9 +719,11 @@ LRESULT Application::MainWindowOnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 LRESULT Application::MainWindowOnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// wParam - Contains the keycode
-	char keycode = static_cast<char>(wParam);
+	unsigned int keycode = static_cast<unsigned int>(wParam);
 
 	// ... Key Up event ...
+	ForwardMessageToWindows([&keycode](SimulationWindow* window) -> bool { return window->OnKeyUp(keycode); });
+		
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
 	// --> "An application should return zero if it processes this message."
@@ -731,11 +734,13 @@ LRESULT Application::MainWindowOnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPA
 	// wParam - Contains the keycode
 	// lParam - Bits 0-15 contain the repeat count
 	// lParam - Bit 30 indicates whether the key was already down before the WM_KEYDOWN message was triggered
-	char keycode = static_cast<char>(wParam);
+	unsigned int keycode = static_cast<unsigned int>(wParam);
 	int repeats = static_cast<int>(LOWORD(lParam)); 
 	bool keyWasPreviouslyDown = (lParam & 0x40000000) > 0;
 
 	// ... Key Down event ...
+	ForwardMessageToWindows([&keycode](SimulationWindow* window) -> bool { return window->OnKeyDown(keycode); });
+
 
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
 	// --> "An application should return zero if it processes this message."

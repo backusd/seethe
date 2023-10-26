@@ -95,18 +95,41 @@ public:
 	inline void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp) noexcept { StartAnimatedMove(duration, finalPosition, finalUp, m_lookAt); }
 	void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp, const DirectX::XMFLOAT3& finalLookAt) noexcept;
 
+	void StartConstantLeftRotation() noexcept;
+	void StartConstantRightRotation() noexcept;
+	void StartConstantUpRotation() noexcept;
+	void StartConstantDownRotation() noexcept;
+	constexpr inline void StopConstantLeftRotation() noexcept { m_isInConstantRotationLeft = false; }
+	constexpr inline void StopConstantRightRotation() noexcept { m_isInConstantRotationRight = false; }
+	constexpr inline void StopConstantUpRotation() noexcept { m_isInConstantRotationUp = false; }
+	constexpr inline void StopConstantDownRotation() noexcept { m_isInConstantRotationDown = false; }
+
 	void ZoomInFixed(float fixedDistance, float duration) noexcept;
 	void ZoomOutFixed(float fixedDistance, float duration) noexcept;
 	void ZoomInPercent(float percent, float duration) noexcept;
 	void ZoomOutPercent(float percent, float duration) noexcept;
 
+	void CenterOnFace() noexcept;
+	void Start90DegreeRotationLeft(float duration = 0.5f) noexcept;
+	void Start90DegreeRotationRight(float duration = 0.5f) noexcept;
+	void Start90DegreeRotationUp(float duration = 0.5f) noexcept;
+	void Start90DegreeRotationDown(float duration = 0.5f) noexcept;
+	void Start90DegreeRotationClockwise(float duration = 0.5f) noexcept;
+	void Start90DegreeRotationCounterClockwise(float duration = 0.5f) noexcept;
+
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
+
+	ND constexpr inline bool IsInConstantRotation() const noexcept { return m_isInConstantRotationLeft || m_isInConstantRotationRight || m_isInConstantRotationUp || m_isInConstantRotationDown; }
 
 private:
 	ND DirectX::XMFLOAT3 ZoomFixedImpl(float fixedDistance) const noexcept; 
 	ND DirectX::XMFLOAT3 ZoomPercentImpl(float percent) const noexcept; 
 
+	ND DirectX::XMFLOAT3 ComputePositionAfterLeftRightRotation(float theta) const noexcept;
+	ND std::tuple<DirectX::XMFLOAT3, DirectX::XMFLOAT3> ComputePositionAndUpAfterUpDownRotation(float theta) const noexcept;
+
+	ND DirectX::XMVECTOR RotateVector(DirectX::XMVECTOR vectorToRotate, DirectX::XMVECTOR axis, float theta) const noexcept;
 
 	// Camera coordinate system with coordinates relative to world space.
 	DirectX::XMFLOAT3 m_position = { 0.0f, 0.0f, 0.0f };
@@ -138,5 +161,12 @@ private:
 	DirectX::XMVECTOR m_initialLook;
 	float m_movementDuration = 0.0f;
 	float m_movementStartTime = -1.0f;
+
+	// Constant Rotation Variables
+	bool m_isInConstantRotationLeft = false;
+	bool m_isInConstantRotationRight = false;
+	bool m_isInConstantRotationUp = false;
+	bool m_isInConstantRotationDown = false;
+
 };
 }

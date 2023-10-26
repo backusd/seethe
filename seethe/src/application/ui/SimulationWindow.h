@@ -133,6 +133,11 @@ public:
 	ND bool OnMouseWheelVertical(int wheelDelta) noexcept;
 	ND bool OnMouseWheelHorizontal(int wheelDelta) noexcept;
 
+	ND bool OnKeyDown(unsigned int virtualKeyCode) noexcept;
+	ND bool OnKeyUp(unsigned int virtualKeyCode) noexcept;
+	ND bool OnChar(char c) noexcept;
+
+
 	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
 	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
 
@@ -159,7 +164,11 @@ private:
 	void HandleMouseMove(float x, float y) noexcept;
 	void HandleMouseWheelVertical(int wheelDelta) noexcept;
 	void HandleMouseWheelHorizontal(int wheelDelta) noexcept;
+	void HandleKeyDown(unsigned int virtualKeyCode) noexcept;
+	void HandleKeyUp(unsigned int virtualKeyCode) noexcept;
+	void HandleChar(char c) noexcept;
 
+	ND constexpr inline bool KeyboardKeyIsPressed() const noexcept { return m_arrowLeftIsPressed || m_arrowRightIsPressed || m_arrowUpIsPressed || m_arrowDownIsPressed; }
 
 
 
@@ -201,6 +210,12 @@ private:
 	bool m_mouseX1ButtonDown = false;
 	bool m_mouseX2ButtonDown = false;
 	DirectX::XMFLOAT2 m_mouseLastPos = DirectX::XMFLOAT2();
+
+	// Keyboard Tracking
+	bool m_arrowLeftIsPressed = false;
+	bool m_arrowRightIsPressed = false;
+	bool m_arrowUpIsPressed = false;
+	bool m_arrowDownIsPressed = false;
 
 };
 }
