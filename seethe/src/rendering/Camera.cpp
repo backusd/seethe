@@ -271,21 +271,121 @@ void Camera::StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPos
 	m_viewDirty = true;
 }
 
+void Camera::ZoomInFixed(float fixedDistance) noexcept
+{
+	ASSERT(fixedDistance > 0.0f, "When zooming, the fixedDistance should always be > 0");
+
+	// Keep the fixedDistance positive. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
+	m_position = ZoomFixedImpl(fixedDistance);
+	m_viewDirty = true;
+}
+void Camera::ZoomOutFixed(float fixedDistance) noexcept
+{
+	ASSERT(fixedDistance > 0.0f, "When zooming, the fixedDistance should always be > 0");
+
+	// Make the fixedDistance negative. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
+	m_position = ZoomFixedImpl(-fixedDistance);
+	m_viewDirty = true;
+}
+void Camera::ZoomInPercent(float percent) noexcept
+{
+	ASSERT(percent > 0.0f, "When zooming by percent, the percent value should always be > 0");
+	ASSERT(percent < 1.0f, "When zooming in by percent, the percent value should always be < 1");
+
+	// Keep the percent positive. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
+	m_position = ZoomPercentImpl(percent);
+	m_viewDirty = true;
+}
+void Camera::ZoomOutPercent(float percent) noexcept
+{
+	ASSERT(percent > 0.0f, "When zooming by percent, the percent value should always be > 0");
+	// NOTE: There is no restriction that Zooming Out can't have the percent be > 1 (for example, 200% makes perfect sense for zooming out)
+
+	// Make the percent negative. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
+	m_position = ZoomPercentImpl(-percent);
+	m_viewDirty = true;
+}
+
+XMFLOAT3 Camera::ZoomFixedImpl(float fixedDistance) const noexcept
+{
+	XMFLOAT3 newPosition;
+
+	XMVECTOR position = XMLoadFloat3(&m_position); 
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt); 
+	XMVECTOR directionToMove = lookAt - position;
+
+	// If the zoom distance is > 0, then we are zooming in and therefore need to make sure we have room and don't zoom beyond the lookAt point
+	if (fixedDistance > 0)
+	{
+		// Note, we add a small margin so that if the requested fixed distance is greater than the available space, 
+		// we don't max out the fixed distance and instead set it just shy of the maximum. This makes it so that the
+		// resulting position vector and lookAt vector are never equal
+		fixedDistance = std::min(fixedDistance, XMVectorGetX(XMVector3Length(directionToMove)) - 0.05f);
+	}
+
+	// First, make the direction to move a unit vector, and then scale it to the distance we want to move
+	directionToMove = XMVector3Normalize(directionToMove) * fixedDistance;
+
+	// Second, add this result to the position vector which should give us the final position we want to be at
+	position += directionToMove;
+
+	XMStoreFloat3(&newPosition, position);
+	return newPosition;
+}
+XMFLOAT3 Camera::ZoomPercentImpl(float percent) const noexcept
+{
+	XMFLOAT3 newPosition;
+
+	XMVECTOR position = XMLoadFloat3(&m_position);
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
+	XMVECTOR directionToMove = lookAt - position;
+
+	const float zoomDistance = XMVectorGetX(XMVector3Length(directionToMove)) * percent;
+
+	// First, make the direction to move a unit vector, and then scale it to the distance we want to move
+	directionToMove = XMVector3Normalize(directionToMove) * zoomDistance; 
+
+	// Second, add this result to the position vector which should give us the final position we want to be at
+	position += directionToMove;
+
+	XMStoreFloat3(&newPosition, position);
+	return newPosition;
+}
+
 void Camera::ZoomInFixed(float fixedDistance, float duration) noexcept
 {
+	ASSERT(fixedDistance > 0.0f, "When zooming, the fixedDistance should always be > 0");
+	ASSERT(duration > 0.0f, "When zooming, the duration should always be > 0");
 
+	// Keep the fixedDistance positive. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
+	StartAnimatedMove(duration, ZoomFixedImpl(fixedDistance));
 }
 void Camera::ZoomOutFixed(float fixedDistance, float duration) noexcept
 {
-
+	ASSERT(fixedDistance > 0.0f, "When zooming, the fixedDistance should always be > 0"); 
+	ASSERT(duration > 0.0f, "When zooming, the duration should always be > 0"); 
+	
+	// Make the fixedDistance negative. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
+	StartAnimatedMove(duration, ZoomFixedImpl(-fixedDistance));
 }
-void Camera::ZoomInPercent(float fixedDistance, float duration) noexcept
+void Camera::ZoomInPercent(float percent, float duration) noexcept
 {
+	ASSERT(percent > 0.0f, "When zooming by percent, the percent value should always be > 0");
+	ASSERT(percent < 1.0f, "When zooming in by percent, the percent value should always be < 1");
+	ASSERT(duration > 0.0f, "When zooming, the duration should always be > 0");
 
+	// Keep the percent positive. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
+	StartAnimatedMove(duration, ZoomPercentImpl(percent));
 }
-void Camera::ZoomOutPercent(float fixedDistance, float duration) noexcept
+void Camera::ZoomOutPercent(float percent, float duration) noexcept
 {
+	ASSERT(percent > 0.0f, "When zooming by percent, the percent value should always be > 0");
+	ASSERT(duration > 0.0f, "When zooming, the duration should always be > 0");
 
+	// NOTE: There is no restriction that Zooming Out can't have the percent be > 1 (for example, 200% makes perfect sense for zooming out)
+
+	// Make the percent negative. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
+	StartAnimatedMove(duration, ZoomPercentImpl(-percent));
 }
 
 }

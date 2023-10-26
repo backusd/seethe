@@ -85,20 +85,28 @@ public:
 	void RotateAroundLookAtPointX(float thetaX) noexcept;
 	void RotateAroundLookAtPointY(float thetaY) noexcept;
 
+	void ZoomInFixed(float fixedDistance) noexcept;
+	void ZoomOutFixed(float fixedDistance) noexcept;
+	void ZoomInPercent(float percent) noexcept;
+	void ZoomOutPercent(float percent) noexcept;
+
 	// Methods to initiate an animation (so the camera continually moves until it reaches a final destination)
 	inline void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition) noexcept { StartAnimatedMove(duration, finalPosition, m_up, m_lookAt); }
 	inline void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp) noexcept { StartAnimatedMove(duration, finalPosition, finalUp, m_lookAt); }
 	void StartAnimatedMove(float duration, const DirectX::XMFLOAT3& finalPosition, const DirectX::XMFLOAT3& finalUp, const DirectX::XMFLOAT3& finalLookAt) noexcept;
+
 	void ZoomInFixed(float fixedDistance, float duration) noexcept;
 	void ZoomOutFixed(float fixedDistance, float duration) noexcept;
-	void ZoomInPercent(float fixedDistance, float duration) noexcept;
-	void ZoomOutPercent(float fixedDistance, float duration) noexcept;
+	void ZoomInPercent(float percent, float duration) noexcept;
+	void ZoomOutPercent(float percent, float duration) noexcept;
 
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
 
 private:
-	
+	ND DirectX::XMFLOAT3 ZoomFixedImpl(float fixedDistance) const noexcept; 
+	ND DirectX::XMFLOAT3 ZoomPercentImpl(float percent) const noexcept; 
+
 
 	// Camera coordinate system with coordinates relative to world space.
 	DirectX::XMFLOAT3 m_position = { 0.0f, 0.0f, 0.0f };

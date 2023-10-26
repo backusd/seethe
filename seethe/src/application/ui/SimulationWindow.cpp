@@ -501,8 +501,13 @@ void SimulationWindow::HandleMouseWheelVertical(int wheelDelta) noexcept
 	LOG_INFO("Delta Vertical: {}", wheelDelta);
 
 	Camera& camera = m_renderer->GetCamera();
-	DirectX::XMFLOAT3 pos = camera.GetPosition3f();
-	camera.StartAnimatedMove(2.0f, { pos.x * 2, pos.y * 2, pos.z * 2 });
+//	DirectX::XMFLOAT3 pos = camera.GetPosition3f();
+//	camera.StartAnimatedMove(2.0f, { pos.x * 2, pos.y * 2, pos.z * 2 });
+
+	if (wheelDelta > 0)
+		camera.ZoomInPercent(0.5f, .2f);
+	else
+		camera.ZoomOutPercent(0.5f, .2f);
 }
 void SimulationWindow::HandleMouseWheelHorizontal(int wheelDelta) noexcept
 {
