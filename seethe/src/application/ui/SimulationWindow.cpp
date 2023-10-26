@@ -500,14 +500,19 @@ void SimulationWindow::HandleMouseWheelVertical(int wheelDelta) noexcept
 {
 	LOG_INFO("Delta Vertical: {}", wheelDelta);
 
-	Camera& camera = m_renderer->GetCamera();
-//	DirectX::XMFLOAT3 pos = camera.GetPosition3f();
-//	camera.StartAnimatedMove(2.0f, { pos.x * 2, pos.y * 2, pos.z * 2 });
+	// NOTE: When using my mouse the wheelDelta values are always multiples of 120. However, when using
+	//       the trackpad, they range from 1-10 typically. We could decide to handle those differently,
+	//       but for right now, I seem to get pretty decent behavior with ignoring the actual value and
+	//       just zooming by percent with the code below.
 
+	constexpr float percent = 0.15f;
+	constexpr float duration = 0.1f;
+
+	Camera& camera = m_renderer->GetCamera();
 	if (wheelDelta > 0)
-		camera.ZoomInPercent(0.5f, .2f);
+		camera.ZoomInPercent(percent, duration);
 	else
-		camera.ZoomOutPercent(0.5f, .2f);
+		camera.ZoomOutPercent(percent, duration);
 }
 void SimulationWindow::HandleMouseWheelHorizontal(int wheelDelta) noexcept
 {
