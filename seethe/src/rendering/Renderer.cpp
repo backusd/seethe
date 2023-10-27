@@ -11,12 +11,13 @@ Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources,
 	m_viewport(viewport),
 	m_scissorRect(scissorRect)
 {
-	DirectX::XMFLOAT3 pos = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
-	DirectX::XMFLOAT3 at = DirectX::XMFLOAT3(2.0f, 2.0f, 2.0f);
-	DirectX::XMVECTOR up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&pos), DirectX::XMLoadFloat3(&at)));
-	DirectX::XMStoreFloat3(&pos, up);
-	//m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), at, pos);
+	//DirectX::XMFLOAT3 pos = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
+	//DirectX::XMFLOAT3 at = DirectX::XMFLOAT3(2.0f, 2.0f, 2.0f);
+	//DirectX::XMVECTOR up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&pos), DirectX::XMLoadFloat3(&at)));
+	//DirectX::XMStoreFloat3(&pos, up);
+	//m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), at, pos);
+
+	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
 
 void Renderer::Update(const Timer& timer, int frameIndex)

@@ -168,7 +168,11 @@ private:
 	void HandleKeyUp(unsigned int virtualKeyCode) noexcept;
 	void HandleChar(char c) noexcept;
 
-	ND constexpr inline bool KeyboardKeyIsPressed() const noexcept { return m_arrowLeftIsPressed || m_arrowRightIsPressed || m_arrowUpIsPressed || m_arrowDownIsPressed; }
+	ND constexpr inline bool KeyboardKeyIsPressed() const noexcept 
+	{ 
+		return m_arrowLeftIsPressed || m_arrowRightIsPressed || m_arrowUpIsPressed || m_arrowDownIsPressed ||
+			   m_keyAIsPressed || m_keyDIsPressed || m_keyEIsPressed || m_keyQIsPressed || m_keySIsPressed || m_keyWIsPressed;
+	}
 
 
 
@@ -216,6 +220,12 @@ private:
 	bool m_arrowRightIsPressed = false;
 	bool m_arrowUpIsPressed = false;
 	bool m_arrowDownIsPressed = false;
-
+	bool m_shiftIsPressed = false;
+	bool m_keyWIsPressed = false;
+	bool m_keyAIsPressed = false;
+	bool m_keySIsPressed = false;
+	bool m_keyDIsPressed = false;
+	bool m_keyQIsPressed = false;
+	bool m_keyEIsPressed = false;
 };
 }

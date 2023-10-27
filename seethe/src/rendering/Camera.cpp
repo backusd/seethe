@@ -225,12 +225,15 @@ void Camera::Update(const Timer& timer) noexcept
 			XMVECTOR look = m_initialLook + ((m_targetLook - m_initialLook) * timeRatio);
 			XMStoreFloat3(&m_lookAt, look);
 
-			// If all we did was implement the code above, we would be fine. However, when the lookAt point stays the same
-			// it would be ideal if the path the camera took from start to finish kept the same distance from the lookAt point,
-			// instead of getting closer and then subsequently further. Put another way, it would be better for the camera
-			// to move along an arc from start to finish rather than move in a straight line. Therefore, when the lookAt point
-			// does not change, we make the following adjustment to the camera movement
-			if (XMVectorGetX(XMVector3Length(m_targetLook - m_initialLook)) < 0.05f)
+			// If all we did was implement the code above, we would be fine. However, when the lookAt point stays the same AND
+			// the total distance to the look at point doesn't change, it would be ideal if the path the camera took from start 
+			// to finish kept the same distance from the lookAt point, instead of getting closer and then subsequently further. 
+			// Put another way, it would be better for the camera to move along an arc from start to finish rather than move in 
+			// a straight line. Therefore, when the lookAt point does not change, we make the following adjustment to the camera 
+			// movement
+			bool lookAtStaysTheSame = XMVectorGetX(XMVector3Length(m_targetLook - m_initialLook)) < 0.05f;
+			bool distanceToLookAtStaysTheSame = std::abs(XMVectorGetX(XMVector3Length(m_initialPosition - m_initialLook)) - XMVectorGetX(XMVector3Length(m_targetPosition - m_initialLook))) < 0.05f;
+			if (lookAtStaysTheSame && distanceToLookAtStaysTheSame)
 			{
 				float distanceToMaintain = XMVectorGetX(XMVector3Length(m_initialPosition - m_initialLook));
 				XMVECTOR direction = pos - look;
@@ -249,14 +252,14 @@ void Camera::Update(const Timer& timer) noexcept
 		const float theta = static_cast<float>(timer.DeltaTime() * radiansPerSecond);
 
 		if (m_isInConstantRotationLeft)
-			RotateAroundLookAtPointX(-theta);
-		else if (m_isInConstantRotationRight)
 			RotateAroundLookAtPointX(theta);
+		else if (m_isInConstantRotationRight)
+			RotateAroundLookAtPointX(-theta);
 
 		if (m_isInConstantRotationUp)
-			RotateAroundLookAtPointY(-theta);
-		else if (m_isInConstantRotationDown)
 			RotateAroundLookAtPointY(theta);
+		else if (m_isInConstantRotationDown)
+			RotateAroundLookAtPointY(-theta);
 	}
 
 	// Make sure to try to update the view matrix in case anything changed

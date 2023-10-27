@@ -25,11 +25,20 @@ public:
 
 	void Update(const seethe::Timer& timer);
 
+	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
+
+	inline bool SetDimensions(float lengthXYZ, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengthXYZ, lengthXYZ, lengthXYZ, allowAtomsToRelocate); }
+	bool SetDimensions(float lengthX, float lengthY, float lengthZ, bool allowAtomsToRelocate = true) noexcept;
+
 private:
+	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
+
 	std::vector<Atom> m_atoms = {};
-	float m_boxLengthX = 20.0f;
-	float m_boxLengthY = 20.0f;
-	float m_boxLengthZ = 20.0f;
+
+	// Note: the box will have dimensions [-m_boxMax*, m_boxMax*] for each axis
+	float m_boxMaxX = 10.0f;
+	float m_boxMaxY = 10.0f;
+	float m_boxMaxZ = 10.0f;
 };
 }
 

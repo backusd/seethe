@@ -240,10 +240,11 @@ void SimulationWindow::InitializeRenderPasses()
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 	boxCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
+			DirectX::XMFLOAT3 dims = m_simulation.GetDimensions();
 			DirectX::XMFLOAT4X4 world;
 			DirectX::XMStoreFloat4x4(&world,
 				DirectX::XMMatrixTranspose(
-					DirectX::XMMatrixScaling(2.0f, 2.0f, 2.0f)
+					DirectX::XMMatrixScaling(dims.x, dims.y, dims.z)
 				)
 			);
 
@@ -583,6 +584,64 @@ void SimulationWindow::HandleKeyDown(unsigned int virtualKeyCode) noexcept
 		m_arrowDownIsPressed = true;
 		camera.StartConstantDownRotation();
 		break;
+
+	case VK_SHIFT:
+		m_shiftIsPressed = true;
+		break;
+
+	case 0x57: // w
+		// Don't do anything if the key is already down
+		if (!m_keyWIsPressed && !m_shiftIsPressed)
+		{
+			m_keyWIsPressed = true;
+			camera.StartConstantUpRotation();
+		}
+		break;
+
+	case 0x41: // a
+		// Don't do anything if the key is already down
+		if (!m_keyAIsPressed && !m_shiftIsPressed)
+		{
+			m_keyAIsPressed = true;
+			camera.StartConstantLeftRotation();
+		}
+		break;
+
+	case 0x53: // s
+		// Don't do anything if the key is already down
+		if (!m_keySIsPressed && !m_shiftIsPressed)
+		{
+			m_keySIsPressed = true;
+			camera.StartConstantDownRotation();
+		}
+		break;
+
+	case 0x44: // d
+		// Don't do anything if the key is already down
+		if (!m_keyDIsPressed && !m_shiftIsPressed)
+		{
+			m_keyDIsPressed = true;
+			camera.StartConstantRightRotation();
+		}
+		break;
+
+	case 0x51: // q
+		// Don't do anything if the key is already down
+		if (!m_keyQIsPressed && !m_shiftIsPressed)
+		{
+			m_keyQIsPressed = true;
+//			camera.StartConstantCounterClockwiseRotation();
+		}
+		break;
+
+	case 0x45: // e
+		// Don't do anything if the key is already down
+		if (!m_keyEIsPressed && !m_shiftIsPressed)
+		{
+			m_keyEIsPressed = true;
+//			camera.StartConstantClockwiseRotation();
+		}
+		break;
 	}
 
 }
@@ -611,6 +670,46 @@ void SimulationWindow::HandleKeyUp(unsigned int virtualKeyCode) noexcept
 		m_arrowDownIsPressed = false;
 		camera.StopConstantDownRotation();
 		break;
+
+	case VK_SHIFT:
+		m_shiftIsPressed = false;
+		break;
+
+	case 0x57: // w
+		// No harm in calling this even if the 'w' key was hit with SHIFT down
+		camera.StopConstantUpRotation();
+		m_keyWIsPressed = false;
+		break;
+
+	case 0x41: // a
+		// No harm in calling this even if the 'a' key was hit with SHIFT down
+		camera.StopConstantLeftRotation();
+		m_keyAIsPressed = false;
+		break;
+
+	case 0x53: // s
+		// No harm in calling this even if the 's' key was hit with SHIFT down
+		camera.StopConstantDownRotation();
+		m_keySIsPressed = false;
+		break;
+
+	case 0x44: // d
+		// No harm in calling this even if the 'd' key was hit with SHIFT down
+		camera.StopConstantRightRotation();
+		m_keyDIsPressed = false;
+		break;
+
+	case 0x51: // q
+		// No harm in calling this even if the 'q' key was hit with SHIFT down
+//		camera.StopConstantCounterClockwiseRotation();
+		m_keyQIsPressed = false;
+		break;
+
+	case 0x45: // e
+		// No harm in calling this even if the 'e' key was hit with SHIFT down
+//		camera.StopConstantClockwiseRotation();
+		m_keyEIsPressed = false;
+		break;
 	}
 }
 void SimulationWindow::HandleChar(char c) noexcept
@@ -620,31 +719,44 @@ void SimulationWindow::HandleChar(char c) noexcept
 	switch (c)
 	{
 	case 'c':
+	case 'C':
 		camera.CenterOnFace();
 		break;
 
-	case 'w':
-		camera.Start90DegreeRotationUp();
+	case 'W':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed())
+			camera.Start90DegreeRotationUp();
 		break;
 
-	case 'a':
-		camera.Start90DegreeRotationLeft();
+	case 'A':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed()) 
+			camera.Start90DegreeRotationLeft();
 		break;
 
-	case 's':
-		camera.Start90DegreeRotationDown();
+	case 'S':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed())
+			camera.Start90DegreeRotationDown();
 		break;
 
-	case 'd':
-		camera.Start90DegreeRotationRight();
+	case 'D':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed())
+			camera.Start90DegreeRotationRight();
 		break;
 
-	case 'q':
-		camera.Start90DegreeRotationCounterClockwise();
+	case 'Q':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed())
+			camera.Start90DegreeRotationCounterClockwise();
 		break;
 
-	case 'e':
-		camera.Start90DegreeRotationClockwise();
+	case 'E':
+		// Dont start a 90 degree rotation if an important keyboard key is being held down
+		if (!KeyboardKeyIsPressed())
+			camera.Start90DegreeRotationClockwise();
 		break;
 	}
 }
