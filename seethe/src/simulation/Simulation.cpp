@@ -5,6 +5,28 @@ using namespace DirectX;
 
 namespace seethe
 {
+static constexpr std::array<float, AtomTypeCount> AtomicRadii = {
+	0.5f,
+	0.6f,
+	0.7f,
+	0.8f,
+	0.9f,
+	1.0f,
+	1.1f,
+	1.2f,
+	1.3f,
+	1.4f
+};
+
+Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity) noexcept :
+	type(_type),
+	position(_position),
+	velocity(_velocity),
+	radius(AtomicRadii[static_cast<int>(_type) - 1])
+{}
+
+
+
 void Simulation::Update(const seethe::Timer& timer)
 {
 	float dt = timer.DeltaTime(); 

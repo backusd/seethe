@@ -8,7 +8,6 @@
 
 
 #define MAX_INSTANCES 100
-#define NUM_MATERIALS 10
 
 struct ObjectConstants
 {
@@ -55,7 +54,7 @@ struct Material
 
 struct MaterialData
 {
-	Material MaterialArray[NUM_MATERIALS];
+	Material MaterialArray[seethe::AtomTypeCount];
 };
 
 

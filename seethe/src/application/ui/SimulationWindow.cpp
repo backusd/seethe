@@ -90,6 +90,15 @@ void SimulationWindow::InitializeRenderPasses()
 		{
 			MaterialData m_materialData = {};
 			m_materialData.MaterialArray[0] = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[1] = { DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[2] = { DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[3] = { DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[4] = { DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[5] = { DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[6] = { DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[7] = { DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[8] = { DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f };
+			m_materialData.MaterialArray[9] = { DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f };
 
 			m_materialsConstantBuffer->CopyData(frameIndex, m_materialData);
 		};
@@ -155,9 +164,15 @@ void SimulationWindow::InitializeRenderPasses()
 			for (const auto& atom : m_simulation.Atoms())
 			{
 				const DirectX::XMFLOAT3& p = atom.position;
-				DirectX::XMStoreFloat4x4(&d.Data[iii].World, DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(p.x, p.y, p.z)));
+				const float radius = atom.radius;
 
-				d.Data[iii].MaterialIndex = iii % 2;
+				DirectX::XMStoreFloat4x4(&d.Data[iii].World, 
+					DirectX::XMMatrixTranspose(
+						DirectX::XMMatrixScaling(radius, radius, radius) * DirectX::XMMatrixTranslation(p.x, p.y, p.z)
+					)
+				);
+
+				d.Data[iii].MaterialIndex = static_cast<std::uint32_t>(atom.type) - 1; // Minus one because Hydrogen = 1 but is at index 0, etc
 
 				++iii;
 			}

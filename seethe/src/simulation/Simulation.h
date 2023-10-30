@@ -8,18 +8,42 @@
 
 namespace seethe
 {
-struct Atom
+static constexpr unsigned int AtomTypeCount = 10;
+
+enum class AtomType
 {
-	DirectX::XMFLOAT3 position = {};
-	DirectX::XMFLOAT3 velocity = {};
-	float radius = 1.0f;
+	HYDROGEN = 1,
+	HELIUM = 2,
+	LITHIUM = 3,
+	BERYLLIUM = 4,
+	BORON = 5,
+	CARBON = 6,
+	NITROGEN = 7,
+	OXYGEN = 8,
+	FLOURINE = 9,
+	NEON = 10
+};
+
+class Atom
+{
+public:
+	Atom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) noexcept;
+	Atom(const Atom&) noexcept = default;
+	Atom(Atom&&) noexcept = default;
+	Atom& operator=(const Atom&) noexcept = default;
+	Atom& operator=(Atom&&) noexcept = default;
+
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 velocity;
+	const float radius;
+	const AtomType type;
 };
 
 class Simulation
 {
 public:
 	void AddAtom(const Atom& atom) { m_atoms.push_back(atom); }
-	void AddAtom(const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}, float radius = 1.0f) { m_atoms.push_back({position, velocity, radius}); }
+	void AddAtom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) { m_atoms.emplace_back(type, position, velocity); }
 
 	ND inline const std::vector<Atom>& Atoms() const noexcept { return m_atoms; }
 
