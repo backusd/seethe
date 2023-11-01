@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "rendering/Renderer.h"
+#include "application/rendering/Materials.h"
 #include "simulation/Simulation.h"
 #include "utils/Timer.h"
 
@@ -43,18 +44,6 @@ struct MeshData
 {
 	std::vector<Vertex> vertices;
 	std::vector<std::uint16_t> indices;
-};
-
-struct Material
-{
-	DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
-	float Roughness = 0.25f;
-};
-
-struct MaterialData
-{
-	Material MaterialArray[seethe::AtomTypeCount];
 };
 
 
@@ -102,7 +91,7 @@ class SimulationWindow
 {
 public:
 	SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
-		Simulation& simulation,
+		Simulation& simulation, Materials& materials,
 		float top, float left, float height, float width) noexcept;
 
 	void Update(const Timer& timer, int frameIndex);
@@ -139,6 +128,8 @@ public:
 
 	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
 	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
+
+	constexpr inline void SetMaterialsDirtyFlag() noexcept { m_materialsDirtyFlag = g_numFrameResources; }
 
 private:
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
@@ -187,6 +178,8 @@ private:
 	D3D12_RECT m_scissorRect;
 	Simulation& m_simulation;
 
+	Materials& m_materials;
+	unsigned int m_materialsDirtyFlag = g_numFrameResources;
 
 
 	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
@@ -203,7 +196,7 @@ private:
 	std::unique_ptr<ConstantBuffer<DirectX::XMFLOAT4X4>> m_boxConstantBuffer;
 
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBuffer<MaterialData>> m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBuffer<Materials>> m_materialsConstantBuffer;
 
 
 	// Mouse Tracking

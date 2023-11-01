@@ -4,13 +4,14 @@
 namespace seethe
 {
 SimulationWindow::SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
-								   Simulation& simulation,
+								   Simulation& simulation, Materials& materials,
 								   float top, float left, float height, float width) noexcept :
 	m_deviceResources(deviceResources),
 	m_viewport{ left, top, width, height, 0.0f, 1.0f },
 	m_scissorRect{ static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) },
 	m_renderer(nullptr),
-	m_simulation(simulation)
+	m_simulation(simulation),
+	m_materials(materials)
 {
 	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
 
@@ -84,23 +85,15 @@ void SimulationWindow::InitializeRenderPasses()
 		};
 
 
-	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<MaterialData>>(m_deviceResources);
+	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<Materials>>(m_deviceResources);
 	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(1, m_materialsConstantBuffer.get());
 	materialsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
-			MaterialData m_materialData = {};
-			m_materialData.MaterialArray[0] = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[1] = { DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[2] = { DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[3] = { DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[4] = { DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[5] = { DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[6] = { DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[7] = { DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[8] = { DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f };
-			m_materialData.MaterialArray[9] = { DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f };
-
-			m_materialsConstantBuffer->CopyData(frameIndex, m_materialData);
+			if (m_materialsDirtyFlag > 0)
+			{
+				m_materialsConstantBuffer->CopyData(frameIndex, m_materials);
+				--m_materialsDirtyFlag;
+			}
 		};
 
 

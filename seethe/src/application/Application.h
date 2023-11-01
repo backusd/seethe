@@ -8,6 +8,7 @@
 #include "utils/Timer.h"
 #include "utils/Constants.h"
 #include "ui/SimulationWindow.h"
+#include "application/rendering/Materials.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
@@ -79,5 +80,7 @@ private:
 	int m_currentFrameIndex = 0;
 	std::array<UINT64, g_numFrameResources> m_fences = {};	
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
+
+	Materials m_materials = {};
 };
 }

@@ -17,6 +17,18 @@ Application::Application() :
 	m_deviceResources = std::make_shared<DeviceResources>(m_mainWindow->GetHWND(), m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 	m_timer.Reset();
 
+	m_materials.materials[0] = { DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[1] = { DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[2] = { DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[3] = { DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[4] = { DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[5] = { DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[6] = { DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[7] = { DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[8] = { DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f };
+	m_materials.materials[9] = { DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f };
+
+
 
 	m_simulation.AddAtom(AtomType::HYDROGEN, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));
 	m_simulation.AddAtom(AtomType::HELIUM, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f));
@@ -55,7 +67,7 @@ Application::Application() :
 	
 
 	// Must intialize the simulation windows AFTER the command list has been reset
-	m_simulationWindows.emplace_back(m_deviceResources, m_simulation, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+	m_simulationWindows.emplace_back(m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 
 
 
@@ -267,9 +279,26 @@ void Application::RenderUI()
 
 	// Right Panel
 	{
-		ImGui::Begin("Right Panel");
+		ImGui::Begin("Materials");
 
-		ImGui::Text("Text on the Right");
+		static int elementIndex = 0;
+		ImGui::Combo("##MaterialEditElementCombo", &elementIndex, "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0");
+
+		Material& material = m_materials.materials[elementIndex];
+
+		auto materialChangedFn = [this]() 
+			{
+				for (auto& window : m_simulationWindows)
+					window.SetMaterialsDirtyFlag();
+			};
+
+		if (ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview))
+			materialChangedFn();
+		if (ImGui::ColorEdit3("FresnelR0", (float*)&material.FresnelR0, ImGuiColorEditFlags_AlphaPreview))
+			materialChangedFn();
+		if (ImGui::DragFloat("Roughness", &material.Roughness, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+			materialChangedFn();
+		
 
 		ImGui::End();
 	}

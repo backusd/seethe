@@ -212,6 +212,9 @@
     <ClInclude Include="src\application\ui\SimulationWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\application\rendering\Materials.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vendor\imgui\misc\debuggers\imgui.natstepfilter" />
