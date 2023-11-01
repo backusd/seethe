@@ -220,6 +220,9 @@ void Application::RenderUI()
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
 
+	static bool editMaterials = true;
+	static bool editLighting = false;
+
 	{
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
@@ -247,10 +250,10 @@ void Application::RenderUI()
 				ImGui::MenuItem("Padding", NULL, &opt_padding); 
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Examples"))
+			if (ImGui::BeginMenu("Edit"))
 			{
-				ImGui::MenuItem("Fullscreen2", NULL, &opt_fullscreen);
-				ImGui::MenuItem("Padding2", NULL, &opt_padding);
+				ImGui::MenuItem("Materials", NULL, &editMaterials);
+				ImGui::MenuItem("Lighting", NULL, &editLighting);
 				ImGui::EndMenu();
 			}
 
@@ -279,28 +282,39 @@ void Application::RenderUI()
 
 	// Right Panel
 	{
-		ImGui::Begin("Materials");
+		if (editMaterials)
+		{
+			ImGui::Begin("Materials");
 
-		static int elementIndex = 0;
-		ImGui::Combo("##MaterialEditElementCombo", &elementIndex, "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0");
+			static int elementIndex = 0;
+			ImGui::Combo("##MaterialEditElementCombo", &elementIndex, "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0");
 
-		Material& material = m_materials.materials[elementIndex];
+			Material& material = m_materials.materials[elementIndex];
 
-		auto materialChangedFn = [this]() 
-			{
-				for (auto& window : m_simulationWindows)
-					window.SetMaterialsDirtyFlag();
-			};
+			auto materialChangedFn = [this]()
+				{
+					for (auto& window : m_simulationWindows)
+						window.SetMaterialsDirtyFlag();
+				};
 
-		if (ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview))
-			materialChangedFn();
-		if (ImGui::ColorEdit3("FresnelR0", (float*)&material.FresnelR0, ImGuiColorEditFlags_AlphaPreview))
-			materialChangedFn();
-		if (ImGui::DragFloat("Roughness", &material.Roughness, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-			materialChangedFn();
-		
+			if (ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview))
+				materialChangedFn();
+			if (ImGui::ColorEdit3("FresnelR0", (float*)&material.FresnelR0, ImGuiColorEditFlags_AlphaPreview))
+				materialChangedFn();
+			if (ImGui::DragFloat("Roughness", &material.Roughness, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+				materialChangedFn();
 
-		ImGui::End();
+
+			ImGui::End();
+		}
+
+		if (editLighting)
+		{
+			ImGui::Begin("Lighting");
+			ImGui::Text("We are editing lighting now");
+			ImGui::End();
+		}
+
 	}
 
 	// Bottom Panel
@@ -314,7 +328,7 @@ void Application::RenderUI()
 
 	// Viewport
 	{
-		ImGuiWindowFlags window_flags = 0;
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBackground;
 		//window_flags |= ImGuiWindowFlags_NoDocking;
 		//window_flags |= ImGuiWindowFlags_NoTitleBar; 
 		//window_flags |= ImGuiWindowFlags_NoCollapse;
@@ -349,7 +363,7 @@ void Application::Render()
 	GFX_THROW_INFO_ONLY(commandList->ResourceBarrier(1, &_b));
 
 	// Clear the back buffer and depth buffer.
-	FLOAT color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	FLOAT color[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
 	GFX_THROW_INFO_ONLY(commandList->ClearRenderTargetView(m_deviceResources->CurrentBackBufferView(), color, 0, nullptr));
 	GFX_THROW_INFO_ONLY(commandList->ClearDepthStencilView(m_deviceResources->DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr));
 
@@ -360,6 +374,7 @@ void Application::Render()
 		commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &depthStencilView)
 	);
 
+
 	// Render ImGui content to back buffer
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
@@ -369,8 +384,6 @@ void Application::Render()
 	//////
 	for (auto& simulationWindow : m_simulationWindows) 
 		simulationWindow.Render(m_currentFrameIndex);
-
-
 
 
 	// Indicate a state transition on the resource usage.
