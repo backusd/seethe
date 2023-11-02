@@ -392,6 +392,8 @@ void Application::RenderUI()
 				{
 					for (auto& window : m_simulationWindows)
 						window.SetMaterialsDirtyFlag();
+
+					SaveMaterials();
 				};
 
 			if (ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview))
