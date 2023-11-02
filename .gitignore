@@ -366,4 +366,4 @@ FodyWeavers.xsd
 
 
 # MY IGRNORES
-#*.cso
+*.cso
