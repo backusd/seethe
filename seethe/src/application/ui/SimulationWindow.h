@@ -7,8 +7,10 @@
 
 
 
-
-#define MAX_INSTANCES 100
+// Max constant buffer size is 4096 float4's
+// Our current InstanceData is basically 5 float4's
+// 4096 / 5 = 819.2
+#define MAX_INSTANCES 819
 
 struct ObjectConstants
 {
@@ -187,7 +189,9 @@ private:
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	std::unique_ptr<ConstantBuffer<InstanceDataArray>> m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_instanceConstantBuffer;
+
+	std::vector<InstanceData> m_instanceData;
 
 	// Box
 	std::unique_ptr<Shader> m_solidVS = nullptr;

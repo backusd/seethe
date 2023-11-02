@@ -143,15 +143,16 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
 
-	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceDataArray>>(m_deviceResources);
+	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
 
 	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
 	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.Atoms().size()));
 
+	m_instanceData = std::vector<InstanceData>(10);
+
 	RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
 	sphereInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
-			InstanceDataArray d = {};
 			int iii = 0;
 
 			for (const auto& atom : m_simulation.Atoms())
@@ -159,18 +160,18 @@ void SimulationWindow::InitializeRenderPasses()
 				const DirectX::XMFLOAT3& p = atom.position;
 				const float radius = atom.radius;
 
-				DirectX::XMStoreFloat4x4(&d.Data[iii].World, 
+				DirectX::XMStoreFloat4x4(&m_instanceData[iii].World,
 					DirectX::XMMatrixTranspose(
 						DirectX::XMMatrixScaling(radius, radius, radius) * DirectX::XMMatrixTranslation(p.x, p.y, p.z)
 					)
 				);
 
-				d.Data[iii].MaterialIndex = static_cast<std::uint32_t>(atom.type) - 1; // Minus one because Hydrogen = 1 but is at index 0, etc
+				m_instanceData[iii].MaterialIndex = static_cast<std::uint32_t>(atom.type) - 1; // Minus one because Hydrogen = 1 but is at index 0, etc
 
 				++iii;
 			}
 
-			m_instanceConstantBuffer->CopyData(frameIndex, d);
+			m_instanceConstantBuffer->CopyData(frameIndex, m_instanceData);
 		};
 
 

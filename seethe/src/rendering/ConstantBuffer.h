@@ -39,6 +39,7 @@ public:
 
 		// Upload buffer might still be in use by the GPU, so do a delayed delete
 		m_deviceResources->DelayedDelete(m_uploadBuffer);
+		m_uploadBuffer = nullptr;
 	}
 
 	ND inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress(unsigned int frameIndex) const noexcept
@@ -75,26 +76,38 @@ template<typename T>
 class ConstantBuffer : public ConstantBufferBase
 {
 public:
-	ConstantBuffer(std::shared_ptr<DeviceResources> deviceResources) :
-		ConstantBufferBase(deviceResources)
+	// Let the element count be the maximum by default
+	// Maximum allowed constant buffer size is 4096 float4's which is 65536 bytes
+	ConstantBuffer(std::shared_ptr<DeviceResources> deviceResources, unsigned int elementCount = 65536 / sizeof(T)) :
+		ConstantBufferBase(deviceResources),
+		m_elementCount(elementCount)
 	{
 		Initialize();
 	}
 	ConstantBuffer(ConstantBuffer&& rhs) :
-		ConstantBufferBase(std::move(rhs))
+		ConstantBufferBase(std::move(rhs)),
+		m_elementCount(rhs.m_elementCount)
 	{
 		Initialize();
 	}
 	ConstantBuffer& operator=(ConstantBuffer&& rhs)
 	{
 		ConstantBufferBase::operator=(std::move(rhs));
+		m_elementCount = rhs.m_elementCount;
 		Initialize();
 		return *this;
 	}
 
-	inline void CopyData(unsigned int frameIndex, const T& data) noexcept
+	
+	inline void CopyData(unsigned int frameIndex, std::span<T> elements) noexcept
 	{
-		memcpy(&m_mappedData[frameIndex * m_elementByteSize], &data, sizeof(T));
+		// Ensure that we are not sending more data than the buffer was created for
+		ASSERT(elements.size() <= m_elementCount, "More data than expected");
+		memcpy(&m_mappedData[frameIndex * m_elementByteSize], elements.data(), elements.size_bytes());
+	}
+	inline void CopyData(unsigned int frameIndex, const T& singleElement) noexcept
+	{
+		memcpy(&m_mappedData[frameIndex * m_elementByteSize], &singleElement, sizeof(T));
 	}
 
 private:
@@ -103,7 +116,11 @@ private:
 
 	void Initialize()
 	{
-		m_elementByteSize = (sizeof(T) + 255) & ~255;
+		ASSERT(m_elementCount > 0, "Invalid to create a 0 sized constant buffer");
+		ASSERT(m_elementCount <= 65536 / sizeof(T), "Element count is too large");
+
+		size_t totalSize = (sizeof(T) * m_elementCount);
+		m_elementByteSize = (totalSize + 255) & ~255;
 
 		// Need to create the buffer in an upload heap so the CPU can regularly send new data to it
 		auto props = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -129,6 +146,9 @@ private:
 		// We do not need to unmap until we are done with the resource. However, we must not write to
 		// the resource while it is in use by the GPU (so we must use synchronization techniques).
 	}
+
+	unsigned int m_elementCount;
 };
+
 
 }

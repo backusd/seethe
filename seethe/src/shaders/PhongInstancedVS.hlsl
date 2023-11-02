@@ -16,7 +16,10 @@
 
 // Constant data that varies per frame.
 
-#define MAX_INSTANCES 100
+// Max constant buffer size is 4096 float4's
+// Our current InstanceData is basically 5 float4's
+// 4096 / 5 = 819.2
+#define MAX_INSTANCES 819
 #define NUM_MATERIALS 10
 
 struct MaterialIn
