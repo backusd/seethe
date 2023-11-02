@@ -4,7 +4,7 @@
 // Contains API for shader lighting.
 //***************************************************************************************
 
-#define MaxLights 16
+#define MAX_LIGHTS 16
 
 struct Light
 {
@@ -135,7 +135,7 @@ float3 ComputeSpotLight(Light L, Material mat, float3 pos, float3 normal, float3
     return BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
 }
 
-float4 ComputeLighting(Light gLights[MaxLights], Material mat,
+float4 ComputeLighting(Light gLights[MAX_LIGHTS], Material mat,
                        float3 pos, float3 normal, float3 toEye,
                        float3 shadowFactor)
 {

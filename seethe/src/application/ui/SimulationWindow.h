@@ -6,12 +6,6 @@
 #include "utils/Timer.h"
 
 
-
-// Max constant buffer size is 4096 float4's
-// Our current InstanceData is basically 5 float4's
-// 4096 / 5 = 819.2
-#define MAX_INSTANCES 819
-
 struct ObjectConstants
 {
 	DirectX::XMFLOAT4X4 World = seethe::MathHelper::Identity4x4();
@@ -24,11 +18,6 @@ struct InstanceData
 	std::uint32_t Pad0;
 	std::uint32_t Pad1;
 	std::uint32_t Pad2;
-};
-
-struct InstanceDataArray
-{
-	InstanceData Data[MAX_INSTANCES];
 };
 
 struct Vertex
