@@ -58,6 +58,9 @@ public:
 
 
 private:
+	void InitializeMaterials() noexcept;
+	void SaveMaterials() noexcept;
+
 	void Update();
 	void Render();
 	void RenderUI();

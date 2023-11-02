@@ -9,6 +9,8 @@
 namespace seethe
 {
 static constexpr unsigned int AtomTypeCount = 10;
+static constexpr std::array AtomNames = { "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", 
+										  "Carbon", "Nitrogen", "Oxygen", "Flourine", "Neon" };
 
 enum class AtomType
 {

@@ -225,6 +225,7 @@
   <ItemGroup>
     <None Include="vendor\imgui\misc\debuggers\imgui.natstepfilter" />
     <None Include="src\shaders\LightingUtil.hlsli" />
+    <None Include="src\application\config\materials.json" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="vendor\imgui\misc\debuggers\imgui.natvis" />

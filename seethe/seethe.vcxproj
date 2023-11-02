@@ -148,6 +148,7 @@
     <ClInclude Include="vendor\imgui\misc\cpp\imgui_stdlib.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\application\config\materials.json" />
     <None Include="src\shaders\LightingUtil.hlsli" />
     <None Include="vendor\imgui\misc\debuggers\imgui.natstepfilter" />
   </ItemGroup>

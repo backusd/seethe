@@ -17,19 +17,7 @@ Application::Application() :
 	m_deviceResources = std::make_shared<DeviceResources>(m_mainWindow->GetHWND(), m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 	m_timer.Reset();
 
-	m_materials.reserve(10);
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f });
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
-
-
+	InitializeMaterials();
 
 	m_simulation.AddAtom(AtomType::HYDROGEN, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));
 	m_simulation.AddAtom(AtomType::HELIUM, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f));
@@ -117,6 +105,114 @@ Application::~Application()
 	ImGui::DestroyContext(); 
 }
 
+void Application::InitializeMaterials() noexcept
+{
+	bool success = false;
+	m_materials.clear();
+
+	try
+	{
+		std::ifstream f("src/application/config/materials.json");
+		json data = json::parse(f);
+
+		m_materials.resize(data.size());
+
+		for (auto& [key, value] : data.items())
+		{
+			auto itr = std::find(AtomNames.begin(), AtomNames.end(), key);
+
+			if (itr == AtomNames.end())
+				throw std::runtime_error("Atom name '" + key + "' is not recognized");
+
+			unsigned int materialIndex = static_cast<unsigned int>(itr - AtomNames.begin());
+
+			ASSERT(materialIndex < m_materials.size(), "Something went wrong - index should not be greater than the size here");
+			
+			for (auto& [key2, value2] : value.items())
+			{
+				if (key2 == "DiffuseAlbedo")
+				{
+					if (!value2.is_array())
+						throw std::runtime_error("Diffuse Albedo for '" + key + "' must be an array of either 3 or 4 values");
+
+					if (value2.size() != 3 && value2.size() != 4)
+						throw std::runtime_error("Diffuse Albedo for '" + key + "' must be an array of either 3 or 4 values");
+
+					float lastValue = value2.size() == 3 ? 1.0f : value2[3].get<float>();
+					m_materials[materialIndex].DiffuseAlbedo = { value2[0].get<float>(), value2[1].get<float>(), value2[2].get<float>(), lastValue };
+				}
+				else if (key2 == "FresnelR0")
+				{
+					if (!value2.is_array())
+						throw std::runtime_error("FresnelR0 for '" + key + "' must be an array of 3 floats");
+
+					if (value2.size() != 3)
+						throw std::runtime_error("FresnelR0 for '" + key + "' must be an array of 3 floats");
+
+					m_materials[materialIndex].FresnelR0 = { value2[0].get<float>(), value2[1].get<float>(), value2[2].get<float>() };
+				}
+				else if (key2 == "Roughness")
+				{
+					if (!value2.is_number_float())
+						throw std::runtime_error("Roughness for '" + key + "' must be a float value");
+
+					m_materials[materialIndex].Roughness = value2.get<float>();
+				}
+				else
+				{
+					throw std::runtime_error("Material component '" + key2 + "' is not recognized");
+				}
+			}
+		}
+
+		success = true;
+	}
+	catch (const json::exception& e)
+	{
+		LOG_ERROR("Application::InitializeMaterials: {}", "Failed to load materials from file: src/application/config/materials.json");
+		LOG_ERROR("Error Message: {}", e.what());
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Application::InitializeMaterials: {}", "Failed to load materials from file: src/application/config/materials.json");
+		LOG_ERROR("Error Message: {}", e.what());
+	}
+
+	// If unsuccessful, just load some default colors
+	if (!success)
+	{
+		m_materials.clear();
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
+	}
+}
+void Application::SaveMaterials() noexcept
+{
+	json j = {};
+	for (unsigned int iii = 0; iii < AtomNames.size(); ++iii)
+	{
+		Material& m = m_materials[iii];
+
+		j[AtomNames[iii]] = {
+			{ "DiffuseAlbedo", { m.DiffuseAlbedo.x, m.DiffuseAlbedo.y, m.DiffuseAlbedo.z, m.DiffuseAlbedo.w } },
+			{ "FresnelR0", { m.FresnelR0.x, m.FresnelR0.y, m.FresnelR0.z } },
+			{ "Roughness", m.Roughness }
+		};
+	}
+
+	std::ofstream materialsFile; 
+	materialsFile.open("src/application/config/materials.json");
+	materialsFile << j.dump(4) << '\n';
+	materialsFile.close();
+}
 
 int Application::Run()
 {
