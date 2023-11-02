@@ -50,7 +50,7 @@
       <PreprocessorDefinitions>DEBUG;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)vendor\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)vendor\imgui\;$(ProjectDir)vendor\json\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -66,7 +66,7 @@
       <PreprocessorDefinitions>RELEASE;NDEBUG;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)vendor\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)vendor\imgui\;$(ProjectDir)vendor\json\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -116,7 +116,7 @@
     <ClInclude Include="src\rendering\DescriptorVector.h" />
     <ClInclude Include="src\rendering\DeviceResources.h" />
     <ClInclude Include="src\rendering\InputLayout.h" />
-    <ClInclude Include="src\application\rendering\Materials.h" />
+    <ClInclude Include="src\application\rendering\Material.h" />
     <ClInclude Include="src\rendering\MeshGroup.h" />
     <ClInclude Include="src\rendering\Renderer.h" />
     <ClInclude Include="src\rendering\RenderItem.h" />

@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "rendering/Renderer.h"
-#include "application/rendering/Materials.h"
+#include "application/rendering/Material.h"
 #include "simulation/Simulation.h"
 #include "utils/Timer.h"
 
@@ -82,7 +82,7 @@ class SimulationWindow
 {
 public:
 	SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
-		Simulation& simulation, Materials& materials,
+		Simulation& simulation, std::vector<Material>& materials,
 		float top, float left, float height, float width) noexcept;
 
 	void Update(const Timer& timer, int frameIndex);
@@ -169,7 +169,7 @@ private:
 	D3D12_RECT m_scissorRect;
 	Simulation& m_simulation;
 
-	Materials& m_materials;
+	std::vector<Material>& m_materials;
 	unsigned int m_materialsDirtyFlag = g_numFrameResources;
 
 
@@ -189,7 +189,7 @@ private:
 	std::unique_ptr<ConstantBuffer<DirectX::XMFLOAT4X4>> m_boxConstantBuffer;
 
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBuffer<Materials>> m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBuffer<Material>> m_materialsConstantBuffer;
 
 
 	// Mouse Tracking

@@ -12,9 +12,4 @@ struct Material
 	float Roughness = 0.25f;
 };
 
-struct Materials
-{
-	Material materials[seethe::AtomTypeCount];
-};
-
 }

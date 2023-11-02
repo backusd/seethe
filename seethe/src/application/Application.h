@@ -8,13 +8,11 @@
 #include "utils/Timer.h"
 #include "utils/Constants.h"
 #include "ui/SimulationWindow.h"
-#include "application/rendering/Materials.h"
+#include "application/rendering/Material.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx12.h"
-
-
 
 namespace seethe
 {
@@ -81,6 +79,6 @@ private:
 	std::array<UINT64, g_numFrameResources> m_fences = {};	
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
 
-	Materials m_materials = {};
+	std::vector<Material> m_materials = {};
 };
 }

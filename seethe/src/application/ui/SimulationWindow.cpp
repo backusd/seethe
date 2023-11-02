@@ -4,7 +4,7 @@
 namespace seethe
 {
 SimulationWindow::SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
-								   Simulation& simulation, Materials& materials,
+								   Simulation& simulation, std::vector<Material>& materials,
 								   float top, float left, float height, float width) noexcept :
 	m_deviceResources(deviceResources),
 	m_viewport{ left, top, width, height, 0.0f, 1.0f },
@@ -85,7 +85,7 @@ void SimulationWindow::InitializeRenderPasses()
 		};
 
 
-	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<Materials>>(m_deviceResources);
+	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
 	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(1, m_materialsConstantBuffer.get());
 	materialsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
