@@ -84,6 +84,8 @@ public:
 	inline void RotateAroundLookAtPoint(float thetaX, float thetaY) noexcept { RotateAroundLookAtPointX(thetaX); RotateAroundLookAtPointY(thetaY); }
 	void RotateAroundLookAtPointX(float thetaX) noexcept;
 	void RotateAroundLookAtPointY(float thetaY) noexcept;
+	void RotateAroundLookAtPointClockwise(float theta) noexcept;
+
 
 	void ZoomInFixed(float fixedDistance) noexcept;
 	void ZoomOutFixed(float fixedDistance) noexcept;
@@ -99,10 +101,14 @@ public:
 	void StartConstantRightRotation() noexcept;
 	void StartConstantUpRotation() noexcept;
 	void StartConstantDownRotation() noexcept;
+	void StartConstantClockwiseRotation() noexcept;
+	void StartConstantCounterClockwiseRotation() noexcept;
 	constexpr inline void StopConstantLeftRotation() noexcept { m_isInConstantRotationLeft = false; }
 	constexpr inline void StopConstantRightRotation() noexcept { m_isInConstantRotationRight = false; }
 	constexpr inline void StopConstantUpRotation() noexcept { m_isInConstantRotationUp = false; }
 	constexpr inline void StopConstantDownRotation() noexcept { m_isInConstantRotationDown = false; }
+	constexpr inline void StopConstantClockwiseRotation() noexcept { m_isInConstantRotationClockwise = false; }
+	constexpr inline void StopConstantCounterClockwiseRotation() noexcept { m_isInConstantRotationCounterClockwise = false; }
 
 	void ZoomInFixed(float fixedDistance, float duration) noexcept;
 	void ZoomOutFixed(float fixedDistance, float duration) noexcept;
@@ -120,7 +126,7 @@ public:
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
 
-	ND constexpr inline bool IsInConstantRotation() const noexcept { return m_isInConstantRotationLeft || m_isInConstantRotationRight || m_isInConstantRotationUp || m_isInConstantRotationDown; }
+	ND constexpr inline bool IsInConstantRotation() const noexcept { return m_isInConstantRotationLeft || m_isInConstantRotationRight || m_isInConstantRotationUp || m_isInConstantRotationDown || m_isInConstantRotationClockwise || m_isInConstantRotationCounterClockwise; }
 
 private:
 	ND DirectX::XMFLOAT3 ZoomFixedImpl(float fixedDistance) const noexcept; 
@@ -128,6 +134,7 @@ private:
 
 	ND DirectX::XMFLOAT3 ComputePositionAfterLeftRightRotation(float theta) const noexcept;
 	ND std::tuple<DirectX::XMFLOAT3, DirectX::XMFLOAT3> ComputePositionAndUpAfterUpDownRotation(float theta) const noexcept;
+	ND DirectX::XMFLOAT3 ComputeUpAfterClockwiseRotation(float theta) const noexcept;
 
 	ND DirectX::XMVECTOR RotateVector(DirectX::XMVECTOR vectorToRotate, DirectX::XMVECTOR axis, float theta) const noexcept;
 
@@ -167,6 +174,8 @@ private:
 	bool m_isInConstantRotationRight = false;
 	bool m_isInConstantRotationUp = false;
 	bool m_isInConstantRotationDown = false;
+	bool m_isInConstantRotationClockwise = false;
+	bool m_isInConstantRotationCounterClockwise = false;
 
 };
 }

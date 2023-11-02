@@ -125,6 +125,11 @@ void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 
 	m_viewDirty = true;
 }
+void Camera::RotateAroundLookAtPointClockwise(float theta) noexcept
+{
+	m_up = ComputeUpAfterClockwiseRotation(theta);
+	m_viewDirty = true;
+}
 
 XMVECTOR Camera::RotateVector(XMVECTOR v, XMVECTOR k, float theta) const noexcept
 {
@@ -260,6 +265,11 @@ void Camera::Update(const Timer& timer) noexcept
 			RotateAroundLookAtPointY(theta);
 		else if (m_isInConstantRotationDown)
 			RotateAroundLookAtPointY(-theta);
+
+		if (m_isInConstantRotationClockwise)
+			RotateAroundLookAtPointClockwise(theta);
+		else if (m_isInConstantRotationCounterClockwise)
+			RotateAroundLookAtPointClockwise(-theta);
 	}
 
 	// Make sure to try to update the view matrix in case anything changed
@@ -319,6 +329,24 @@ void Camera::StartConstantDownRotation() noexcept
 	if (!m_isInConstantRotationUp)
 	{
 		m_isInConstantRotationDown = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
+}
+void Camera::StartConstantClockwiseRotation() noexcept
+{
+	// Don't start a clockwise rotation if we are already rotating counter clockwise
+	if (!m_isInConstantRotationCounterClockwise)
+	{
+		m_isInConstantRotationClockwise = true;
+		m_performingAnimatedMove = false; // Cancel current animation
+	}
+}
+void Camera::StartConstantCounterClockwiseRotation() noexcept
+{
+	// Don't start a counter clockwise rotation if we are already rotating clockwise
+	if (!m_isInConstantRotationClockwise)
+	{
+		m_isInConstantRotationCounterClockwise = true;
 		m_performingAnimatedMove = false; // Cancel current animation
 	}
 }
@@ -543,7 +571,10 @@ void Camera::Start90DegreeRotationClockwise(float duration) noexcept
 
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	XMVECTOR up = XMLoadFloat3(&m_up);
-	up = XMVector3Normalize(RotateVector(up, pos, -DirectX::XM_PIDIV2));
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
+	pos = XMVector3Normalize(lookAt - pos);
+
+	up = XMVector3Normalize(RotateVector(up, pos, DirectX::XM_PIDIV2));
 	XMStoreFloat3(&newUp, up);
 
 	StartAnimatedMove(duration, m_position, newUp);
@@ -559,7 +590,10 @@ void Camera::Start90DegreeRotationCounterClockwise(float duration) noexcept
 
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	XMVECTOR up = XMLoadFloat3(&m_up);
-	up = XMVector3Normalize(RotateVector(up, pos, DirectX::XM_PIDIV2));
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
+	pos = XMVector3Normalize(lookAt - pos);
+
+	up = XMVector3Normalize(RotateVector(up, pos, -DirectX::XM_PIDIV2));
 	XMStoreFloat3(&newUp, up);
 
 	StartAnimatedMove(duration, m_position, newUp);
@@ -601,6 +635,20 @@ std::tuple<XMFLOAT3, XMFLOAT3> Camera::ComputePositionAndUpAfterUpDownRotation(f
 	XMStoreFloat3(&newUp, up);
 
 	return { newPosition, newUp };
+}
+XMFLOAT3 Camera::ComputeUpAfterClockwiseRotation(float theta) const noexcept
+{
+	XMFLOAT3 result;
+
+	XMVECTOR pos = XMLoadFloat3(&m_position);
+	XMVECTOR up = XMLoadFloat3(&m_up);
+	XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
+	pos = XMVector3Normalize(lookAt - pos);
+
+	up = XMVector3Normalize(RotateVector(up, pos, theta));
+
+	XMStoreFloat3(&result, up);
+	return result;
 }
 
 

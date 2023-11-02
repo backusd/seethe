@@ -638,7 +638,7 @@ void SimulationWindow::HandleKeyDown(unsigned int virtualKeyCode) noexcept
 		if (!m_keyQIsPressed && !m_shiftIsPressed)
 		{
 			m_keyQIsPressed = true;
-//			camera.StartConstantCounterClockwiseRotation();
+			camera.StartConstantCounterClockwiseRotation();
 		}
 		break;
 
@@ -647,7 +647,7 @@ void SimulationWindow::HandleKeyDown(unsigned int virtualKeyCode) noexcept
 		if (!m_keyEIsPressed && !m_shiftIsPressed)
 		{
 			m_keyEIsPressed = true;
-//			camera.StartConstantClockwiseRotation();
+			camera.StartConstantClockwiseRotation();
 		}
 		break;
 	}
@@ -709,13 +709,13 @@ void SimulationWindow::HandleKeyUp(unsigned int virtualKeyCode) noexcept
 
 	case 0x51: // q
 		// No harm in calling this even if the 'q' key was hit with SHIFT down
-//		camera.StopConstantCounterClockwiseRotation();
+		camera.StopConstantCounterClockwiseRotation();
 		m_keyQIsPressed = false;
 		break;
 
 	case 0x45: // e
 		// No harm in calling this even if the 'e' key was hit with SHIFT down
-//		camera.StopConstantClockwiseRotation();
+		camera.StopConstantClockwiseRotation();
 		m_keyEIsPressed = false;
 		break;
 	}
