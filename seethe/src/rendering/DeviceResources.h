@@ -26,6 +26,7 @@
 
 #elif defined(RELEASE)
 
+#define INFOMAN
 #define GFX_EXCEPT(hr) std::runtime_error(std::format(																\
 	"Device Resources Exception\n[Error Code] {:#x} ({})\n[Error Description]\n{}\n[File] {}\n[Line] {}\n",			\
 	hr, hr, seethe::TranslateErrorCode(hr),	__FILE__, __LINE__))
