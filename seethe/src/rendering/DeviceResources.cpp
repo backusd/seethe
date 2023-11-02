@@ -1,5 +1,6 @@
 #include "DeviceResources.h"
 #include "utils/Log.h"
+#include "utils/String.h"
 //#include "utils/Profile.h"
 
 
@@ -84,7 +85,7 @@ namespace seethe
 	// All Direct3D 11 capable devices support 4X MSAA for all render 
 	// target formats, so we only need to check quality support.
 
-	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels = {};
 	msQualityLevels.Format = m_backBufferFormat;
 	msQualityLevels.SampleCount = 4;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
@@ -136,7 +137,7 @@ namespace seethe
 	}
 	void DeviceResources::CreateRtvAndDsvDescriptorHeaps()
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
 		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -148,7 +149,7 @@ namespace seethe
 			)
 		);
 
-		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 		dsvHeapDesc.NumDescriptors = 1;
 		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -169,7 +170,7 @@ namespace seethe
 		// otherwise we are creating it for composition (UWP)
 		if (m_hWnd != 0)
 		{
-			DXGI_SWAP_CHAIN_DESC sd;
+			DXGI_SWAP_CHAIN_DESC sd = {};
 			sd.BufferDesc.Width = m_width;
 			sd.BufferDesc.Height = m_height;
 			sd.BufferDesc.RefreshRate.Numerator = 60;
@@ -247,7 +248,9 @@ namespace seethe
 			GFX_THROW_INFO(m_fence->SetEventOnCompletion(m_currentFence, eventHandle));
 
 			// Wait until the GPU hits current fence event is fired.
+#pragma warning(suppress : 6387)
 			WaitForSingleObject(eventHandle, INFINITE);
+#pragma warning(suppress : 6387)
 			CloseHandle(eventHandle);
 		}
 	}
@@ -310,7 +313,7 @@ namespace seethe
 		}
 
 		// Create the depth/stencil buffer and view.
-		D3D12_RESOURCE_DESC depthStencilDesc;
+		D3D12_RESOURCE_DESC depthStencilDesc = {};
 		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Alignment = 0;
 		depthStencilDesc.Width = m_width;
@@ -330,7 +333,7 @@ namespace seethe
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-		D3D12_CLEAR_VALUE optClear;
+		D3D12_CLEAR_VALUE optClear = {};
 		optClear.Format = m_depthStencilFormat;
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
@@ -348,7 +351,7 @@ namespace seethe
 		);
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Format = m_depthStencilFormat;
@@ -386,7 +389,7 @@ namespace seethe
 			std::wstring text = L"***Adapter: ";
 			text += desc.Description;
 
-			LOG_INFO("{}", std::string(text.begin(), text.end()));
+			LOG_INFO("{}", ws2s(text)); // std::string(text.begin(), text.end()));
 
 			adapterList.push_back(adapter);
 
@@ -411,7 +414,7 @@ namespace seethe
 			std::wstring text = L"***Output: ";
 			text += desc.DeviceName;
 
-			LOG_INFO("{}", std::string(text.begin(), text.end()));
+			LOG_INFO("{}", ws2s(text));
 
 			LogOutputDisplayModes(output, m_backBufferFormat);
 
@@ -440,7 +443,7 @@ namespace seethe
 				L"Height = " + std::to_wstring(x.Height) + L" " +
 				L"Refresh = " + std::to_wstring(n) + L"/" + std::to_wstring(d);
 
-			LOG_INFO("{}", std::string(text.begin(), text.end()));
+			LOG_INFO("{}", ws2s(text));
 		}
 	}
 

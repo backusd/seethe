@@ -1,5 +1,5 @@
 #include "TranslateErrorCode.h"
-
+#include "utils/String.h"
 
 namespace seethe
 {
@@ -32,8 +32,7 @@ std::string TranslateErrorCode(HRESULT hr) noexcept
 		LocalFree(pMsgBuf);
 	}
 
-	std::string e(errorString.begin(), errorString.end());
-	return e;
+	return ws2s(errorString);
 }
 
 

@@ -92,6 +92,7 @@
     <ClCompile Include="src\utils\DxgiInfoManager.cpp" />
     <ClCompile Include="src\utils\Log.cpp" />
     <ClCompile Include="src\utils\MathHelper.cpp" />
+    <ClCompile Include="src\utils\String.cpp" />
     <ClCompile Include="src\utils\Timer.cpp" />
     <ClCompile Include="src\utils\TranslateErrorCode.cpp" />
     <ClCompile Include="vendor\imgui\backends\imgui_impl_dx12.cpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="src\utils\DxgiInfoManager.h" />
     <ClInclude Include="src\utils\Log.h" />
     <ClInclude Include="src\utils\MathHelper.h" />
+    <ClInclude Include="src\utils\String.h" />
     <ClInclude Include="src\utils\Timer.h" />
     <ClInclude Include="src\utils\TranslateErrorCode.h" />
     <ClInclude Include="vendor\imgui\backends\imgui_impl_dx12.h" />
