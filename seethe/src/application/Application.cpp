@@ -1,5 +1,7 @@
 #include "Application.h"
 #include "utils/Log.h"
+#include "utils/String.h"
+#include "application/ui/fonts/Fonts.h"
 
 #include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
 
@@ -95,8 +97,21 @@ Application::Application() :
 		m_descriptorVector->GetGPUHandleAt(0)		// YOUR_GPU_DESCRIPTOR_HANDLE_FOR_FONT_SRV);
 	);
 
-	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-	ASSERT(font != nullptr, "Could not find font");
+	float baseFontSize = 18.0f;
+	float iconFontSize = baseFontSize * 2.0f / 3.0f;
+
+	segoe = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", baseFontSize);
+	ASSERT(segoe != nullptr, "Could not find font");
+
+	ImFontConfig icons_config;
+	icons_config.MergeMode = true; 
+	icons_config.PixelSnapH = true; 
+	icons_config.GlyphMinAdvanceX = iconFontSize; 
+	icons_config.GlyphOffset = ImVec2(0, 3); // The glyphs tend to be too high, so bring them down 3 pixels
+
+	static const ImWchar icon_ranges[] = { 0xE700, 0xF8B3, 0 };
+	fa = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segmdl2.ttf", 18.0f, &icons_config, icon_ranges);
+	ASSERT(fa != nullptr, "Could not find font");
 }
 Application::~Application()
 {
@@ -314,6 +329,8 @@ void Application::Update()
 }
 void Application::RenderUI()
 {
+	ImGuiIO& io = ImGui::GetIO();
+
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
 
@@ -358,6 +375,48 @@ void Application::RenderUI()
 		}
 
 		ImGui::End();
+	}
+
+	// Top Panel
+	{
+		//ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+		//window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove; 
+		//window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+		//window_flags |= ImGuiWindowFlags_NoNavFocus;
+		ImGuiWindowFlags window_flags = 0;
+		window_flags |= ImGuiWindowFlags_NoCollapse;
+		window_flags |= ImGuiWindowFlags_NoTitleBar;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4, 4));
+
+		ImGui::Begin("Top Panel", nullptr, window_flags);
+		float width = ImGui::GetWindowWidth();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 3));
+
+		static bool isPlaying = true;
+
+		ImGui::SameLine(width / 2);
+		if (ImGui::Button(isPlaying ? ICON_PLAY_SOLID : ICON_PAUSE))
+		{
+			isPlaying = !isPlaying;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_PLAY_WHILE_CLICKED))
+			int iii = 0;
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_PLAY ICON_STOPWATCH)) 
+			int iii = 0;
+
+
+
+		ImGui::PopStyleVar(); // ImGuiStyleVar_FramePadding
+		ImGui::PopStyleVar(); // ImGuiStyleVar_ItemSpacing
+
+		ImGui::End();
+
+		ImGui::PopStyleVar(); // ImGuiStyleVar_WindowPadding
 	}
 
 	// Left Panel

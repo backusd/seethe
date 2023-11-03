@@ -83,5 +83,9 @@ private:
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
 
 	std::vector<Material> m_materials = {};
+
+
+	ImFont* segoe = nullptr;
+	ImFont* fa = nullptr;
 };
 }

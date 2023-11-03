@@ -105,7 +105,9 @@
     <ClCompile Include="vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Users\backu\Downloads\IconsFontAwesome6.h" />
     <ClInclude Include="src\application\Application.h" />
+    <ClInclude Include="src\application\ui\fonts\Fonts.h" />
     <ClInclude Include="src\application\ui\SimulationWindow.h" />
     <ClInclude Include="src\application\window\MainWindow.h" />
     <ClInclude Include="src\application\window\WindowMessageMap.h" />
@@ -204,6 +206,10 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src\shaders\output\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\..\..\Users\backu\Downloads\fa-regular-400.ttf" />
+    <Font Include="..\..\..\Users\backu\Downloads\fa-solid-900.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
