@@ -100,8 +100,8 @@ Application::Application() :
 	float baseFontSize = 18.0f;
 	float iconFontSize = baseFontSize * 2.0f / 3.0f;
 
-	segoe = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", baseFontSize);
-	ASSERT(segoe != nullptr, "Could not find font");
+	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", baseFontSize);
+	ASSERT(font != nullptr, "Could not find font");
 
 	ImFontConfig icons_config;
 	icons_config.MergeMode = true; 
@@ -110,8 +110,8 @@ Application::Application() :
 	icons_config.GlyphOffset = ImVec2(0, 3); // The glyphs tend to be too high, so bring them down 3 pixels
 
 	static const ImWchar icon_ranges[] = { 0xE700, 0xF8B3, 0 };
-	fa = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segmdl2.ttf", 18.0f, &icons_config, icon_ranges);
-	ASSERT(fa != nullptr, "Could not find font");
+	font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segmdl2.ttf", 18.0f, &icons_config, icon_ranges);
+	ASSERT(font != nullptr, "Could not find font");
 }
 Application::~Application()
 {
@@ -336,6 +336,7 @@ void Application::RenderUI()
 
 	static bool editMaterials = true;
 	static bool editLighting = false;
+	static bool editSimulationSettings = false;
 
 	{
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -368,6 +369,7 @@ void Application::RenderUI()
 			{
 				ImGui::MenuItem("Materials", NULL, &editMaterials);
 				ImGui::MenuItem("Lighting", NULL, &editLighting);
+				ImGui::MenuItem("Simulation Settings", NULL, &editSimulationSettings);
 				ImGui::EndMenu();
 			}
 
@@ -394,20 +396,93 @@ void Application::RenderUI()
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 3));
-
-		static bool isPlaying = true;
+		
+		ImGui::Indent();
+		if (ImGui::Button(ICON_UNDO))
+		{
+			int iii = 0;
+		}
+		ImGui::SetItemTooltip("Undo");
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_REDO))
+		{
+			int iii = 0;
+		}
+		ImGui::SetItemTooltip("Redo");
 
 		ImGui::SameLine(width / 2);
-		if (ImGui::Button(isPlaying ? ICON_PLAY_SOLID : ICON_PAUSE))
+
+		switch (m_simulationSettings.playState)
 		{
-			isPlaying = !isPlaying;
+		case SimulationSettings::PlayState::PAUSED:
+		{
+			// Play Button
+			if (ImGui::Button(ICON_PLAY_SOLID)) 
+			{
+				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING;
+			}
+			else
+				ImGui::SetItemTooltip("Play");
+
+			// Play while L button is down
+			ImGui::SameLine(); 
+			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
+			if (ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
+			{
+				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN;
+			}
+			else
+				ImGui::SetItemTooltip("Play the simulation only while this button is being clicked"); 
+
+			// Play for set amount of time button
+			ImGui::SameLine(); 
+			if (ImGui::Button(ICON_PLAY ICON_STOPWATCH))
+			{
+				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME;
+			}
+			else
+				ImGui::SetItemTooltip("Play the simulation fixed amount of time. \nSee Edit > Simulation Settings to adjust the duration");
+
+			break;
 		}
-		ImGui::SameLine();
-		if (ImGui::Button(ICON_PLAY_WHILE_CLICKED))
-			int iii = 0;
-		ImGui::SameLine();
-		if (ImGui::Button(ICON_PLAY ICON_STOPWATCH)) 
-			int iii = 0;
+
+		case SimulationSettings::PlayState::PLAYING:
+		case SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME:
+		{
+			// Pause Button
+			if (ImGui::Button(ICON_PAUSE))
+			{
+				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
+			}
+			else
+				ImGui::SetItemTooltip("Pause");
+
+			break;
+		}
+
+		case SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN:
+		{
+			ImGui::BeginDisabled(true);
+			ImGui::Button(ICON_PLAY_SOLID);
+			ImGui::EndDisabled();
+
+			// Play while L button is down
+			ImGui::SameLine();
+			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
+			if (!ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
+			{
+				// Pause the simulation once we release the LButton
+				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
+			}
+
+			ImGui::BeginDisabled(true);
+			ImGui::SameLine();
+			ImGui::Button(ICON_PLAY ICON_STOPWATCH);
+			ImGui::EndDisabled();
+
+			break;
+		}			
+		}
 
 
 
@@ -470,6 +545,68 @@ void Application::RenderUI()
 		{
 			ImGui::Begin("Lighting");
 			ImGui::Text("We are editing lighting now");
+			ImGui::End();
+		}
+
+		if (editSimulationSettings)
+		{
+			ImGui::Begin("Simulation Settings");
+
+			// Play / Pause State
+			ImGui::SeparatorText("Play/Pause State");
+			ImGui::Text("State: ");
+			ImGui::SameLine();
+			switch (m_simulationSettings.playState)
+			{
+			case SimulationSettings::PlayState::PAUSED: ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Paused"); break;
+			case SimulationSettings::PlayState::PLAYING: ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Playing"); break;
+			case SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME: ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Playing For Fixed Time"); break;
+			case SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN: ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Playing While LButton Down"); break;
+			}
+			ImGui::Spacing();
+
+			// Fixed Time Settings
+			ImGui::SeparatorText("Play For Fixed Time Settings");
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Play Duration"); ImGui::SameLine();
+			ImGui::DragFloat("##Play Duration", &m_simulationSettings.fixedTimePlayDuration, 0.25f, 0.0f, 60.0f, "%.2f");
+			ImGui::Text("Time Remaining: ");
+			ImGui::SameLine();
+			if (m_simulationSettings.playState == SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME)
+				ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "%.2f", m_simulationSettings.fixedTimePlayDuration - m_simulationSettings.accumulatedFixedTime);
+			else
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "N/A");
+			ImGui::Spacing();
+
+			// Simulation Box
+			ImGui::SeparatorText("Simulation Box");
+			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+			
+			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 5.0f : 10.0f;
+			
+			static bool forceSidesToBeEqual = true;
+			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &forceSidesToBeEqual))
+			{
+				if (forceSidesToBeEqual)
+				{
+					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
+					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+				}
+			}
+
+			if (forceSidesToBeEqual)
+			{
+				if (ImGui::DragFloat("Side Length", &m_simulationSettings.boxDimensions.x, 0.5f, minSideLength, 1000.f, "%.1f"))
+				{
+					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
+					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+				}
+			}
+			else
+			{
+				ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f");
+			}
+
 			ImGui::End();
 		}
 

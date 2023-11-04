@@ -16,6 +16,29 @@
 
 namespace seethe
 {
+struct SimulationSettings
+{
+	enum class PlayState
+	{
+		PAUSED,
+		PLAYING,
+		PLAYING_WHILE_LBUTTON_DOWN,
+		PLAYING_FOR_FIXED_TIME
+	};
+
+	// State of Play / Pause
+	PlayState playState = PlayState::PAUSED;
+
+	// Fixed Time Settings
+	float fixedTimePlayDuration = 5.0f;
+	float accumulatedFixedTime = 0.0f;
+
+	// Box Settings
+	DirectX::XMFLOAT3 boxDimensions = { 10.0f, 10.0f, 10.0f };
+	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
+
+};
+
 class Application
 {
 public:
@@ -84,8 +107,6 @@ private:
 
 	std::vector<Material> m_materials = {};
 
-
-	ImFont* segoe = nullptr;
-	ImFont* fa = nullptr;
+	SimulationSettings m_simulationSettings;
 };
 }
