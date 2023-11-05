@@ -52,8 +52,10 @@ public:
 	void Update(const seethe::Timer& timer);
 
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
+	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept; 
 
 	inline bool SetDimensions(float lengthXYZ, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengthXYZ, lengthXYZ, lengthXYZ, allowAtomsToRelocate); }
+	bool SetDimensions(const DirectX::XMFLOAT3& lengths, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengths.x, lengths.y, lengths.z, allowAtomsToRelocate); }
 	bool SetDimensions(float lengthX, float lengthY, float lengthZ, bool allowAtomsToRelocate = true) noexcept;
 
 	ND constexpr inline bool IsPlaying() const noexcept { return m_isPlaying; }

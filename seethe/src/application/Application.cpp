@@ -585,7 +585,7 @@ void Application::RenderUI()
 			ImGui::Spacing();
 
 			// Fixed Time Settings
-			ImGui::SeparatorText("Play For Fixed Time Settings");
+			ImGui::SeparatorText("Play for Fixed Time Settings");
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Play Duration"); ImGui::SameLine();
 			ImGui::DragFloat("##Play Duration", &m_simulationSettings.fixedTimePlayDuration, 0.25f, 0.0f, 60.0f, "%.2f");
@@ -601,7 +601,9 @@ void Application::RenderUI()
 			ImGui::SeparatorText("Simulation Box");
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 			
-			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 5.0f : 10.0f;
+
+			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
+				5.0f : m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 			
 			static bool forceSidesToBeEqual = true;
 			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &forceSidesToBeEqual))
@@ -619,11 +621,14 @@ void Application::RenderUI()
 				{
 					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
 					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 				}
 			}
 			else
 			{
-				ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f");
+				if (ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f"))
+					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+
 			}
 
 			ImGui::End();

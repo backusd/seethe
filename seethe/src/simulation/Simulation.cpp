@@ -152,6 +152,21 @@ bool Simulation::DimensionUpdateTryRelocation(float& position, float radius, flo
 	return true;
 }
 
+float Simulation::GetMaxAxisAlignedDistanceFromOrigin() const noexcept
+{
+	float max = 0.0f;
+
+	for (const auto& atom : m_atoms)
+	{
+		float x = std::abs(atom.position.x) + atom.radius;
+		float y = std::abs(atom.position.y) + atom.radius;
+		float z = std::abs(atom.position.z) + atom.radius;
+
+		max = std::max(max, std::max(x, std::max(y, z)));
+	} 
+
+	return max;
+}
 
 
 
