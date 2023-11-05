@@ -56,6 +56,10 @@ public:
 	inline bool SetDimensions(float lengthXYZ, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengthXYZ, lengthXYZ, lengthXYZ, allowAtomsToRelocate); }
 	bool SetDimensions(float lengthX, float lengthY, float lengthZ, bool allowAtomsToRelocate = true) noexcept;
 
+	ND constexpr inline bool IsPlaying() const noexcept { return m_isPlaying; }
+	constexpr void StartPlaying() noexcept { m_isPlaying = true; }
+	constexpr void StopPlaying() noexcept { m_isPlaying = false; }
+
 private:
 	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
 
@@ -65,6 +69,8 @@ private:
 	float m_boxMaxX = 10.0f;
 	float m_boxMaxY = 10.0f;
 	float m_boxMaxZ = 10.0f;
+
+	bool m_isPlaying = false;
 };
 }
 

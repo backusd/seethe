@@ -321,6 +321,18 @@ void Application::Update()
 	);
 
 
+	// If the simulation is only running for a fixed amount of time, update the time counter
+	if (m_simulationSettings.playState == SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME)
+	{
+		m_simulationSettings.accumulatedFixedTime += m_timer.DeltaTime();
+		if (m_simulationSettings.accumulatedFixedTime > m_simulationSettings.fixedTimePlayDuration)
+		{
+			m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
+			m_simulationSettings.accumulatedFixedTime = 0.0f;
+			m_simulation.StopPlaying();
+		}
+	}
+
 
 	m_simulation.Update(m_timer);
 
@@ -420,6 +432,7 @@ void Application::RenderUI()
 			if (ImGui::Button(ICON_PLAY_SOLID)) 
 			{
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING;
+				m_simulation.StartPlaying();
 			}
 			else
 				ImGui::SetItemTooltip("Play");
@@ -430,6 +443,7 @@ void Application::RenderUI()
 			if (ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
 			{
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN;
+				m_simulation.StartPlaying();
 			}
 			else
 				ImGui::SetItemTooltip("Play the simulation only while this button is being clicked"); 
@@ -439,6 +453,7 @@ void Application::RenderUI()
 			if (ImGui::Button(ICON_PLAY ICON_STOPWATCH))
 			{
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME;
+				m_simulation.StartPlaying();
 			}
 			else
 				ImGui::SetItemTooltip("Play the simulation fixed amount of time. \nSee Edit > Simulation Settings to adjust the duration");
@@ -453,6 +468,8 @@ void Application::RenderUI()
 			if (ImGui::Button(ICON_PAUSE))
 			{
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
+				m_simulationSettings.accumulatedFixedTime = 0.0f;
+				m_simulation.StopPlaying();
 			}
 			else
 				ImGui::SetItemTooltip("Pause");
@@ -473,6 +490,8 @@ void Application::RenderUI()
 			{
 				// Pause the simulation once we release the LButton
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
+				m_simulationSettings.accumulatedFixedTime = 0.0f;
+				m_simulation.StopPlaying();
 			}
 
 			ImGui::BeginDisabled(true);

@@ -29,6 +29,8 @@ Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity)
 
 void Simulation::Update(const seethe::Timer& timer)
 {
+	if (!m_isPlaying) return;
+
 	float dt = timer.DeltaTime(); 
 	
 	for (auto& atom : m_atoms)
