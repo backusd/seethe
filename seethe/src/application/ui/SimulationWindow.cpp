@@ -146,7 +146,7 @@ void SimulationWindow::InitializeRenderPasses()
 	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
 
 	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
-	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.Atoms().size()));
+	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetAtoms().size()));
 
 	m_instanceData = std::vector<InstanceData>(10);
 
@@ -155,7 +155,7 @@ void SimulationWindow::InitializeRenderPasses()
 		{
 			int iii = 0;
 
-			for (const auto& atom : m_simulation.Atoms())
+			for (const auto& atom : m_simulation.GetAtoms())
 			{
 				const DirectX::XMFLOAT3& p = atom.position;
 				const float radius = atom.radius;

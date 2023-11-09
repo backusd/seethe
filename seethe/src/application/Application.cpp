@@ -3,6 +3,7 @@
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
 #include "application/change-requests/BoxResizeCR.h"
+#include "application/change-requests/SimulationPlayCR.h"
 
 #include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
 
@@ -460,6 +461,7 @@ void Application::RenderUI()
 			// Play Button
 			if (ImGui::Button(ICON_PLAY_SOLID)) 
 			{
+				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING;
 				m_simulation.StartPlaying();
 			}
@@ -471,6 +473,7 @@ void Application::RenderUI()
 			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
 			if (ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
 			{
+				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN;
 				m_simulation.StartPlaying();
 			}
@@ -481,6 +484,7 @@ void Application::RenderUI()
 			ImGui::SameLine(); 
 			if (ImGui::Button(ICON_PLAY ICON_STOPWATCH))
 			{
+				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME;
 				m_simulation.StartPlaying();
 			}
@@ -496,6 +500,9 @@ void Application::RenderUI()
 			// Pause Button
 			if (ImGui::Button(ICON_PAUSE))
 			{
+				SimulationPlayCR* cr = static_cast<SimulationPlayCR*>(m_undoStack.top().get());
+				cr->m_final = m_simulation.GetAtoms();
+
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
 				m_simulationSettings.accumulatedFixedTime = 0.0f;
 				m_simulation.StopPlaying();
@@ -517,6 +524,9 @@ void Application::RenderUI()
 			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
 			if (!ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
 			{
+				SimulationPlayCR* cr = static_cast<SimulationPlayCR*>(m_undoStack.top().get());
+				cr->m_final = m_simulation.GetAtoms();
+
 				// Pause the simulation once we release the LButton
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
 				m_simulationSettings.accumulatedFixedTime = 0.0f;

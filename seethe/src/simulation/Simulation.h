@@ -37,8 +37,8 @@ public:
 
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 velocity;
-	const float radius;
-	const AtomType type;
+	float radius;
+	AtomType type;
 };
 
 class Simulation
@@ -47,14 +47,15 @@ public:
 	void AddAtom(const Atom& atom) { m_atoms.push_back(atom); }
 	void AddAtom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) { m_atoms.emplace_back(type, position, velocity); }
 
-	ND inline const std::vector<Atom>& Atoms() const noexcept { return m_atoms; }
-
 	void Update(const seethe::Timer& timer);
-
+	
+	ND inline const std::vector<Atom>& GetAtoms() const noexcept { return m_atoms; }
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX * 2, m_boxMaxY * 2, m_boxMaxZ * 2 }; }
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;
 
+	inline void SetAtoms(const std::vector<Atom>& atoms) noexcept { m_atoms = atoms; }
+	inline void SetAtoms(std::vector<Atom>&& atoms) noexcept { m_atoms = std::move(atoms); }
 	inline bool SetDimensions(float lengthXYZ, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengthXYZ, lengthXYZ, lengthXYZ, allowAtomsToRelocate); }
 	bool SetDimensions(const DirectX::XMFLOAT3& lengths, bool allowAtomsToRelocate = true) noexcept { return SetDimensions(lengths.x, lengths.y, lengths.z, allowAtomsToRelocate); }
 	bool SetDimensions(float lengthX, float lengthY, float lengthZ, bool allowAtomsToRelocate = true) noexcept;

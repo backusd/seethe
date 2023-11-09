@@ -78,6 +78,7 @@
   <ItemGroup>
     <ClCompile Include="src\application\Application.cpp" />
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp" />
+    <ClCompile Include="src\application\change-requests\SimulationPlay.cpp" />
     <ClCompile Include="src\application\EntryPoint.cpp" />
     <ClCompile Include="src\application\ui\SimulationWindow.cpp" />
     <ClCompile Include="src\application\window\MainWindow.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="src\application\Application.h" />
     <ClInclude Include="src\application\change-requests\BoxResizeCR.h" />
     <ClInclude Include="src\application\change-requests\ChangeRequest.h" />
+    <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />
     <ClInclude Include="src\application\ui\fonts\Fonts.h" />
     <ClInclude Include="src\application\ui\SimulationWindow.h" />
     <ClInclude Include="src\application\window\MainWindow.h" />
