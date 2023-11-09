@@ -452,6 +452,31 @@ void Application::RenderUI()
 			ImGui::SetItemTooltip("Redo"); 
 		}
 
+		ImGui::SameLine();
+
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		const ImVec2 p = ImGui::GetCursorScreenPos();
+		float x = p.x + 10.0f;
+		float y = p.y;
+		float sz = 24.0f;
+		float thickness = 2.0f;
+		const ImU32 col = ImColor(1.0f, 0.0f, 0.0f);
+		draw_list->AddLine(ImVec2(x, y), ImVec2(x, y + sz), col, thickness);
+
+		ImGui::SameLine(x + 12.0f);
+
+		ImGui::Button("Selection");
+		ImGui::SameLine();
+		ImGui::Button("Mode");
+		ImGui::SameLine();
+		ImGui::Button("Buttons");
+		ImGui::SameLine();
+
+
+
+
+
+
 		ImGui::SameLine(width / 2);
 
 		switch (m_simulationSettings.playState)
