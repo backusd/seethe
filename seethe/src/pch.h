@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <deque>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -26,6 +27,7 @@
 #include <optional>
 #include <queue>
 #include <span>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <string_view>

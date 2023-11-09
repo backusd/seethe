@@ -2,6 +2,7 @@
 #include "utils/Log.h"
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
+#include "application/change-requests/BoxResizeCR.h"
 
 #include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
 
@@ -410,17 +411,45 @@ void Application::RenderUI()
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 3));
 		
 		ImGui::Indent();
-		if (ImGui::Button(ICON_UNDO))
+		// Disable undo/redo buttons when the simulation is playing
+		if (m_simulationSettings.playState != SimulationSettings::PlayState::PAUSED)
 		{
-			int iii = 0;
+			ImGui::BeginDisabled(true);
+			ImGui::Button(ICON_UNDO);
+			ImGui::SameLine();
+			ImGui::Button(ICON_REDO);
+			ImGui::EndDisabled();
 		}
-		ImGui::SetItemTooltip("Undo");
-		ImGui::SameLine();
-		if (ImGui::Button(ICON_REDO))
+		else
 		{
-			int iii = 0;
+			if (m_undoStack.size() == 0)
+			{
+				ImGui::BeginDisabled(true);
+				ImGui::Button(ICON_UNDO);
+				ImGui::EndDisabled();
+			}
+			else if (ImGui::Button(ICON_UNDO))
+			{
+				m_redoStack.push(m_undoStack.top());
+				m_undoStack.top()->Undo(this);
+				m_undoStack.pop();
+			}
+			ImGui::SetItemTooltip("Undo");
+			ImGui::SameLine();
+			if (m_redoStack.size() == 0) 
+			{
+				ImGui::BeginDisabled(true); 
+				ImGui::Button(ICON_REDO);
+				ImGui::EndDisabled(); 
+			}
+			else if (ImGui::Button(ICON_REDO)) 
+			{
+				m_undoStack.push(m_redoStack.top()); 
+				m_redoStack.top()->Redo(this);
+				m_redoStack.pop();
+			}
+			ImGui::SetItemTooltip("Redo"); 
 		}
-		ImGui::SetItemTooltip("Redo");
 
 		ImGui::SameLine(width / 2);
 
@@ -601,39 +630,84 @@ void Application::RenderUI()
 			ImGui::SeparatorText("Simulation Box");
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 			
-
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
 				5.0f : m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 			
-			static bool forceSidesToBeEqual = true;
-			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &forceSidesToBeEqual))
+			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &m_simulationSettings.forceSidesToBeEqual))
 			{
-				if (forceSidesToBeEqual)
+				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
+
+				if (m_simulationSettings.forceSidesToBeEqual && (initial.x != initial.y || initial.x != initial.z))
 				{
-					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
-					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+					m_simulationSettings.boxDimensions.y = initial.x;
+					m_simulationSettings.boxDimensions.z = initial.x;
+
+					// Update the simulation
+					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions); 
+
+					// Add the undo change request. 
+					AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true));
 				}
 			}
 
-			if (forceSidesToBeEqual)
+			if (m_simulationSettings.forceSidesToBeEqual)
 			{
+				static bool isActive = false;
+				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions;
 				if (ImGui::DragFloat("Side Length", &m_simulationSettings.boxDimensions.x, 0.5f, minSideLength, 1000.f, "%.1f"))
 				{
 					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
 					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+
+					// Update the simulation
 					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+				}
+				if (ImGui::IsItemActive())
+				{
+					if (!isActive)
+					{
+						isActive = true;
+						// Create the change request for the undo stack
+						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual));
+					}
+				}
+				else if (isActive)
+				{
+					isActive = false;
+					// Update the final size in the change request
+					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get());
+					cr->m_final = m_simulationSettings.boxDimensions;
 				}
 			}
 			else
 			{
+				static bool isActive = false;
+				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
 				if (ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f"))
+				{
+					// Update the simulation
 					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
-
+				}
+				if (ImGui::IsItemActive()) 
+				{
+					if (!isActive) 
+					{
+						isActive = true; 
+						// Create the change request for the undo stack
+						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual));
+					}
+				}
+				else if (isActive) 
+				{
+					isActive = false;
+					// Update the final size in the change request
+					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get()); 
+					cr->m_final = m_simulationSettings.boxDimensions; 
+				}
 			}
 
 			ImGui::End();
 		}
-
 	}
 
 	// Bottom Panel
@@ -769,6 +843,15 @@ void Application::ForwardMessageToWindows(std::function<bool(SimulationWindow*)>
 			}
 		}
 	}
+}
+
+void Application::AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept
+{
+	m_undoStack.push(cr);
+
+	// Clear the Redo Stack
+	while (m_redoStack.size() > 0)
+		m_redoStack.pop();
 }
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

@@ -249,7 +249,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 	boxCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
-			DirectX::XMFLOAT3 dims = m_simulation.GetDimensions();
+			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
 			DirectX::XMFLOAT4X4 world;
 			DirectX::XMStoreFloat4x4(&world,
 				DirectX::XMMatrixTranspose(

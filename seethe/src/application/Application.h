@@ -9,6 +9,7 @@
 #include "utils/Constants.h"
 #include "ui/SimulationWindow.h"
 #include "application/rendering/Material.h"
+#include "application/change-requests/ChangeRequest.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
@@ -34,9 +35,9 @@ struct SimulationSettings
 	float accumulatedFixedTime = 0.0f;
 
 	// Box Settings
-	DirectX::XMFLOAT3 boxDimensions = { 10.0f, 10.0f, 10.0f };
+	DirectX::XMFLOAT3 boxDimensions = { 20.0f, 20.0f, 20.0f };
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
-
+	bool forceSidesToBeEqual = true;
 };
 
 class Application
@@ -79,6 +80,8 @@ public:
 	ND LRESULT MainWindowOnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	ND LRESULT MainWindowOnKillFocus(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+	ND inline Simulation& GetSimulation() noexcept { return m_simulation; }
+	ND inline SimulationSettings& GetSimulationSettings() noexcept { return m_simulationSettings; }
 
 private:
 	void InitializeMaterials() noexcept;
@@ -90,6 +93,8 @@ private:
 	void Present();
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
+
+	void AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept;
 
 	std::unique_ptr<MainWindow> m_mainWindow;
 	std::shared_ptr<DeviceResources> m_deviceResources;
@@ -108,5 +113,8 @@ private:
 	std::vector<Material> m_materials = {};
 
 	SimulationSettings m_simulationSettings;
+
+	std::stack<std::shared_ptr<ChangeRequest>> m_undoStack;
+	std::stack<std::shared_ptr<ChangeRequest>> m_redoStack;
 };
 }
