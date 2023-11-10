@@ -18,8 +18,9 @@ struct SubmeshGeometry
 	UINT StartIndexLocation = 0;
 	INT  BaseVertexLocation = 0;
 
-	// Bounding box of the geometry defined by this submesh. 
+	// Bounding box and sphere of the geometry defined by this submesh. 
 	DirectX::BoundingBox Bounds;
+	DirectX::BoundingSphere Sphere;
 };
 
 //
@@ -171,14 +172,29 @@ MeshGroupT<T>::MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
 			XMFLOAT3 position = v.Position(); // This is guaranteed to work because we impose the HAS_POSITION concept
 			XMVECTOR p = XMLoadFloat3(&position);
 			vMin = XMVectorMin(vMin, p); 
-			vMax = XMVectorMax(vMax, p); 
+			vMax = XMVectorMax(vMax, p);
 		}
 		for (const std::uint16_t& i : indices[iii])
 			m_indices.push_back(i);
 
 		// Compute the bounding box
-		XMStoreFloat3(&submesh.Bounds.Center, 0.5f * (vMin + vMax));
+		XMVECTOR center = 0.5f * (vMin + vMax);
+		XMStoreFloat3(&submesh.Bounds.Center, center);
 		XMStoreFloat3(&submesh.Bounds.Extents, 0.5f * (vMax - vMin));
+
+		// Compute the bounding sphere
+		XMVECTOR furthestPoint = center;
+
+		for (const T& v : m_vertices)
+		{
+			XMFLOAT3 position = v.Position(); // This is guaranteed to work because we impose the HAS_POSITION concept 
+			XMVECTOR p = XMLoadFloat3(&position); 
+			if (XMVectorGetX(XMVector3Length(p - center)) > XMVectorGetX(XMVector3Length(furthestPoint - center)))
+				furthestPoint = p;
+		}
+
+		submesh.Sphere.Center = submesh.Bounds.Center;
+		submesh.Sphere.Radius = XMVectorGetX(XMVector3Length(furthestPoint));
 	}
 
 	// Compute the vertex/index buffer view data

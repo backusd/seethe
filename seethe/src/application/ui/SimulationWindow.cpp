@@ -780,6 +780,7 @@ void SimulationWindow::Pick(int x, int y)
 	XMMATRIX view = camera.GetView();
 
 	BoundingBox bounds = m_sphereMeshGroup->GetSubmesh(0).Bounds; 
+	BoundingSphere sphere = m_sphereMeshGroup->GetSubmesh(0).Sphere;
 
 	XMVECTOR clickpointNear = XMVectorSet(x, y, 0.0f, 1.0f);
 	XMVECTOR clickpointFar = XMVectorSet(x, y, 1.0f, 1.0f);
@@ -823,6 +824,10 @@ void SimulationWindow::Pick(int x, int y)
 		if (bounds.Intersects(origin, direction, distance))
 		{
 			LOG_TRACE("INTERSECTION: {}", distance); 
+		}
+		if (sphere.Intersects(origin, direction, distance))
+		{
+			LOG_TRACE("***** SPHERE: {}", distance);
 		}
 	}
 }
