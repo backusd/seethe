@@ -12,12 +12,12 @@ Camera::Camera() noexcept
 void Camera::SetPosition(float x, float y, float z) noexcept
 {
 	m_position = XMFLOAT3(x, y, z);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::SetPosition(const XMFLOAT3& v) noexcept
 {
 	m_position = v;
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 
 void Camera::SetLens(float fovY, float aspect, float zn, float zf) noexcept
@@ -61,7 +61,7 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 	m_lookAt = target;
 	m_up = up;
 
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 
 
@@ -115,7 +115,7 @@ void Camera::LookAt(const XMFLOAT3& pos, const XMFLOAT3& target, const XMFLOAT3&
 void Camera::RotateAroundLookAtPointX(float thetaX) noexcept
 {
 	m_position = ComputePositionAfterLeftRightRotation(thetaX);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 {
@@ -123,12 +123,12 @@ void Camera::RotateAroundLookAtPointY(float thetaY) noexcept
 	m_position = position;
 	m_up = up;
 
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::RotateAroundLookAtPointClockwise(float theta) noexcept
 {
 	m_up = ComputeUpAfterClockwiseRotation(theta);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 
 XMVECTOR Camera::RotateVector(XMVECTOR v, XMVECTOR k, float theta) const noexcept
@@ -147,56 +147,13 @@ XMVECTOR Camera::RotateVector(XMVECTOR v, XMVECTOR k, float theta) const noexcep
 
 void Camera::UpdateViewMatrix() noexcept
 {
-	if (m_viewDirty)
-	{
-//		XMVECTOR R = XMLoadFloat3(&m_right);
-		XMVECTOR U = XMLoadFloat3(&m_up);
-		XMVECTOR L = XMLoadFloat3(&m_lookAt);
-		XMVECTOR P = XMLoadFloat3(&m_position);
+//	XMVECTOR R = XMLoadFloat3(&m_right);
+	XMVECTOR U = XMLoadFloat3(&m_up);
+	XMVECTOR L = XMLoadFloat3(&m_lookAt);
+	XMVECTOR P = XMLoadFloat3(&m_position);
 
-		XMMATRIX view = XMMatrixLookAtLH(P, L, U);
-		XMStoreFloat4x4(&m_view, view);
-
-		m_viewDirty = false;
-
-//		// Keep camera's axes orthogonal to each other and of unit length.
-//		L = XMVector3Normalize(L);
-//		U = XMVector3Normalize(XMVector3Cross(L, R));
-//
-//		// U, L already ortho-normal, so no need to normalize cross product.
-//		R = XMVector3Cross(U, L);
-//
-//		// Fill in the view matrix entries.
-//		float x = -XMVectorGetX(XMVector3Dot(P, R));
-//		float y = -XMVectorGetX(XMVector3Dot(P, U));
-//		float z = -XMVectorGetX(XMVector3Dot(P, L));
-//
-//		XMStoreFloat3(&m_right, R);
-//		XMStoreFloat3(&m_up, U);
-//		XMStoreFloat3(&m_lookAt, L);
-//
-//		m_view(0, 0) = m_right.x;
-//		m_view(1, 0) = m_right.y;
-//		m_view(2, 0) = m_right.z;
-//		m_view(3, 0) = x;
-//
-//		m_view(0, 1) = m_up.x;
-//		m_view(1, 1) = m_up.y;
-//		m_view(2, 1) = m_up.z;
-//		m_view(3, 1) = y;
-//
-//		m_view(0, 2) = m_lookAt.x;
-//		m_view(1, 2) = m_lookAt.y;
-//		m_view(2, 2) = m_lookAt.z;
-//		m_view(3, 2) = z;
-//
-//		m_view(0, 3) = 0.0f;
-//		m_view(1, 3) = 0.0f;
-//		m_view(2, 3) = 0.0f;
-//		m_view(3, 3) = 1.0f;
-//
-//		m_viewDirty = false;
-	}
+	XMMATRIX view = XMMatrixLookAtLH(P, L, U);
+	XMStoreFloat4x4(&m_view, view);
 }
 
 void Camera::Update(const Timer& timer) noexcept
@@ -249,7 +206,7 @@ void Camera::Update(const Timer& timer) noexcept
 			}
 		}
 
-		m_viewDirty = true;
+		UpdateViewMatrix();
 	}
 	else if (IsInConstantRotation())
 	{
@@ -271,10 +228,9 @@ void Camera::Update(const Timer& timer) noexcept
 			RotateAroundLookAtPointClockwise(theta);
 		else if (m_isInConstantRotationCounterClockwise)
 			RotateAroundLookAtPointClockwise(-theta);
-	}
 
-	// Make sure to try to update the view matrix in case anything changed
-	UpdateViewMatrix();
+		UpdateViewMatrix();
+	}
 }
 
 void Camera::StartAnimatedMove(float duration, const XMFLOAT3& finalPosition, const XMFLOAT3& finalUp, const XMFLOAT3& finalLookAt) noexcept
@@ -294,7 +250,6 @@ void Camera::StartAnimatedMove(float duration, const XMFLOAT3& finalPosition, co
 	m_initialLook = XMLoadFloat3(&m_lookAt);
 	m_movementDuration = duration;
 	m_movementStartTime = -1.0;
-	m_viewDirty = true;
 }
 
 void Camera::StartConstantLeftRotation() noexcept
@@ -358,7 +313,7 @@ void Camera::ZoomInFixed(float fixedDistance) noexcept
 
 	// Keep the fixedDistance positive. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
 	m_position = ZoomFixedImpl(fixedDistance);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::ZoomOutFixed(float fixedDistance) noexcept
 {
@@ -366,7 +321,7 @@ void Camera::ZoomOutFixed(float fixedDistance) noexcept
 
 	// Make the fixedDistance negative. ZoomFixedImpl assumes a positive fixedDistance means zooming in and negative means zooming out
 	m_position = ZoomFixedImpl(-fixedDistance);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::ZoomInPercent(float percent) noexcept
 {
@@ -375,7 +330,7 @@ void Camera::ZoomInPercent(float percent) noexcept
 
 	// Keep the percent positive. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
 	m_position = ZoomPercentImpl(percent);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 void Camera::ZoomOutPercent(float percent) noexcept
 {
@@ -384,7 +339,7 @@ void Camera::ZoomOutPercent(float percent) noexcept
 
 	// Make the percent negative. ZoomPercentImpl assumes a positive percent means zooming in and negative means zooming out
 	m_position = ZoomPercentImpl(-percent);
-	m_viewDirty = true;
+	UpdateViewMatrix();
 }
 
 XMFLOAT3 Camera::ZoomFixedImpl(float fixedDistance) const noexcept

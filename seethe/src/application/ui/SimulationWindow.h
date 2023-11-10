@@ -161,13 +161,9 @@ private:
 			   m_keyAIsPressed || m_keyDIsPressed || m_keyEIsPressed || m_keyQIsPressed || m_keySIsPressed || m_keyWIsPressed;
 	}
 
-
-
-
-
 	void InitializeRenderPasses();
 
-
+	void Pick(int x, int y);
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	std::unique_ptr<Renderer> m_renderer;
@@ -187,6 +183,8 @@ private:
 	std::unique_ptr<ConstantBuffer<InstanceData>> m_instanceConstantBuffer;
 
 	std::vector<InstanceData> m_instanceData;
+
+	std::shared_ptr<MeshGroupT<Vertex>> m_sphereMeshGroup = nullptr;
 
 	// Box
 	std::unique_ptr<Shader> m_solidVS = nullptr;

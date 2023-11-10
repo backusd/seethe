@@ -1,5 +1,6 @@
 #include "SimulationWindow.h"
 
+using namespace DirectX;
 
 namespace seethe
 {
@@ -107,7 +108,7 @@ void SimulationWindow::InitializeRenderPasses()
 	std::vector<std::vector<std::uint16_t>> indices;
 	indices.push_back(std::move(sphereMesh.indices));
 
-	std::shared_ptr<MeshGroupT<Vertex>> meshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
+	m_sphereMeshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
 
 
 
@@ -140,7 +141,7 @@ void SimulationWindow::InitializeRenderPasses()
 
 
 	//RenderPassLayer layer1(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
-	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
+	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, m_sphereMeshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
 
 	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
@@ -524,6 +525,8 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
+	Pick(x, y);
+
 	Camera& camera = m_renderer->GetCamera();
 
 	if (m_mouseLButtonDown)
@@ -543,7 +546,6 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 
 		camera.RotateAroundLookAtPoint(thetaX, thetaY);
 	}
-
 }
 void SimulationWindow::HandleMouseWheelVertical(int wheelDelta) noexcept
 {
@@ -771,6 +773,59 @@ void SimulationWindow::HandleChar(char c) noexcept
 }
 
 
+void SimulationWindow::Pick(int x, int y)
+{
+	Camera& camera = m_renderer->GetCamera();
+	XMMATRIX projection = camera.GetProj();
+	XMMATRIX view = camera.GetView();
+
+	BoundingBox bounds = m_sphereMeshGroup->GetSubmesh(0).Bounds; 
+
+	XMVECTOR clickpointNear = XMVectorSet(x, y, 0.0f, 1.0f);
+	XMVECTOR clickpointFar = XMVectorSet(x, y, 1.0f, 1.0f);
+
+	XMVECTOR origin, destination, direction; 
+
+	float distance = FLT_MAX;
+	for (const Atom& atom : m_simulation.GetAtoms()) 
+	{
+		// Construct world matrix
+		const DirectX::XMFLOAT3& p = atom.position;
+		const float radius = atom.radius / 2;
+		XMMATRIX world = XMMatrixScaling(radius, radius, radius) * XMMatrixTranslation(p.x, p.y, p.z);
+
+		origin = XMVector3Unproject(
+			clickpointNear, 
+			m_viewport.TopLeftX,
+			m_viewport.TopLeftY,
+			m_viewport.Width,
+			m_viewport.Height,
+			m_viewport.MinDepth, 
+			m_viewport.MaxDepth,  
+			projection, 
+			view, 
+			world); 
+
+		destination = XMVector3Unproject( 
+			clickpointFar,
+			m_viewport.TopLeftX,
+			m_viewport.TopLeftY,
+			m_viewport.Width,
+			m_viewport.Height,
+			m_viewport.MinDepth,
+			m_viewport.MaxDepth,
+			projection, 
+			view, 
+			world);
+
+		direction = XMVector3Normalize(destination - origin); 
+
+		if (bounds.Intersects(origin, direction, distance))
+		{
+			LOG_TRACE("INTERSECTION: {}", distance); 
+		}
+	}
+}
 
 
 }

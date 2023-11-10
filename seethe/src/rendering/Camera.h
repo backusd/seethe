@@ -58,18 +58,10 @@ public:
 	void LookAt(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& target, const DirectX::XMFLOAT3& up) noexcept;
 
 	// Get View/Proj matrices.
-	ND inline DirectX::XMMATRIX GetView() const noexcept
-	{
-		ASSERT(!m_viewDirty, "View matrix is not up to date");
-		return XMLoadFloat4x4(&m_view);
-	}
+	ND inline DirectX::XMMATRIX GetView() const noexcept { return XMLoadFloat4x4(&m_view); }
 	ND inline DirectX::XMMATRIX GetProj() const noexcept { return DirectX::XMLoadFloat4x4(&m_proj); }
 
-	ND inline DirectX::XMFLOAT4X4 GetView4x4f() const noexcept
-	{
-		ASSERT(!m_viewDirty, "View matrix is not up to date");
-		return m_view;
-	}
+	ND inline DirectX::XMFLOAT4X4 GetView4x4f() const noexcept { return m_view; }
 	ND inline DirectX::XMFLOAT4X4 GetProj4x4f() const noexcept { return m_proj; }
 
 //	// Strafe/Walk the camera a distance d.
@@ -151,8 +143,6 @@ private:
 	float m_fovY = 0.0f;
 	float m_nearWindowHeight = 0.0f;
 	float m_farWindowHeight = 0.0f;
-
-	bool m_viewDirty = true;
 
 	// Cache View/Proj matrices.
 	DirectX::XMFLOAT4X4 m_view = MathHelper::Identity4x4();
