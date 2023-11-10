@@ -140,8 +140,9 @@ XMVECTOR Camera::RotateVector(XMVECTOR v, XMVECTOR k, float theta) const noexcep
 	//     theta : angle of rotation
 	//     k     : unit vector representing axis of rotation
 	//     v_rot = v*cos(theta) + (k x v)*sin(theta) + k*(k dot v)*(1-cos(theta))
+	//return v * cos(theta) + XMVector3Cross(k, v) * sin(theta) + k * XMVector3Dot(k, v) * (1 - cos(theta));
 
-	return v * cos(theta) + XMVector3Cross(k, v) * sin(theta) + k * XMVector3Dot(k, v) * (1 - cos(theta));
+	return XMVector3Rotate(v, XMQuaternionRotationAxis(k, theta));	
 }
 
 void Camera::UpdateViewMatrix() noexcept
