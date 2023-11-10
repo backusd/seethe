@@ -677,11 +677,20 @@ void Application::RenderUI()
 					m_simulationSettings.boxDimensions.y = initial.x;
 					m_simulationSettings.boxDimensions.z = initial.x;
 
-					// Update the simulation
-					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions); 
+					// Get the initial atom positions before setting the new dimensions
+					std::vector<Atom> atomsInitial = {};
+					std::vector<Atom> atomsFinal = {};
+					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions) 
+						atomsInitial = m_simulation.GetAtoms();
 
-					// Add the undo change request. 
-					AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true));
+					// Update the simulation
+					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+
+					// Get final positions and create the change request
+					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions) 
+						atomsFinal = m_simulation.GetAtoms();
+
+					AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true, atomsInitial, atomsFinal));
 				}
 			}
 
@@ -703,7 +712,10 @@ void Application::RenderUI()
 					{
 						isActive = true;
 						// Create the change request for the undo stack
-						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual));
+						std::vector<Atom> atomsInitial = {};
+						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
+							atomsInitial = m_simulation.GetAtoms();
+						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial));
 					}
 				}
 				else if (isActive)
@@ -712,6 +724,8 @@ void Application::RenderUI()
 					// Update the final size in the change request
 					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get());
 					cr->m_final = m_simulationSettings.boxDimensions;
+					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
+						cr->m_atomsFinal = m_simulation.GetAtoms();
 				}
 			}
 			else
@@ -729,7 +743,10 @@ void Application::RenderUI()
 					{
 						isActive = true; 
 						// Create the change request for the undo stack
-						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual));
+						std::vector<Atom> atomsInitial = {};
+						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
+							atomsInitial = m_simulation.GetAtoms();
+						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial));
 					}
 				}
 				else if (isActive) 
@@ -738,6 +755,8 @@ void Application::RenderUI()
 					// Update the final size in the change request
 					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get()); 
 					cr->m_final = m_simulationSettings.boxDimensions; 
+					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
+						cr->m_atomsFinal = m_simulation.GetAtoms();
 				}
 			}
 
