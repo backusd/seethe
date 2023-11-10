@@ -94,7 +94,15 @@ private:
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
 
-	void AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept;
+	template<typename T, typename... Args>
+	void AddUndoCR(Args&&... args) noexcept
+	{
+		std::shared_ptr<ChangeRequest> cr = std::make_shared<T>(std::forward<Args>(args)...);
+		m_undoStack.push(cr);
+		// Clear the Redo Stack
+		while (m_redoStack.size() > 0)
+			m_redoStack.pop();
+	}
 
 	std::unique_ptr<MainWindow> m_mainWindow;
 	std::shared_ptr<DeviceResources> m_deviceResources;

@@ -486,7 +486,7 @@ void Application::RenderUI()
 			// Play Button
 			if (ImGui::Button(ICON_PLAY_SOLID)) 
 			{
-				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
+				AddUndoCR<SimulationPlayCR>(m_simulation.GetAtoms());
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING;
 				m_simulation.StartPlaying();
 			}
@@ -498,7 +498,7 @@ void Application::RenderUI()
 			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
 			if (ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
 			{
-				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
+				AddUndoCR<SimulationPlayCR>(m_simulation.GetAtoms());
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_WHILE_LBUTTON_DOWN;
 				m_simulation.StartPlaying();
 			}
@@ -509,7 +509,7 @@ void Application::RenderUI()
 			ImGui::SameLine(); 
 			if (ImGui::Button(ICON_PLAY ICON_STOPWATCH))
 			{
-				AddUndoCR(std::make_shared<SimulationPlayCR>(m_simulation.GetAtoms()));
+				AddUndoCR<SimulationPlayCR>(m_simulation.GetAtoms());
 				m_simulationSettings.playState = SimulationSettings::PlayState::PLAYING_FOR_FIXED_TIME;
 				m_simulation.StartPlaying();
 			}
@@ -690,7 +690,7 @@ void Application::RenderUI()
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions) 
 						atomsFinal = m_simulation.GetAtoms();
 
-					AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true, atomsInitial, atomsFinal));
+					AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true, atomsInitial, atomsFinal);
 				}
 			}
 
@@ -715,7 +715,7 @@ void Application::RenderUI()
 						std::vector<Atom> atomsInitial = {};
 						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 							atomsInitial = m_simulation.GetAtoms();
-						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial));
+						AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
 					}
 				}
 				else if (isActive)
@@ -746,7 +746,7 @@ void Application::RenderUI()
 						std::vector<Atom> atomsInitial = {};
 						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 							atomsInitial = m_simulation.GetAtoms();
-						AddUndoCR(std::make_shared<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial));
+						AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
 					}
 				}
 				else if (isActive) 
@@ -899,14 +899,14 @@ void Application::ForwardMessageToWindows(std::function<bool(SimulationWindow*)>
 	}
 }
 
-void Application::AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept
-{
-	m_undoStack.push(cr);
-
-	// Clear the Redo Stack
-	while (m_redoStack.size() > 0)
-		m_redoStack.pop();
-}
+//void Application::AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept
+//{
+//	m_undoStack.push(cr);
+//
+//	// Clear the Redo Stack
+//	while (m_redoStack.size() > 0)
+//		m_redoStack.pop();
+//}
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
