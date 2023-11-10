@@ -99,7 +99,7 @@
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\application\change-requests\SimulationPlay.cpp">
+    <ClCompile Include="src\application\change-requests\SimulationPlayCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
