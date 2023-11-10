@@ -666,7 +666,7 @@ void Application::RenderUI()
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 			
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
-				5.0f : m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
+				5.0f : 2 * m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 			
 			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &m_simulationSettings.forceSidesToBeEqual))
 			{
