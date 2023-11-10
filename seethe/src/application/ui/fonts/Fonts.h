@@ -15,4 +15,4 @@
 #define ICON_STOPWATCH				"\xee\xa4\x96"	// U+e916
 #define ICON_REDO					"\xee\x9e\xa6"	// U+e7a6
 #define ICON_UNDO					"\xee\x9e\xa7"	// U+e7a7
-
+#define ICON_BOX_EDIT				"\xee\xaf\x92" // U+ebd2

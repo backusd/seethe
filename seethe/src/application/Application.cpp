@@ -465,7 +465,25 @@ void Application::RenderUI()
 
 		ImGui::SameLine(x + 12.0f);
 
-		ImGui::Button("Selection");
+		if (m_simulationSettings.allowMouseToResizeBoxDimensions)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.9f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+		}
+
+		if (ImGui::Button(ICON_BOX_EDIT))
+			m_simulationSettings.allowMouseToResizeBoxDimensions = !m_simulationSettings.allowMouseToResizeBoxDimensions;
+		ImGui::SetItemTooltip("Allow Mouse to Resize Simulation Box");
+
+		ImGui::PopStyleColor(3);
+		
 		ImGui::SameLine();
 		ImGui::Button("Mode");
 		ImGui::SameLine();
@@ -661,10 +679,12 @@ void Application::RenderUI()
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "N/A");
 			ImGui::Spacing();
 
+
 			// Simulation Box
 			ImGui::SeparatorText("Simulation Box");
+			ImGui::Checkbox("Allow Mouse to Resize Box", &m_simulationSettings.allowMouseToResizeBoxDimensions);
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
-			
+
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
 				5.0f : 2 * m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 			

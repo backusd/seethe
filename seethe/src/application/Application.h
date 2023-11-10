@@ -38,6 +38,7 @@ struct SimulationSettings
 	DirectX::XMFLOAT3 boxDimensions = { 20.0f, 20.0f, 20.0f };
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
 	bool forceSidesToBeEqual = true;
+	bool allowMouseToResizeBoxDimensions = false;
 };
 
 class Application
