@@ -81,6 +81,13 @@ private:
 // MeshGroupT ======================================================================================================
 //
 template<typename T>
+concept HAS_POSITION = requires(T t)
+{
+	{t.Position()} -> std::convertible_to<DirectX::XMFLOAT3>;
+};
+
+template<typename T>
+requires HAS_POSITION<T>
 class MeshGroupT : public MeshGroup
 {
 public:
@@ -116,11 +123,14 @@ private:
 };
 
 template<typename T>
+requires HAS_POSITION<T>
 MeshGroupT<T>::MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
 	const std::vector<std::vector<T>>& vertices,
 	const std::vector<std::vector<std::uint16_t>>& indices) :
 	MeshGroup(deviceResources)
 {
+	using namespace DirectX;
+
 	ASSERT(vertices.size() > 0, "No vertices to add");
 	ASSERT(vertices.size() == indices.size(), "There must be a 1:1 correspondence between the number of vertex lists and index lists");
 
@@ -146,11 +156,29 @@ MeshGroupT<T>::MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
 		submesh.BaseVertexLocation = (INT)m_vertices.size();
 		m_submeshes.push_back(submesh);
 
+		XMFLOAT3 vMinf3(+MathHelper::Infinity, +MathHelper::Infinity, +MathHelper::Infinity);  
+		XMFLOAT3 vMaxf3(-MathHelper::Infinity, -MathHelper::Infinity, -MathHelper::Infinity);  
+
+		XMVECTOR vMin = DirectX::XMLoadFloat3(&vMinf3); 
+		XMVECTOR vMax = DirectX::XMLoadFloat3(&vMaxf3); 
+
 		// Add the vertices and indices
 		for (const T& v : vertices[iii])
+		{
 			m_vertices.push_back(v);
+
+			// Compute the min/max for the bounding box
+			XMFLOAT3 position = v.Position(); // This is guaranteed to work because we impose the HAS_POSITION concept
+			XMVECTOR p = XMLoadFloat3(&position);
+			vMin = XMVectorMin(vMin, p); 
+			vMax = XMVectorMax(vMax, p); 
+		}
 		for (const std::uint16_t& i : indices[iii])
 			m_indices.push_back(i);
+
+		// Compute the bounding box
+		XMStoreFloat3(&submesh.Bounds.Center, 0.5f * (vMin + vMax));
+		XMStoreFloat3(&submesh.Bounds.Extents, 0.5f * (vMax - vMin));
 	}
 
 	// Compute the vertex/index buffer view data
