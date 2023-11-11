@@ -465,11 +465,22 @@ bool SimulationWindow::OnChar(char c) noexcept
 
 void SimulationWindow::HandleLButtonDown() noexcept
 {
-	LOG_INFO("{}", "HandleLButtonDown");
+	if (m_allowMouseToResizeBoxDimensions)
+	{
+		m_mouseDraggingBoxWallX = m_mouseHoveringBoxWallX;
+		m_mouseDraggingBoxWallY = m_mouseHoveringBoxWallY;
+		m_mouseDraggingBoxWallZ = m_mouseHoveringBoxWallZ;
+		m_mouseDraggingBoxJustStarted = m_mouseDraggingBoxWallX || m_mouseDraggingBoxWallY || m_mouseDraggingBoxWallZ;
+	}
 }
 void SimulationWindow::HandleLButtonUp() noexcept
 {
-	LOG_INFO("{}", "HandleLButtonUp");
+	if (m_allowMouseToResizeBoxDimensions)
+	{
+		m_mouseDraggingBoxWallX = false;
+		m_mouseDraggingBoxWallY = false;
+		m_mouseDraggingBoxWallZ = false;
+	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
 {
@@ -525,9 +536,86 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
+
 	// Disallow picking when the simulation is actively playing
 	if (!m_simulation.IsPlaying())
-		Pick(x, y);
+	{
+		// Check we mouse resizing the box is enabled
+		if (m_allowMouseToResizeBoxDimensions)
+		{
+			// If we are actively expanding/contracting the box walls, handle that first
+			if (m_mouseDraggingBoxWallX || m_mouseDraggingBoxWallY || m_mouseDraggingBoxWallZ)
+			{
+				float vpCenterX = m_viewport.TopLeftX + (m_viewport.Width / 2);
+				float vpCenterY = m_viewport.TopLeftY + (m_viewport.Height / 2);
+
+				Camera& camera = m_renderer->GetCamera();
+				XMVECTOR up = XMVector3Normalize(camera.GetUp());
+				XMVECTOR pos = XMVector3Normalize(camera.GetPosition());
+				XMVECTOR right = XMVector3Cross(pos, up);
+
+				LOG_TRACE("Up      : {}, {}, {}", XMVectorGetX(up), XMVectorGetY(up), XMVectorGetZ(up));
+				LOG_TRACE("Right   : {}, {}, {}", XMVectorGetX(right), XMVectorGetY(right), XMVectorGetZ(right));
+				LOG_TRACE("Position: {}, {}, {}", XMVectorGetX(pos), XMVectorGetY(pos), XMVectorGetZ(pos));
+
+				if (m_mouseDraggingBoxJustStarted)
+				{
+					if (m_mouseDraggingBoxWallX)
+					{
+						m_mouseDraggingBoxRightIsLarger = XMVectorGetX(pos) > 0.0f;
+						m_mouseDraggingBoxUpIsLarger = m_mouseDraggingBoxRightIsLarger ? XMVectorGetX(up) > 0.0f : XMVectorGetX(up) < 0.0f;
+					}
+					else
+					{
+						m_mouseDraggingBoxRightIsLarger = x > vpCenterX;
+						m_mouseDraggingBoxUpIsLarger = y < vpCenterY;
+					}
+					
+					m_mouseDraggingBoxJustStarted = false;
+				}
+
+				float deltaX = (x - m_mousePrevX) * (m_mouseDraggingBoxRightIsLarger ? 1 : -1);
+				float deltaY = (y - m_mousePrevY) * (m_mouseDraggingBoxUpIsLarger ? -1 : 1);
+
+				XMFLOAT3 dims = m_simulation.GetDimensions();
+				float minimumNewSize = m_simulation.GetMaxAxisAlignedDistanceFromOrigin(); 
+
+
+
+				if (m_mouseDraggingBoxWallX)
+				{
+					deltaX *= std::abs(XMVectorGetX(right));
+					deltaY *= std::abs(XMVectorGetX(up));
+					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
+					dims.x = std::max(minimumNewSize, dims.x + scaleFactor);					
+				}
+				else if (m_mouseDraggingBoxWallY)
+				{
+					deltaX *= std::abs(XMVectorGetY(right));
+					deltaY *= std::abs(XMVectorGetY(up));
+					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
+					dims.y = std::max(minimumNewSize, dims.y + scaleFactor);
+				}
+				else if (m_mouseDraggingBoxWallZ)
+				{
+					deltaX *= std::abs(XMVectorGetZ(right));
+					deltaY *= std::abs(XMVectorGetZ(up));
+					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
+					dims.z = std::max(minimumNewSize, dims.z + scaleFactor);
+				}
+
+				m_simulation.SetDimensions(dims, false);
+
+				m_mousePrevX = x;
+				m_mousePrevY = y;
+				return;
+			}
+			else
+				PickBoxWalls(x, y);
+		}
+
+		//Pick(x, y);		
+	}
 
 	Camera& camera = m_renderer->GetCamera();
 
@@ -548,6 +636,9 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 
 		camera.RotateAroundLookAtPoint(thetaX, thetaY);
 	}
+
+	m_mousePrevX = x;
+	m_mousePrevY = y;
 }
 void SimulationWindow::HandleMouseWheelVertical(int wheelDelta) noexcept
 {
@@ -832,6 +923,86 @@ void SimulationWindow::Pick(float x, float y)
 			LOG_TRACE("***** SPHERE: {}", distance);
 		}
 	}
+}
+
+void SimulationWindow::PickBoxWalls(float x, float y)
+{
+	Camera& camera = m_renderer->GetCamera(); 
+	XMMATRIX projection = camera.GetProj(); 
+	XMMATRIX view = camera.GetView();
+
+	XMVECTOR clickpointNear = XMVectorSet(x, y, 0.0f, 1.0f);   
+	XMVECTOR clickpointFar = XMVectorSet(x, y, 1.0f, 1.0f);  
+
+	DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+	XMMATRIX world = XMMatrixScaling(dims.x, dims.y, dims.z);
+
+	XMVECTOR origin = XMVector3Unproject(
+		clickpointNear,
+		m_viewport.TopLeftX,
+		m_viewport.TopLeftY,
+		m_viewport.Width,
+		m_viewport.Height,
+		m_viewport.MinDepth,
+		m_viewport.MaxDepth,
+		projection,
+		view,
+		world);
+
+	XMVECTOR destination = XMVector3Unproject(
+		clickpointFar,
+		m_viewport.TopLeftX,
+		m_viewport.TopLeftY,
+		m_viewport.Width,
+		m_viewport.Height,
+		m_viewport.MinDepth,
+		m_viewport.MaxDepth,
+		projection,
+		view,
+		world);
+
+	XMVECTOR direction = XMVector3Normalize(destination - origin);
+
+	float distance = FLT_MAX;
+	float minDistance = FLT_MAX;
+	ClearMouseHoverWallState();
+
+	if (m_boundingBoxPosX.Intersects(origin, direction, distance) || m_boundingBoxNegX.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallX = true;
+		}
+	}
+
+	if (m_boundingBoxPosY.Intersects(origin, direction, distance) || m_boundingBoxNegY.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallY = true;
+		}
+	}
+
+	if (m_boundingBoxPosZ.Intersects(origin, direction, distance) || m_boundingBoxNegZ.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallZ = true;
+		}
+	}
+
+//	if (m_mouseHoveringBoxWallX)
+//		LOG_TRACE("X: {}", minDistance);
+//	else if (m_mouseHoveringBoxWallY)
+//		LOG_TRACE("Y: {}", minDistance);
+//	else if (m_mouseHoveringBoxWallZ)
+//		LOG_TRACE("Z: {}", minDistance);
 }
 
 

@@ -128,7 +128,12 @@ public:
 
 	constexpr inline void SetMaterialsDirtyFlag() noexcept { m_materialsDirtyFlag = g_numFrameResources; }
 
-	constexpr inline void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept{ m_allowMouseToResizeBoxDimensions = allow; }
+	constexpr inline void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept
+	{ 
+		m_allowMouseToResizeBoxDimensions = allow; 
+		ClearMouseHoverWallState();
+		ClearMouseDraggingWallState();
+	}
 
 private:
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
@@ -171,6 +176,21 @@ private:
 	void InitializeRenderPasses();
 
 	void Pick(float x, float y);
+	void PickBoxWalls(float x, float y);
+
+	constexpr inline void ClearMouseHoverWallState() noexcept
+	{
+		m_mouseHoveringBoxWallX = false;
+		m_mouseHoveringBoxWallY = false;
+		m_mouseHoveringBoxWallZ = false;
+		m_mouseDraggingBoxJustStarted = false;
+	}
+	constexpr inline void ClearMouseDraggingWallState() noexcept
+	{
+		m_mouseDraggingBoxWallX = false;
+		m_mouseDraggingBoxWallY = false;
+		m_mouseDraggingBoxWallZ = false;
+	}
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	std::unique_ptr<Renderer> m_renderer;
@@ -202,6 +222,13 @@ private:
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
 	std::unique_ptr<ConstantBuffer<Material>> m_materialsConstantBuffer;
 
+	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
+	const DirectX::BoundingBox m_boundingBoxNegX = { {-1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
+	const DirectX::BoundingBox m_boundingBoxPosY = { { 0.0f,  1.0f,  0.0f}, { 1.0f, 0.05f, 1.0f } };
+	const DirectX::BoundingBox m_boundingBoxNegY = { { 0.0f, -1.0f,  0.0f}, { 1.0f, 0.05f, 1.0f } };
+	const DirectX::BoundingBox m_boundingBoxPosZ = { { 0.0f,  0.0f,  1.0f}, { 1.0f, 1.0f, 0.05f } };
+	const DirectX::BoundingBox m_boundingBoxNegZ = { { 0.0f,  0.0f, -1.0f}, { 1.0f, 1.0f, 0.05f } };
+
 
 	// Mouse Tracking
 	bool m_mouseLButtonDown = false;
@@ -226,5 +253,16 @@ private:
 
 	// State Info
 	bool m_allowMouseToResizeBoxDimensions = false;
+	bool m_mouseHoveringBoxWallX = false;
+	bool m_mouseHoveringBoxWallY = false;
+	bool m_mouseHoveringBoxWallZ = false;
+	bool m_mouseDraggingBoxWallX = false;
+	bool m_mouseDraggingBoxWallY = false;
+	bool m_mouseDraggingBoxWallZ = false;
+	float m_mousePrevX = 0.0f;
+	float m_mousePrevY = 0.0f;
+	bool m_mouseDraggingBoxJustStarted = false;
+	bool m_mouseDraggingBoxRightIsLarger = false;
+	bool m_mouseDraggingBoxUpIsLarger = false;
 };
 }
