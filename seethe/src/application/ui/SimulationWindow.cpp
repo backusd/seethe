@@ -525,7 +525,9 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
-	Pick(x, y);
+	// Disallow picking when the simulation is actively playing
+	if (!m_simulation.IsPlaying())
+		Pick(x, y);
 
 	Camera& camera = m_renderer->GetCamera();
 
@@ -773,7 +775,7 @@ void SimulationWindow::HandleChar(char c) noexcept
 }
 
 
-void SimulationWindow::Pick(int x, int y)
+void SimulationWindow::Pick(float x, float y)
 {
 	Camera& camera = m_renderer->GetCamera();
 	XMMATRIX projection = camera.GetProj();

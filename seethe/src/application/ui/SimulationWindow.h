@@ -128,6 +128,8 @@ public:
 
 	constexpr inline void SetMaterialsDirtyFlag() noexcept { m_materialsDirtyFlag = g_numFrameResources; }
 
+	constexpr inline void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept{ m_allowMouseToResizeBoxDimensions = allow; }
+
 private:
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
 	bool OnButtonUpImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
@@ -160,10 +162,15 @@ private:
 		return m_arrowLeftIsPressed || m_arrowRightIsPressed || m_arrowUpIsPressed || m_arrowDownIsPressed ||
 			   m_keyAIsPressed || m_keyDIsPressed || m_keyEIsPressed || m_keyQIsPressed || m_keySIsPressed || m_keyWIsPressed;
 	}
+	ND constexpr inline bool MouseIsInViewport(float x, float y) const noexcept
+	{
+		return m_viewport.TopLeftX <= x && m_viewport.TopLeftX + m_viewport.Width >= x &&
+			m_viewport.TopLeftY <= y && m_viewport.TopLeftY + m_viewport.Height >= y;
+	}
 
 	void InitializeRenderPasses();
 
-	void Pick(int x, int y);
+	void Pick(float x, float y);
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	std::unique_ptr<Renderer> m_renderer;
@@ -216,5 +223,8 @@ private:
 	bool m_keyDIsPressed = false;
 	bool m_keyQIsPressed = false;
 	bool m_keyEIsPressed = false;
+
+	// State Info
+	bool m_allowMouseToResizeBoxDimensions = false;
 };
 }

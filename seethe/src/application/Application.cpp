@@ -479,11 +479,17 @@ void Application::RenderUI()
 		}
 
 		if (ImGui::Button(ICON_BOX_EDIT))
+		{
 			m_simulationSettings.allowMouseToResizeBoxDimensions = !m_simulationSettings.allowMouseToResizeBoxDimensions;
+			for (auto& window : m_simulationWindows)
+				window.SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+		}
 		ImGui::SetItemTooltip("Allow Mouse to Resize Simulation Box");
 
 		ImGui::PopStyleColor(3);
 		
+		ImGui::SameLine();
+		ImGui::Button("Simulation");
 		ImGui::SameLine();
 		ImGui::Button("Mode");
 		ImGui::SameLine();
