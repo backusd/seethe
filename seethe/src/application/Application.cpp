@@ -688,7 +688,11 @@ void Application::RenderUI()
 
 			// Simulation Box
 			ImGui::SeparatorText("Simulation Box");
-			ImGui::Checkbox("Allow Mouse to Resize Box", &m_simulationSettings.allowMouseToResizeBoxDimensions);
+			if (ImGui::Checkbox("Allow Mouse to Resize Box", &m_simulationSettings.allowMouseToResizeBoxDimensions))
+			{
+				for (auto& window : m_simulationWindows)
+					window.SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+			}
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
@@ -792,7 +796,7 @@ void Application::RenderUI()
 
 	// Bottom Panel
 	{
-		ImGui::Begin("Bottom Panel");
+		ImGui::Begin("Bottom Panel"); 
 
 		ImGui::Text("Text on the Bottom");
 

@@ -180,16 +180,27 @@ private:
 
 	constexpr inline void ClearMouseHoverWallState() noexcept
 	{
-		m_mouseHoveringBoxWallX = false;
-		m_mouseHoveringBoxWallY = false;
-		m_mouseHoveringBoxWallZ = false;
+		m_mouseHoveringBoxWallPosX = false;
+		m_mouseHoveringBoxWallPosY = false;
+		m_mouseHoveringBoxWallPosZ = false;
+		m_mouseHoveringBoxWallNegX = false;
+		m_mouseHoveringBoxWallNegY = false;
+		m_mouseHoveringBoxWallNegZ = false;
 		m_mouseDraggingBoxJustStarted = false;
 	}
 	constexpr inline void ClearMouseDraggingWallState() noexcept
 	{
-		m_mouseDraggingBoxWallX = false;
-		m_mouseDraggingBoxWallY = false;
-		m_mouseDraggingBoxWallZ = false;
+		m_mouseDraggingBoxWallPosX = false;
+		m_mouseDraggingBoxWallPosY = false;
+		m_mouseDraggingBoxWallPosZ = false;
+		m_mouseDraggingBoxWallNegX = false;
+		m_mouseDraggingBoxWallNegY = false;
+		m_mouseDraggingBoxWallNegZ = false;
+	}
+	ND inline bool MouseIsDraggingWall() const noexcept
+	{
+		return m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallPosZ ||
+			m_mouseDraggingBoxWallNegX || m_mouseDraggingBoxWallNegY || m_mouseDraggingBoxWallNegZ;
 	}
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
@@ -253,12 +264,18 @@ private:
 
 	// State Info
 	bool m_allowMouseToResizeBoxDimensions = false;
-	bool m_mouseHoveringBoxWallX = false;
-	bool m_mouseHoveringBoxWallY = false;
-	bool m_mouseHoveringBoxWallZ = false;
-	bool m_mouseDraggingBoxWallX = false;
-	bool m_mouseDraggingBoxWallY = false;
-	bool m_mouseDraggingBoxWallZ = false;
+	bool m_mouseHoveringBoxWallPosX = false;
+	bool m_mouseHoveringBoxWallPosY = false;
+	bool m_mouseHoveringBoxWallPosZ = false;
+	bool m_mouseHoveringBoxWallNegX = false;
+	bool m_mouseHoveringBoxWallNegY = false;
+	bool m_mouseHoveringBoxWallNegZ = false;
+	bool m_mouseDraggingBoxWallPosX = false;
+	bool m_mouseDraggingBoxWallPosY = false;
+	bool m_mouseDraggingBoxWallPosZ = false;
+	bool m_mouseDraggingBoxWallNegX = false;
+	bool m_mouseDraggingBoxWallNegY = false;
+	bool m_mouseDraggingBoxWallNegZ = false;
 	float m_mousePrevX = 0.0f;
 	float m_mousePrevY = 0.0f;
 	bool m_mouseDraggingBoxJustStarted = false;

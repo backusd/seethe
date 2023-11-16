@@ -467,19 +467,20 @@ void SimulationWindow::HandleLButtonDown() noexcept
 {
 	if (m_allowMouseToResizeBoxDimensions)
 	{
-		m_mouseDraggingBoxWallX = m_mouseHoveringBoxWallX;
-		m_mouseDraggingBoxWallY = m_mouseHoveringBoxWallY;
-		m_mouseDraggingBoxWallZ = m_mouseHoveringBoxWallZ;
-		m_mouseDraggingBoxJustStarted = m_mouseDraggingBoxWallX || m_mouseDraggingBoxWallY || m_mouseDraggingBoxWallZ;
+		m_mouseDraggingBoxWallPosX = m_mouseHoveringBoxWallPosX;
+		m_mouseDraggingBoxWallPosY = m_mouseHoveringBoxWallPosY;
+		m_mouseDraggingBoxWallPosZ = m_mouseHoveringBoxWallPosZ;
+		m_mouseDraggingBoxWallNegX = m_mouseHoveringBoxWallNegX;
+		m_mouseDraggingBoxWallNegY = m_mouseHoveringBoxWallNegY;
+		m_mouseDraggingBoxWallNegZ = m_mouseHoveringBoxWallNegZ;
+		m_mouseDraggingBoxJustStarted = MouseIsDraggingWall();
 	}
 }
 void SimulationWindow::HandleLButtonUp() noexcept
 {
-	if (m_allowMouseToResizeBoxDimensions)
+	if (m_allowMouseToResizeBoxDimensions) 
 	{
-		m_mouseDraggingBoxWallX = false;
-		m_mouseDraggingBoxWallY = false;
-		m_mouseDraggingBoxWallZ = false;
+		ClearMouseDraggingWallState(); 
 	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
@@ -536,7 +537,6 @@ void SimulationWindow::HandleX2ButtonDoubleClick() noexcept
 }
 void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 {
-
 	// Disallow picking when the simulation is actively playing
 	if (!m_simulation.IsPlaying())
 	{
@@ -544,32 +544,52 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 		if (m_allowMouseToResizeBoxDimensions)
 		{
 			// If we are actively expanding/contracting the box walls, handle that first
-			if (m_mouseDraggingBoxWallX || m_mouseDraggingBoxWallY || m_mouseDraggingBoxWallZ)
+			if (MouseIsDraggingWall())
 			{
-				float vpCenterX = m_viewport.TopLeftX + (m_viewport.Width / 2);
-				float vpCenterY = m_viewport.TopLeftY + (m_viewport.Height / 2);
-
 				Camera& camera = m_renderer->GetCamera();
-				XMVECTOR up = XMVector3Normalize(camera.GetUp());
-				XMVECTOR pos = XMVector3Normalize(camera.GetPosition());
-				XMVECTOR right = XMVector3Cross(pos, up);
+				XMVECTOR _up = XMVector3Normalize(camera.GetUp());
+				XMVECTOR _pos = XMVector3Normalize(camera.GetPosition());
 
-				LOG_TRACE("Up      : {}, {}, {}", XMVectorGetX(up), XMVectorGetY(up), XMVectorGetZ(up));
-				LOG_TRACE("Right   : {}, {}, {}", XMVectorGetX(right), XMVectorGetY(right), XMVectorGetZ(right));
-				LOG_TRACE("Position: {}, {}, {}", XMVectorGetX(pos), XMVectorGetY(pos), XMVectorGetZ(pos));
+				XMFLOAT3 up = {};
+				XMFLOAT3 pos = {};
+				XMFLOAT3 right = {};
+
+				XMStoreFloat3(&up, _up);
+				XMStoreFloat3(&pos, _pos);
+				XMStoreFloat3(&right, XMVector3Cross(_pos, _up));
 
 				if (m_mouseDraggingBoxJustStarted)
 				{
-					if (m_mouseDraggingBoxWallX)
+					if (m_mouseDraggingBoxWallPosX)
 					{
-						m_mouseDraggingBoxRightIsLarger = XMVectorGetX(pos) > 0.0f;
-						m_mouseDraggingBoxUpIsLarger = m_mouseDraggingBoxRightIsLarger ? XMVectorGetX(up) > 0.0f : XMVectorGetX(up) < 0.0f;
+						m_mouseDraggingBoxRightIsLarger = right.x > 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.x > 0.0f; 
 					}
-					else
+					else if (m_mouseDraggingBoxWallNegX)
 					{
-						m_mouseDraggingBoxRightIsLarger = x > vpCenterX;
-						m_mouseDraggingBoxUpIsLarger = y < vpCenterY;
+						m_mouseDraggingBoxRightIsLarger = right.x < 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.x < 0.0f;
 					}
+					else if (m_mouseDraggingBoxWallPosY)
+					{
+						m_mouseDraggingBoxRightIsLarger = right.y > 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.y > 0.0f;
+					}
+					else if (m_mouseDraggingBoxWallNegY)
+					{
+						m_mouseDraggingBoxRightIsLarger = right.y < 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.y < 0.0f;
+					}
+					else if (m_mouseDraggingBoxWallPosZ)
+					{
+						m_mouseDraggingBoxRightIsLarger = right.z > 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.z > 0.0f;
+					}
+					else if (m_mouseDraggingBoxWallNegZ)
+					{
+						m_mouseDraggingBoxRightIsLarger = right.z < 0.0f;
+						m_mouseDraggingBoxUpIsLarger = up.z < 0.0f;
+					} 
 					
 					m_mouseDraggingBoxJustStarted = false;
 				}
@@ -578,28 +598,26 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 				float deltaY = (y - m_mousePrevY) * (m_mouseDraggingBoxUpIsLarger ? -1 : 1);
 
 				XMFLOAT3 dims = m_simulation.GetDimensions();
-				float minimumNewSize = m_simulation.GetMaxAxisAlignedDistanceFromOrigin(); 
+				float minimumNewSize = m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 
-
-
-				if (m_mouseDraggingBoxWallX)
+				if (m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
 				{
-					deltaX *= std::abs(XMVectorGetX(right));
-					deltaY *= std::abs(XMVectorGetX(up));
+					deltaX *= std::abs(right.x);
+					deltaY *= std::abs(up.x);
 					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
 					dims.x = std::max(minimumNewSize, dims.x + scaleFactor);					
 				}
-				else if (m_mouseDraggingBoxWallY)
+				else if (m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
 				{
-					deltaX *= std::abs(XMVectorGetY(right));
-					deltaY *= std::abs(XMVectorGetY(up));
+					deltaX *= std::abs(right.y);
+					deltaY *= std::abs(up.y);
 					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
 					dims.y = std::max(minimumNewSize, dims.y + scaleFactor);
 				}
-				else if (m_mouseDraggingBoxWallZ)
+				else if (m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
 				{
-					deltaX *= std::abs(XMVectorGetZ(right));
-					deltaY *= std::abs(XMVectorGetZ(up));
+					deltaX *= std::abs(right.z);
+					deltaY *= std::abs(up.z);
 					float scaleFactor = 2 * dims.x * ((deltaX / m_viewport.Width) + (deltaY / m_viewport.Height));
 					dims.z = std::max(minimumNewSize, dims.z + scaleFactor);
 				}
@@ -967,42 +985,65 @@ void SimulationWindow::PickBoxWalls(float x, float y)
 	float minDistance = FLT_MAX;
 	ClearMouseHoverWallState();
 
-	if (m_boundingBoxPosX.Intersects(origin, direction, distance) || m_boundingBoxNegX.Intersects(origin, direction, distance))
+	// X
+	if (m_boundingBoxPosX.Intersects(origin, direction, distance))
 	{
 		if (distance < minDistance)
 		{
 			minDistance = distance;
 			ClearMouseHoverWallState();
-			m_mouseHoveringBoxWallX = true;
+			m_mouseHoveringBoxWallPosX = true;
 		}
 	}
-
-	if (m_boundingBoxPosY.Intersects(origin, direction, distance) || m_boundingBoxNegY.Intersects(origin, direction, distance))
+	if (m_boundingBoxNegX.Intersects(origin, direction, distance))
 	{
 		if (distance < minDistance)
 		{
 			minDistance = distance;
 			ClearMouseHoverWallState();
-			m_mouseHoveringBoxWallY = true;
+			m_mouseHoveringBoxWallNegX = true;
 		}
 	}
 
-	if (m_boundingBoxPosZ.Intersects(origin, direction, distance) || m_boundingBoxNegZ.Intersects(origin, direction, distance))
+	// Y
+	if (m_boundingBoxPosY.Intersects(origin, direction, distance))
 	{
 		if (distance < minDistance)
 		{
 			minDistance = distance;
 			ClearMouseHoverWallState();
-			m_mouseHoveringBoxWallZ = true;
+			m_mouseHoveringBoxWallPosY = true;
+		}
+	}
+	if (m_boundingBoxNegY.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallNegY = true;
 		}
 	}
 
-//	if (m_mouseHoveringBoxWallX)
-//		LOG_TRACE("X: {}", minDistance);
-//	else if (m_mouseHoveringBoxWallY)
-//		LOG_TRACE("Y: {}", minDistance);
-//	else if (m_mouseHoveringBoxWallZ)
-//		LOG_TRACE("Z: {}", minDistance);
+	// Z
+	if (m_boundingBoxPosZ.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallPosZ = true;
+		}
+	}
+	if (m_boundingBoxNegZ.Intersects(origin, direction, distance))
+	{
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			ClearMouseHoverWallState();
+			m_mouseHoveringBoxWallNegZ = true;
+		}
+	}
 }
 
 
