@@ -82,6 +82,7 @@
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp" />
     <ClCompile Include="src\application\change-requests\SimulationPlayCR.cpp" />
     <ClCompile Include="src\application\EntryPoint.cpp" />
+    <ClCompile Include="src\rendering\GeometryGenerator.cpp" />
     <ClCompile Include="src\application\ui\SimulationWindow.cpp" />
     <ClCompile Include="src\application\window\MainWindow.cpp" />
     <ClCompile Include="src\application\window\WindowMessageMap.cpp" />
@@ -114,6 +115,7 @@
     <ClInclude Include="src\application\change-requests\BoxResizeCR.h" />
     <ClInclude Include="src\application\change-requests\ChangeRequest.h" />
     <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />
+    <ClInclude Include="src\rendering\GeometryGenerator.h" />
     <ClInclude Include="src\application\ui\fonts\Fonts.h" />
     <ClInclude Include="src\application\ui\SimulationWindow.h" />
     <ClInclude Include="src\application\window\MainWindow.h" />

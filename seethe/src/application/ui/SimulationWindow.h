@@ -37,12 +37,6 @@ struct SolidColorVertex
 	ND inline DirectX::XMFLOAT3 Position() const noexcept { return { Pos.x, Pos.y, Pos.z }; }
 };
 
-struct MeshData
-{
-	std::vector<Vertex> vertices;
-	std::vector<std::uint16_t> indices;
-};
-
 
 static constexpr int MaxLights = 16;
 
@@ -225,8 +219,6 @@ private:
 	unsigned int m_materialsDirtyFlag = g_numFrameResources;
 	unsigned int m_boxMaterialsDirtyFlag = g_numFrameResources;
 	unsigned int m_boxFaceMaterialsDirtyFlag = g_numFrameResources;
-
-	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
 
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;

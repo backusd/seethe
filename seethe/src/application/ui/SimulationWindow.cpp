@@ -1,4 +1,5 @@
 #include "SimulationWindow.h"
+#include "rendering/GeometryGenerator.h"
 
 using namespace DirectX;
 
@@ -111,13 +112,17 @@ void SimulationWindow::InitializeRenderPasses()
 
 	// Beginning of Layer #1 -----------------------------------------------------------------------
 
-	MeshData sphereMesh = SphereMesh(0.5f, 20, 20);
+	GeometryGenerator::MeshData sphereMesh = GeometryGenerator::CreateSphere(0.5f, 20, 20);
+	std::vector<Vertex> sphereVertices;
+	sphereVertices.reserve(sphereMesh.Vertices.size());
+	for (GeometryGenerator::Vertex& v : sphereMesh.Vertices)
+		sphereVertices.push_back({ v.Position, v.Normal });
 
 	std::vector<std::vector<Vertex>> vertices;
-	vertices.push_back(std::move(sphereMesh.vertices));
+	vertices.push_back(std::move(sphereVertices));
 
 	std::vector<std::vector<std::uint16_t>> indices;
-	indices.push_back(std::move(sphereMesh.indices));
+	indices.push_back(std::move(sphereMesh.GetIndices16()));
 
 	m_sphereMeshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
 
@@ -270,7 +275,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 	boxCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
-			InstanceData d;
+			InstanceData d = {};
 			d.MaterialIndex = 0;
 
 			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
@@ -382,99 +387,6 @@ void SimulationWindow::InitializeRenderPasses()
 				--m_boxFaceMaterialsDirtyFlag;
 			}
 		};
-}
-MeshData SimulationWindow::SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount)
-{
-	using namespace DirectX;
-
-	MeshData mesh;
-
-	Vertex topVertex({ 0.0f, +radius, 0.0f }, { 0.0f, +1.0f, 0.0f });
-	Vertex bottomVertex({ 0.0f, -radius, 0.0f }, { 0.0f, -1.0f, 0.0f });
-
-	mesh.vertices.push_back(topVertex);
-
-	float phiStep = XM_PI / stackCount;
-	float thetaStep = 2.0f * XM_PI / sliceCount;
-
-	// Compute vertices for each stack ring (do not count the poles as rings).
-	for (uint32_t i = 1; i <= stackCount - 1; ++i)
-	{
-		float phi = i * phiStep;
-
-		// Vertices of ring.
-		for (uint32_t j = 0; j <= sliceCount; ++j)
-		{
-			float theta = j * thetaStep;
-
-			Vertex v = {};
-
-			// spherical to cartesian
-			v.Pos.x = radius * sinf(phi) * cosf(theta);
-			v.Pos.y = radius * cosf(phi);
-			v.Pos.z = radius * sinf(phi) * sinf(theta);
-
-			XMVECTOR p = XMLoadFloat3(&v.Pos);
-			XMStoreFloat3(&v.Normal, XMVector3Normalize(p));
-
-			mesh.vertices.push_back(v);
-		}
-	}
-
-	mesh.vertices.push_back(bottomVertex);
-
-	//
-	// Compute indices for top stack.  The top stack was written first to the vertex buffer
-	// and connects the top pole to the first ring.
-	//
-
-	for (std::uint16_t i = 1; i <= sliceCount; ++i)
-	{
-		mesh.indices.push_back(0);
-		mesh.indices.push_back(i + 1);
-		mesh.indices.push_back(i);
-	}
-
-	//
-	// Compute indices for inner stacks (not connected to poles).
-	//
-
-	// Offset the indices to the index of the first vertex in the first ring.
-	// This is just skipping the top pole vertex.
-	std::uint16_t baseIndex = 1;
-	std::uint16_t ringVertexCount = sliceCount + 1;
-	for (std::uint16_t i = 0; i < stackCount - 2; ++i)
-	{
-		for (std::uint16_t j = 0; j < sliceCount; ++j)
-		{
-			mesh.indices.push_back(baseIndex + i * ringVertexCount + j);
-			mesh.indices.push_back(baseIndex + i * ringVertexCount + j + 1);
-			mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
-			mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j);
-			mesh.indices.push_back(baseIndex + i * ringVertexCount + j + 1);
-			mesh.indices.push_back(baseIndex + (i + 1) * ringVertexCount + j + 1);
-		}
-	}
-
-	//
-	// Compute indices for bottom stack.  The bottom stack was written last to the vertex buffer
-	// and connects the bottom pole to the bottom ring.
-	//
-
-	// South pole vertex was added last.
-	std::uint16_t southPoleIndex = (std::uint16_t)mesh.vertices.size() - 1;
-
-	// Offset the indices to the index of the first vertex in the last ring.
-	baseIndex = southPoleIndex - ringVertexCount;
-
-	for (std::uint16_t i = 0; i < sliceCount; ++i)
-	{
-		mesh.indices.push_back(southPoleIndex);
-		mesh.indices.push_back(baseIndex + i);
-		mesh.indices.push_back(baseIndex + i + 1);
-	}
-
-	return mesh;
 }
 
 void SimulationWindow::Update(const Timer& timer, int frameIndex)
