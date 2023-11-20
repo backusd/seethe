@@ -12,9 +12,20 @@ SimulationWindow::SimulationWindow(std::shared_ptr<DeviceResources> deviceResour
 	m_scissorRect{ static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) },
 	m_renderer(nullptr),
 	m_simulation(simulation),
-	m_materials(materials)
+	m_atomMaterials(materials)
 {
 	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
+
+	// Create the materials that will be used for the box.
+	// 1. White material for the box lines
+	// 2. Green material for when hovering to resize part of the box (fractional alpha for transparency)
+	// 3. 
+	m_boxMaterials.reserve(1);
+	m_boxMaterials.push_back({ { 1.0f, 1.0f, 1.0f, 1.0f }, {}, 0.0f });
+	
+	m_boxFaceMaterials.reserve(1);
+	m_boxFaceMaterials.push_back({ { 0.0f, 1.0f, 0.0f, 0.5f }, {}, 0.0f });
+	m_boxFaceMaterials.push_back({ { 0.0f, 1.0f, 0.0f, 0.3f }, {}, 0.0f });
 
 	InitializeRenderPasses();
 }
@@ -92,7 +103,7 @@ void SimulationWindow::InitializeRenderPasses()
 		{
 			if (m_materialsDirtyFlag > 0)
 			{
-				m_materialsConstantBuffer->CopyData(frameIndex, m_materials);
+				m_materialsConstantBuffer->CopyData(frameIndex, m_atomMaterials);
 				--m_materialsDirtyFlag;
 			}
 		};
@@ -143,7 +154,6 @@ void SimulationWindow::InitializeRenderPasses()
 	//RenderPassLayer layer1(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, m_sphereMeshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
-
 	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
 
 	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
@@ -178,24 +188,34 @@ void SimulationWindow::InitializeRenderPasses()
 
 	// Beginning of Layer #2 (Box Layer) -----------------------------------------------------------------------
 
-	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+//	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+//	std::vector<SolidColorVertex> boxVertices = {
+//		{ { 1.0f, 1.0f, 1.0f, 1.0f }, color },		// 0:  x  y  z
+//		{ { -1.0f, 1.0f, 1.0f, 1.0f }, color },		// 1: -x  y  z
+//		{ { 1.0f, -1.0f, 1.0f, 1.0f }, color },		// 2:  x -y  z
+//		{ { 1.0f, 1.0f, -1.0f, 1.0f }, color },		// 3:  x  y -z
+//		{ { -1.0f, -1.0f, 1.0f, 1.0f }, color },	// 4: -x -y  z
+//		{ { -1.0f, 1.0f, -1.0f, 1.0f }, color },	// 5: -x  y -z
+//		{ { 1.0f, -1.0f, -1.0f, 1.0f }, color },	// 6:  x -y -z
+//		{ { -1.0f, -1.0f, -1.0f, 1.0f }, color }	// 7: -x -y -z
+//	};
 	std::vector<SolidColorVertex> boxVertices = {
-		{ { 1.0f, 1.0f, 1.0f, 1.0f }, color },		// 0:  x  y  z
-		{ { -1.0f, 1.0f, 1.0f, 1.0f }, color },		// 1: -x  y  z
-		{ { 1.0f, -1.0f, 1.0f, 1.0f }, color },		// 2:  x -y  z
-		{ { 1.0f, 1.0f, -1.0f, 1.0f }, color },		// 3:  x  y -z
-		{ { -1.0f, -1.0f, 1.0f, 1.0f }, color },	// 4: -x -y  z
-		{ { -1.0f, 1.0f, -1.0f, 1.0f }, color },	// 5: -x  y -z
-		{ { 1.0f, -1.0f, -1.0f, 1.0f }, color },	// 6:  x -y -z
-		{ { -1.0f, -1.0f, -1.0f, 1.0f }, color }	// 7: -x -y -z
+		{ { 1.0f, 1.0f, 1.0f, 1.0f } },		// 0:  x  y  z
+		{ { -1.0f, 1.0f, 1.0f, 1.0f } },	// 1: -x  y  z
+		{ { 1.0f, -1.0f, 1.0f, 1.0f } },	// 2:  x -y  z
+		{ { 1.0f, 1.0f, -1.0f, 1.0f } },	// 3:  x  y -z
+		{ { -1.0f, -1.0f, 1.0f, 1.0f } },	// 4: -x -y  z
+		{ { -1.0f, 1.0f, -1.0f, 1.0f } },	// 5: -x  y -z
+		{ { 1.0f, -1.0f, -1.0f, 1.0f } },	// 6:  x -y -z
+		{ { -1.0f, -1.0f, -1.0f, 1.0f } }	// 7: -x -y -z
 	};
 	std::vector<std::uint16_t> boxIndices = {
-		// Positive z face
+		// Negative z face
 		0, 1,
 		0, 2,
 		1, 4,
 		2, 4,
-		// Negative z face
+		// Positive z face
 		3, 5,
 		3, 6,
 		5, 7,
@@ -221,7 +241,7 @@ void SimulationWindow::InitializeRenderPasses()
 	m_solidInputLayout = std::make_unique<InputLayout>(
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+//			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	}
 	);
 
@@ -244,21 +264,123 @@ void SimulationWindow::InitializeRenderPasses()
 
 	RenderPassLayer& layer2 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxMeshGroup, boxDesc, D3D_PRIMITIVE_TOPOLOGY_LINELIST, "Layer #2");
 
-	m_boxConstantBuffer = std::make_unique<ConstantBuffer<DirectX::XMFLOAT4X4>>(m_deviceResources);
+	m_boxConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
 
 	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 	boxCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
+			InstanceData d;
+			d.MaterialIndex = 0;
+
 			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
-			DirectX::XMFLOAT4X4 world;
-			DirectX::XMStoreFloat4x4(&world,
+			DirectX::XMStoreFloat4x4(&d.World,
 				DirectX::XMMatrixTranspose(
 					DirectX::XMMatrixScaling(dims.x, dims.y, dims.z)
 				)
 			);
 
-			m_boxConstantBuffer->CopyData(frameIndex, world);
+			m_boxConstantBuffer->CopyData(frameIndex, d);
+		};
+
+	m_boxMaterialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
+	RootConstantBufferView& boxMaterialsCBV = boxRI.EmplaceBackRootConstantBufferView(1, m_boxMaterialsConstantBuffer.get());
+	boxMaterialsCBV.Update = [this](const Timer& timer, int frameIndex)
+		{
+			if (m_boxMaterialsDirtyFlag > 0)
+			{
+				m_boxMaterialsConstantBuffer->CopyData(frameIndex, m_boxMaterials);
+				--m_boxMaterialsDirtyFlag;
+			}
+		};
+
+
+
+	// Beginning of Layer #3 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
+
+	// In this layer we render two of the size walls 
+	std::vector<std::vector<SolidColorVertex>> boxFaceVerticesList = {
+		{
+			{ {  0.0f,  1.0f,  1.0f, 1.0f } },	// x  y  z
+			{ {  0.0f, -1.0f,  1.0f, 1.0f } },	// x -y  z
+			{ {  0.0f,  1.0f, -1.0f, 1.0f } },	// x  y -z
+			{ {  0.0f, -1.0f, -1.0f, 1.0f } },	// x -y -z
+		}
+	};
+	std::vector<std::vector<std::uint16_t>> boxFaceIndicesList = { { 0, 1, 2, 3 } };
+
+	std::shared_ptr<MeshGroupT<SolidColorVertex>> boxFacesMeshGroup = std::make_shared<MeshGroupT<SolidColorVertex>>(m_deviceResources, boxFaceVerticesList, boxFaceIndicesList);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC boxFaceDesc = boxDesc;
+	// Box faces will be triangles
+	boxFaceDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	// Don't cull back facing triangles because we will want to see the face from either side
+	boxFaceDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	// Enable transparency blending
+	boxFaceDesc.BlendState.AlphaToCoverageEnable = false;
+	boxFaceDesc.BlendState.IndependentBlendEnable = false;
+	boxFaceDesc.BlendState.RenderTarget[0].BlendEnable = true;
+	boxFaceDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+	boxFaceDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	boxFaceDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	boxFaceDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	boxFaceDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	boxFaceDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	boxFaceDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	boxFaceDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+	boxFaceDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxFacesMeshGroup, boxFaceDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, "Layer #3");
+	layer3.SetActive(false);
+
+	m_boxFaceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+
+	RenderItem& boxFaceRI = layer3.EmplaceBackRenderItem();
+	boxFaceRI.SetInstanceCount(2);
+	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(0, m_boxFaceConstantBuffer.get());
+	boxFaceCBV.Update = [this](const Timer& timer, int frameIndex) 
+		{
+			uint32_t i = MouseIsDraggingWall() ? 0 : 1;
+			InstanceData d[2] = {};
+			d[0].MaterialIndex = i;
+			d[1].MaterialIndex = i;
+
+			XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+
+			XMMATRIX pos = XMMatrixIdentity();
+			XMMATRIX neg = XMMatrixIdentity();
+
+			if (m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
+			{
+				pos = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
+				neg = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
+			{
+				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, dims.y, 0.0f);
+				neg = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosZ || m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
+			{
+				pos = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
+				neg = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
+			}
+
+			XMStoreFloat4x4(&d[0].World, XMMatrixTranspose(pos));
+			XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
+
+			m_boxFaceConstantBuffer->CopyData(frameIndex, d);
+		};
+
+	m_boxFaceMaterialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
+	RootConstantBufferView& boxFaceMaterialsCBV = boxFaceRI.EmplaceBackRootConstantBufferView(1, m_boxFaceMaterialsConstantBuffer.get());
+	boxFaceMaterialsCBV.Update = [this](const Timer& timer, int frameIndex)
+		{
+			if (m_boxFaceMaterialsDirtyFlag > 0)
+			{
+				m_boxFaceMaterialsConstantBuffer->CopyData(frameIndex, m_boxFaceMaterials);
+				--m_boxFaceMaterialsDirtyFlag;
+			}
 		};
 }
 MeshData SimulationWindow::SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount)
@@ -404,6 +526,13 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 		m_mouseLastPos = { x, y }; // Make sure this gets updated AFTER calling HandleMouseMove() so we don't lose the previous position data
 		return true;
 	}
+	else if (m_allowMouseToResizeBoxDimensions)
+	{
+		// If we are allowing the box wall to be resized, its possible the transparency layer
+		// is active because the mouse could have been hovering over a box wall and then exited
+		// the viewport. When this happens, we must make sure the layer is deactivated
+		SetBoxWallTransparencyRenderLayerActive(false);
+	}
 
 	m_mouseLastPos = { x, y }; // Make sure this gets updated AFTER calling HandleMouseMove() so we don't lose the previous position data
 	
@@ -540,7 +669,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 	// Disallow picking when the simulation is actively playing
 	if (!m_simulation.IsPlaying())
 	{
-		// Check we mouse resizing the box is enabled
+		// Check if mouse resizing the box is enabled
 		if (m_allowMouseToResizeBoxDimensions)
 		{
 			// If we are actively expanding/contracting the box walls, handle that first
@@ -629,7 +758,10 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 				return;
 			}
 			else
+			{
 				PickBoxWalls(x, y);
+				SetBoxWallTransparencyRenderLayerActive(MouseIsHoveringWall());
+			}
 		}
 
 		//Pick(x, y);		
@@ -942,7 +1074,6 @@ void SimulationWindow::Pick(float x, float y)
 		}
 	}
 }
-
 void SimulationWindow::PickBoxWalls(float x, float y)
 {
 	Camera& camera = m_renderer->GetCamera(); 

@@ -75,8 +75,11 @@ public:
 	ND inline std::shared_ptr<MeshGroup> GetMeshGroup() const noexcept { return m_meshes; }
 	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
+	ND constexpr inline bool IsActive() const noexcept { return m_active; }
 
 	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
+	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
+
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not make a Draw call for this layer)
 	std::function<bool(const RenderPassLayer&, ID3D12GraphicsCommandList*)> PreWork = [](const RenderPassLayer&, ID3D12GraphicsCommandList*) { return true; };
@@ -93,6 +96,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	D3D12_PRIMITIVE_TOPOLOGY					m_topology;
 	std::shared_ptr<MeshGroup>					m_meshes; // shared_ptr because it is possible (if not likely) that different layers will want to reference the same mesh
+	bool										m_active = true;
 
 	// Name (for debug/profiling purposes)
 	std::string m_name;

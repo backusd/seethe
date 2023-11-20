@@ -39,6 +39,11 @@ public:
 
 	ND constexpr inline Camera& GetCamera() noexcept { return m_camera; }
 	ND constexpr inline const Camera& GetCamera() const noexcept { return m_camera; }
+	ND constexpr inline RenderPass& GetRenderPass(unsigned int index) noexcept 
+	{ 
+		ASSERT(index < m_renderPasses.size(), "index too large");
+		return m_renderPasses[index]; 
+	}
 
 	constexpr inline void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
 	constexpr inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }

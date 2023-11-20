@@ -30,10 +30,16 @@ void Renderer::Update(const Timer& timer, int frameIndex)
 		pass.Update(timer, frameIndex);
 
 		for (RenderPassLayer& layer : pass.GetRenderPassLayers())
-			layer.Update(timer, frameIndex);
+		{
+			if (layer.IsActive())
+				layer.Update(timer, frameIndex);
+		}
 
 		for (ComputeLayer& layer : pass.GetComputeLayers())
-			layer.Update(timer, frameIndex);
+		{
+			if (layer.IsActive()) 
+				layer.Update(timer, frameIndex); 
+		}
 	}
 }
 
@@ -53,6 +59,9 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 		// Before attempting to perform any rendering, first perform all compute operations
 		for (const ComputeLayer& layer : pass.GetComputeLayers())
 		{
+			if (!layer.IsActive())
+				continue;
+
 			RunComputeLayer(layer, nullptr, frameIndex); // NOTE: Pass nullptr for the timer, because we do not have access to the timer during the Rendering phase
 		}
 
@@ -77,6 +86,9 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 		// Render the render layers for the pass
 		for (const RenderPassLayer& layer : pass.GetRenderPassLayers())
 		{
+			if (!layer.IsActive())
+				continue;
+
 			ASSERT(layer.GetRenderItems().size() > 0, "Layer has no render items");
 			ASSERT(layer.GetPSO() != nullptr, "Layer has no pipeline state");
 			ASSERT(layer.GetMeshGroup() != nullptr, "Layer has no mesh group");

@@ -79,8 +79,10 @@ public:
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
 	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
+	ND constexpr inline bool IsActive() const noexcept { return m_active; }
 
 	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
+	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not call Dispatch for this RenderLayer)
 	// Also, because a ComputeLayer can be executed during the Update phase, it can get access to the Timer. However, 
@@ -100,6 +102,7 @@ private:
 	std::shared_ptr<RootSignature>				m_rootSignature;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	std::vector<ComputeItem>					m_computeItems;
+	bool										m_active = true;
 
 	// Name (for debug/profiling purposes)
 	std::string m_name;

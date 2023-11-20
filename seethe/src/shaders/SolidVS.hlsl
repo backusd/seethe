@@ -1,6 +1,7 @@
 // Include structures and functions for lighting.
 #include "LightingUtil.hlsli"
 
+#define MAX_INSTANCES 819
 #define NUM_MATERIALS 10
 
 struct MaterialIn
@@ -19,10 +20,15 @@ struct InstanceData
     uint Pad2;
 };
 
-cbuffer cbPerObject : register(b0)
+//cbuffer cbPerObject : register(b0)
+//{
+//    float4x4 gWorld;
+//};
+
+cbuffer cbInstanceData : register(b0)
 {
-    float4x4 gWorld;
-};
+    InstanceData gInstanceDataArray[MAX_INSTANCES];
+}
 
 cbuffer cbMaterial : register(b1)
 {
@@ -57,7 +63,7 @@ cbuffer cbPass : register(b2)
 struct VertexIn
 {
     float4 PosL : POSITION;
-    float4 Color : COLOR;
+//    float4 Color : COLOR;
 };
 
 struct VertexOut
@@ -66,16 +72,20 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-VertexOut main(VertexIn vin)
+VertexOut main(VertexIn vin, uint instanceID : SV_InstanceID)
 {
     VertexOut vout;
 	
 	// Transform to homogeneous clip space.
-    float4 posW = mul(vin.PosL, gWorld);
+    float4x4 world = gInstanceDataArray[instanceID].World;
+    float4 posW = mul(vin.PosL, world);
     vout.PosH = mul(posW, gViewProj);
 	
 	// Just pass vertex color into the pixel shader.
-    vout.Color = vin.Color;
+//    vout.Color = vin.Color;
     
+    // When rendering as a solid color, we use the diffuse albedo as the color
+    uint matIndex = gInstanceDataArray[instanceID].MaterialIndex;
+    vout.Color = gMaterial[matIndex].DiffuseAlbedo;
     return vout;
 }

@@ -31,7 +31,7 @@ struct Vertex
 struct SolidColorVertex
 {
 	DirectX::XMFLOAT4 Pos;
-	DirectX::XMFLOAT4 Color;
+//	DirectX::XMFLOAT4 Color;
 
 	// This method is required because we impose the HAS_POSITION concept on MeshGroupT so that we can compute the bounding box
 	ND inline DirectX::XMFLOAT3 Position() const noexcept { return { Pos.x, Pos.y, Pos.z }; }
@@ -133,6 +133,9 @@ public:
 		m_allowMouseToResizeBoxDimensions = allow; 
 		ClearMouseHoverWallState();
 		ClearMouseDraggingWallState();
+
+		if (!allow)
+			SetBoxWallTransparencyRenderLayerActive(false);
 	}
 
 private:
@@ -202,6 +205,15 @@ private:
 		return m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallPosZ ||
 			m_mouseDraggingBoxWallNegX || m_mouseDraggingBoxWallNegY || m_mouseDraggingBoxWallNegZ;
 	}
+	ND inline bool MouseIsHoveringWall() const noexcept
+	{
+		return m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallPosZ ||
+			m_mouseHoveringBoxWallNegX || m_mouseHoveringBoxWallNegY || m_mouseHoveringBoxWallNegZ;
+	}
+	inline void SetBoxWallTransparencyRenderLayerActive(bool active) noexcept
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(active);
+	}
 
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	std::unique_ptr<Renderer> m_renderer;
@@ -209,9 +221,10 @@ private:
 	D3D12_RECT m_scissorRect;
 	Simulation& m_simulation;
 
-	std::vector<Material>& m_materials;
+	std::vector<Material>& m_atomMaterials;
 	unsigned int m_materialsDirtyFlag = g_numFrameResources;
-
+	unsigned int m_boxMaterialsDirtyFlag = g_numFrameResources;
+	unsigned int m_boxFaceMaterialsDirtyFlag = g_numFrameResources;
 
 	MeshData SphereMesh(float radius, uint32_t sliceCount, uint32_t stackCount);
 
@@ -228,10 +241,17 @@ private:
 	std::unique_ptr<Shader> m_solidVS = nullptr;
 	std::unique_ptr<Shader> m_solidPS = nullptr;
 	std::unique_ptr<InputLayout> m_solidInputLayout = nullptr;
-	std::unique_ptr<ConstantBuffer<DirectX::XMFLOAT4X4>> m_boxConstantBuffer;
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_boxConstantBuffer;
+	std::vector<Material> m_boxMaterials;
+	std::vector<Material> m_boxFaceMaterials;
 
 	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
 	std::unique_ptr<ConstantBuffer<Material>> m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBuffer<Material>> m_boxMaterialsConstantBuffer;
+
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_boxFaceConstantBuffer;
+	std::unique_ptr<ConstantBuffer<Material>> m_boxFaceMaterialsConstantBuffer;
+
 
 	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
 	const DirectX::BoundingBox m_boundingBoxNegX = { {-1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
