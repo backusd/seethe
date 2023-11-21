@@ -1,13 +1,17 @@
 #include "SimulationWindow.h"
+#include "application/Application.h"
+#include "application/change-requests/BoxResizeCR.h"
 #include "rendering/GeometryGenerator.h"
 
 using namespace DirectX;
 
 namespace seethe
 {
-SimulationWindow::SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
+SimulationWindow::SimulationWindow(Application& application,
+								   std::shared_ptr<DeviceResources> deviceResources, 
 								   Simulation& simulation, std::vector<Material>& materials,
 								   float top, float left, float height, float width) noexcept :
+	m_application(application),
 	m_deviceResources(deviceResources),
 	m_viewport{ left, top, width, height, 0.0f, 1.0f },
 	m_scissorRect{ static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) },
@@ -569,6 +573,12 @@ void SimulationWindow::HandleLButtonDown() noexcept
 		m_mouseDraggingBoxWallNegY = m_mouseHoveringBoxWallNegY;
 		m_mouseDraggingBoxWallNegZ = m_mouseHoveringBoxWallNegZ;
 		m_mouseDraggingBoxJustStarted = MouseIsDraggingWall();
+
+		if (m_mouseDraggingBoxJustStarted)
+		{
+			m_boxDimensionsInitial = m_simulation.GetDimensions();
+			m_forceSidesToBeEqualInitial = m_application.GetSimulationSettings().forceSidesToBeEqual;
+		}
 	}
 }
 void SimulationWindow::HandleLButtonUp() noexcept
@@ -576,6 +586,13 @@ void SimulationWindow::HandleLButtonUp() noexcept
 	if (m_allowMouseToResizeBoxDimensions) 
 	{
 		ClearMouseDraggingWallState(); 
+
+		XMFLOAT3 dims = m_simulation.GetDimensions();
+		if (dims.x != m_boxDimensionsInitial.x || dims.y != m_boxDimensionsInitial.y || dims.z != m_boxDimensionsInitial.z)
+		{
+			m_application.AddUndoCR<BoxResizeCR>(m_boxDimensionsInitial, dims, false, m_forceSidesToBeEqualInitial, false);
+			m_application.GetSimulationSettings().forceSidesToBeEqual = false;
+		}
 	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
@@ -718,6 +735,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 				}
 
 				m_simulation.SetDimensions(dims, false);
+				m_application.GetSimulationSettings().boxDimensions = dims;
 
 				m_mousePrevX = x;
 				m_mousePrevY = y;

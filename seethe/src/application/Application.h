@@ -84,6 +84,16 @@ public:
 	ND inline Simulation& GetSimulation() noexcept { return m_simulation; }
 	ND inline SimulationSettings& GetSimulationSettings() noexcept { return m_simulationSettings; }
 
+	template<typename T, typename... Args>
+	void AddUndoCR(Args&&... args) noexcept
+	{
+		std::shared_ptr<ChangeRequest> cr = std::make_shared<T>(std::forward<Args>(args)...);
+		m_undoStack.push(cr);
+		// Clear the Redo Stack
+		while (m_redoStack.size() > 0)
+			m_redoStack.pop();
+	}
+
 private:
 	void InitializeMaterials() noexcept;
 	void SaveMaterials() noexcept;
@@ -95,15 +105,7 @@ private:
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
 
-	template<typename T, typename... Args>
-	void AddUndoCR(Args&&... args) noexcept
-	{
-		std::shared_ptr<ChangeRequest> cr = std::make_shared<T>(std::forward<Args>(args)...);
-		m_undoStack.push(cr);
-		// Clear the Redo Stack
-		while (m_redoStack.size() > 0)
-			m_redoStack.pop();
-	}
+
 
 	std::unique_ptr<MainWindow> m_mainWindow;
 	std::shared_ptr<DeviceResources> m_deviceResources;

@@ -77,10 +77,13 @@ struct PassConstants
 
 namespace seethe
 {
+class Application;
+
 class SimulationWindow
 {
 public:
-	SimulationWindow(std::shared_ptr<DeviceResources> deviceResources, 
+	SimulationWindow(Application& application,
+		std::shared_ptr<DeviceResources> deviceResources, 
 		Simulation& simulation, std::vector<Material>& materials,
 		float top, float left, float height, float width) noexcept;
 
@@ -217,6 +220,7 @@ private:
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
 	Simulation& m_simulation;
+	Application& m_application;
 
 	std::vector<Material>& m_atomMaterials;
 	unsigned int m_materialsDirtyFlag = g_numFrameResources;
@@ -298,5 +302,7 @@ private:
 	bool m_mouseDraggingBoxJustStarted = false;
 	bool m_mouseDraggingBoxRightIsLarger = false;
 	bool m_mouseDraggingBoxUpIsLarger = false;
+	DirectX::XMFLOAT3 m_boxDimensionsInitial = {};
+	bool m_forceSidesToBeEqualInitial = true;
 };
 }

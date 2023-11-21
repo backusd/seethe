@@ -60,7 +60,7 @@ Application::Application() :
 	
 
 	// Must intialize the simulation windows AFTER the command list has been reset
-	m_simulationWindows.emplace_back(m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+	m_simulationWindows.emplace_back(*this, m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 
 
 
