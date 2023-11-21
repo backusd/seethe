@@ -234,7 +234,7 @@ private:
 
 	std::vector<InstanceData> m_instanceData;
 
-	std::shared_ptr<MeshGroupT<Vertex>> m_sphereMeshGroup = nullptr;
+	std::shared_ptr<MeshGroup<Vertex>> m_sphereMeshGroup = nullptr;
 
 	// Box
 	std::unique_ptr<Shader> m_solidVS = nullptr;

@@ -136,7 +136,7 @@ void SimulationWindow::InitializeRenderPasses()
 	indices.push_back(std::move(sphereMesh.GetIndices16()));
 	indices.push_back(std::move(arrowMesh.GetIndices16()));
 
-	m_sphereMeshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
+	m_sphereMeshGroup = std::make_shared<MeshGroup<Vertex>>(m_deviceResources, vertices, indices);
 
 
 
@@ -296,7 +296,7 @@ void SimulationWindow::InitializeRenderPasses()
 	std::vector<std::vector<std::uint16_t>> boxIndicesList;
 	boxIndicesList.push_back(std::move(boxIndices));
 
-	std::shared_ptr<MeshGroupT<SolidColorVertex>> boxMeshGroup = std::make_shared<MeshGroupT<SolidColorVertex>>(m_deviceResources, boxVerticesList, boxIndicesList);
+	std::shared_ptr<MeshGroup<SolidColorVertex>> boxMeshGroup = std::make_shared<MeshGroup<SolidColorVertex>>(m_deviceResources, boxVerticesList, boxIndicesList);
 
 	m_solidVS = std::make_unique<Shader>("src/shaders/output/SolidVS.cso");
 	m_solidPS = std::make_unique<Shader>("src/shaders/output/SolidPS.cso");
@@ -372,7 +372,7 @@ void SimulationWindow::InitializeRenderPasses()
 	};
 	std::vector<std::vector<std::uint16_t>> boxFaceIndicesList = { { 0, 1, 2, 3 } };
 
-	std::shared_ptr<MeshGroupT<SolidColorVertex>> boxFacesMeshGroup = std::make_shared<MeshGroupT<SolidColorVertex>>(m_deviceResources, boxFaceVerticesList, boxFaceIndicesList);
+	std::shared_ptr<MeshGroup<SolidColorVertex>> boxFacesMeshGroup = std::make_shared<MeshGroup<SolidColorVertex>>(m_deviceResources, boxFaceVerticesList, boxFaceIndicesList);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC boxFaceDesc = boxDesc;
 	// Box faces will be triangles

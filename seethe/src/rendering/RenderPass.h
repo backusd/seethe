@@ -78,7 +78,7 @@ public:
 		return m_constantBufferViews.emplace_back(rootParameterIndex, cb);
 	}
 	RenderPassLayer& EmplaceBackRenderPassLayer(std::shared_ptr<DeviceResources> deviceResources,
-		std::shared_ptr<MeshGroup> meshGroup,
+		std::shared_ptr<MeshGroupBase> meshGroup,
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		const std::string& name = "Unnamed")

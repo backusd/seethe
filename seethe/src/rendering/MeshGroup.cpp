@@ -6,7 +6,7 @@ namespace seethe
 //
 // MeshGroup ======================================================================================================
 //
-MeshGroup::MeshGroup(MeshGroup&& rhs) noexcept :
+MeshGroupBase::MeshGroupBase(MeshGroupBase&& rhs) noexcept :
 	m_deviceResources(rhs.m_deviceResources),
 	m_vertexBufferGPU(rhs.m_vertexBufferGPU),
 	m_indexBufferGPU(rhs.m_indexBufferGPU),
@@ -17,7 +17,7 @@ MeshGroup::MeshGroup(MeshGroup&& rhs) noexcept :
 	// Set the "moved from" flag on the rhs object so that it knows not to call DelayedDelete on GPU resources
 	rhs.m_movedFrom = true;
 }
-MeshGroup& MeshGroup::operator=(MeshGroup&& rhs) noexcept
+MeshGroupBase& MeshGroupBase::operator=(MeshGroupBase&& rhs) noexcept
 {
 	m_deviceResources = rhs.m_deviceResources;
 	m_vertexBufferGPU = rhs.m_vertexBufferGPU;
@@ -31,7 +31,7 @@ MeshGroup& MeshGroup::operator=(MeshGroup&& rhs) noexcept
 
 	return *this;
 }
-Microsoft::WRL::ComPtr<ID3D12Resource> MeshGroup::CreateDefaultBuffer(const void* initData, UINT64 byteSize) const
+Microsoft::WRL::ComPtr<ID3D12Resource> MeshGroupBase::CreateDefaultBuffer(const void* initData, UINT64 byteSize) const
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> defaultBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer = nullptr;
@@ -95,7 +95,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> MeshGroup::CreateDefaultBuffer(const void
 //
 // DynamicMesh ======================================================================================================
 //
-Microsoft::WRL::ComPtr<ID3D12Resource> DynamicMeshGroup::CreateUploadBuffer(UINT64 totalBufferSize) const
+Microsoft::WRL::ComPtr<ID3D12Resource> DynamicMeshGroupBase::CreateUploadBuffer(UINT64 totalBufferSize) const
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
 

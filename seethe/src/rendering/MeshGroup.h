@@ -24,15 +24,15 @@ struct SubmeshGeometry
 };
 
 //
-// MeshGroup ======================================================================================================
+// MeshGroupBase ======================================================================================================
 //
-class MeshGroup
+class MeshGroupBase
 {
 public:
-	MeshGroup(std::shared_ptr<DeviceResources> deviceResources) noexcept : m_deviceResources(deviceResources) {}
-	MeshGroup(MeshGroup&& rhs) noexcept;
-	MeshGroup& operator=(MeshGroup&& rhs) noexcept;
-	virtual ~MeshGroup() noexcept {}
+	MeshGroupBase(std::shared_ptr<DeviceResources> deviceResources) noexcept : m_deviceResources(deviceResources) {}
+	MeshGroupBase(MeshGroupBase&& rhs) noexcept;
+	MeshGroupBase& operator=(MeshGroupBase&& rhs) noexcept;
+	virtual ~MeshGroupBase() noexcept {}
 
 	inline void Bind(ID3D12GraphicsCommandList* commandList) const
 	{
@@ -73,8 +73,8 @@ protected:
 
 private:
 	// There is too much state to worry about copying, so just delete copy operations until we find a good use case
-	MeshGroup(const MeshGroup&) noexcept = delete;
-	MeshGroup& operator=(const MeshGroup&) noexcept = delete;
+	MeshGroupBase(const MeshGroupBase&) noexcept = delete;
+	MeshGroupBase& operator=(const MeshGroupBase&) noexcept = delete;
 };
 
 
@@ -89,34 +89,34 @@ concept HAS_POSITION = requires(T t)
 
 template<typename T>
 requires HAS_POSITION<T>
-class MeshGroupT : public MeshGroup
+class MeshGroup : public MeshGroupBase
 {
 public:
-	MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
+	MeshGroup(std::shared_ptr<DeviceResources> deviceResources,
 		const std::vector<std::vector<T>>& vertices,
 		const std::vector<std::vector<std::uint16_t>>& indices);
-	MeshGroupT(MeshGroupT&& rhs) noexcept :
-		MeshGroup(std::move(rhs)),
+	MeshGroup(MeshGroup&& rhs) noexcept :
+		MeshGroupBase(std::move(rhs)),
 		m_vertices(std::move(rhs.m_vertices)),
 		m_indices(std::move(rhs.m_indices))
 	{
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 	}
-	MeshGroupT& operator=(MeshGroupT&& rhs) noexcept
+	MeshGroup& operator=(MeshGroup&& rhs) noexcept
 	{
 		// Specifically, see this SO post above calling std::move(rhs) but then proceding to use the rhs object: https://stackoverflow.com/questions/22977230/move-constructors-in-inheritance-hierarchy
 
-		MeshGroup::operator=(std::move(rhs));
+		MeshGroupBase::operator=(std::move(rhs));
 		m_vertices = std::move(rhs.m_vertices);
 		m_indices = std::move(rhs.m_indices);
 		return *this;
 	}
-	virtual ~MeshGroupT() noexcept override { CleanUp(); }
+	virtual ~MeshGroup() noexcept override { CleanUp(); }
 
 private:
 	// There is too much state to worry about copying, so just delete copy operations until we find a good use case
-	MeshGroupT(const MeshGroupT&) noexcept = delete;
-	MeshGroupT& operator=(const MeshGroupT&) noexcept = delete;
+	MeshGroup(const MeshGroup&) noexcept = delete;
+	MeshGroup& operator=(const MeshGroup&) noexcept = delete;
 
 	// System memory copies. 
 	std::vector<T> m_vertices;
@@ -125,10 +125,10 @@ private:
 
 template<typename T>
 requires HAS_POSITION<T>
-MeshGroupT<T>::MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
+MeshGroup<T>::MeshGroup(std::shared_ptr<DeviceResources> deviceResources,
 	const std::vector<std::vector<T>>& vertices,
 	const std::vector<std::vector<std::uint16_t>>& indices) :
-	MeshGroup(deviceResources)
+	MeshGroupBase(deviceResources)
 {
 	using namespace DirectX;
 
@@ -213,25 +213,25 @@ MeshGroupT<T>::MeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
 }
 
 //
-// DynamicMesh ======================================================================================================
+// DynamicMeshBase ======================================================================================================
 //
 // NOTE: For dynamic meshes, we make the simplification that the underlying MeshGroup will ONLY hold a single mesh.
 //       The reason for this is that we have to change the vertex/index buffer view each frame as well as copy data
 //		 from the CPU to GPU each frame which is all made easier by forcing the class to only manage a single Mesh
-class DynamicMeshGroup : public MeshGroup
+class DynamicMeshGroupBase : public MeshGroupBase
 {
 public:
-	DynamicMeshGroup(std::shared_ptr<DeviceResources> deviceResources) : MeshGroup(deviceResources) {}
-	DynamicMeshGroup(DynamicMeshGroup&& rhs) noexcept :
-		MeshGroup(std::move(rhs))
+	DynamicMeshGroupBase(std::shared_ptr<DeviceResources> deviceResources) : MeshGroupBase(deviceResources) {}
+	DynamicMeshGroupBase(DynamicMeshGroupBase&& rhs) noexcept :
+		MeshGroupBase(std::move(rhs))
 	{
 	}
-	DynamicMeshGroup& operator=(DynamicMeshGroup&& rhs) noexcept
+	DynamicMeshGroupBase& operator=(DynamicMeshGroupBase&& rhs) noexcept
 	{
-		MeshGroup::operator=(std::move(rhs));
+		MeshGroupBase::operator=(std::move(rhs));
 		return *this;
 	}
-	virtual ~DynamicMeshGroup() noexcept override {}
+	virtual ~DynamicMeshGroupBase() noexcept override {}
 	inline void Update(int frameIndex) noexcept override
 	{
 		// For dynamic meshes, we keep gNumFrameResources copies of the vertex/index buffer in a single, continuous buffer
@@ -246,23 +246,23 @@ protected:
 
 private:
 	// There is too much state to worry about copying, so just delete copy operations until we find a good use case
-	DynamicMeshGroup(const DynamicMeshGroup&) = delete;
-	DynamicMeshGroup& operator=(const DynamicMeshGroup&) = delete;
+	DynamicMeshGroupBase(const DynamicMeshGroupBase&) = delete;
+	DynamicMeshGroupBase& operator=(const DynamicMeshGroupBase&) = delete;
 };
 
 
 //
-// MeshGroupDynamicT ======================================================================================================
+// DynamicMeshGroup ======================================================================================================
 //
 template<typename T>
-class DynamicMeshGroupT : public DynamicMeshGroup
+class DynamicMeshGroup : public DynamicMeshGroupBase
 {
 public:
 	// NOTE: For Dynamic meshes, we only allow there to be a single mesh - see Note above the DynamicMeshGroup class
-	DynamicMeshGroupT(std::shared_ptr<DeviceResources> deviceResources,
+	DynamicMeshGroup(std::shared_ptr<DeviceResources> deviceResources,
 					  std::vector<T>&& vertices,
 					  std::vector<std::uint16_t>&& indices) :
-		DynamicMeshGroup(deviceResources),
+		DynamicMeshGroupBase(deviceResources),
 		m_vertices(std::move(vertices)),
 		m_indices(std::move(indices))
 	{
@@ -302,8 +302,8 @@ public:
 		m_vertexBufferView.BufferLocation = m_vertexBufferGPU->GetGPUVirtualAddress();
 		m_indexBufferView.BufferLocation = m_indexBufferGPU->GetGPUVirtualAddress();
 	}
-	DynamicMeshGroupT(DynamicMeshGroupT&& rhs) noexcept :
-		DynamicMeshGroup(std::move(rhs)),
+	DynamicMeshGroup(DynamicMeshGroup&& rhs) noexcept :
+		DynamicMeshGroupBase(std::move(rhs)),
 		m_vertices(std::move(rhs.m_vertices)),
 		m_indices(std::move(rhs.m_indices))
 	{
@@ -311,9 +311,9 @@ public:
 		GFX_THROW_INFO(m_vertexBufferGPU->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedVertexData)));
 		GFX_THROW_INFO(m_indexBufferGPU->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedIndexData)));
 	}
-	DynamicMeshGroupT& operator=(DynamicMeshGroupT&& rhs) noexcept
+	DynamicMeshGroup& operator=(DynamicMeshGroup&& rhs) noexcept
 	{
-		DynamicMeshGroup::operator=(std::move(rhs));
+		DynamicMeshGroupBase::operator=(std::move(rhs));
 		m_vertices = std::move(rhs.m_vertices);
 		m_indices = std::move(rhs.m_indices);
 
@@ -323,7 +323,7 @@ public:
 
 		return *this;
 	}
-	virtual ~DynamicMeshGroupT() noexcept override
+	virtual ~DynamicMeshGroup() noexcept override
 	{
 		if (m_vertexBufferGPU != nullptr)
 			m_vertexBufferGPU->Unmap(0, nullptr);
@@ -365,8 +365,8 @@ public:
 
 private:
 	// There is too much state to worry about copying, so just delete copy operations until we find a good use case
-	DynamicMeshGroupT(const DynamicMeshGroupT&) = delete;
-	DynamicMeshGroupT& operator=(const DynamicMeshGroupT&) = delete;
+	DynamicMeshGroup(const DynamicMeshGroup&) = delete;
+	DynamicMeshGroup& operator=(const DynamicMeshGroup&) = delete;
 
 	// System memory copies. 
 	std::vector<T> m_vertices;

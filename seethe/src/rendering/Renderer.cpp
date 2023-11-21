@@ -99,7 +99,7 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 			if (!layer.PreWork(layer, commandList))		// Pre-Work method (example usage: setting stencil value)
 				continue;
 
-			MeshGroup* meshGroup = layer.GetMeshGroup().get();
+			MeshGroupBase* meshGroup = layer.GetMeshGroup().get();
 			meshGroup->Bind(commandList);
 			GFX_THROW_INFO_ONLY(commandList->IASetPrimitiveTopology(layer.GetTopology()));			
 

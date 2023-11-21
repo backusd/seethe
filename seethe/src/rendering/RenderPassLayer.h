@@ -11,7 +11,7 @@ class RenderPassLayer
 {
 public:
 	RenderPassLayer(std::shared_ptr<DeviceResources> deviceResources, 
-					std::shared_ptr<MeshGroup> meshGroup,
+					std::shared_ptr<MeshGroupBase> meshGroup,
 					const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 					D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 					const std::string& name = "Unnamed") :
@@ -75,7 +75,7 @@ public:
 	ND constexpr inline const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND constexpr inline D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
-	ND inline std::shared_ptr<MeshGroup> GetMeshGroup() const noexcept { return m_meshes; }
+	ND inline std::shared_ptr<MeshGroupBase> GetMeshGroup() const noexcept { return m_meshes; }
 	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 	ND constexpr inline bool IsActive() const noexcept { return m_active; }
@@ -98,7 +98,7 @@ private:
 	std::vector<RenderItem>						m_renderItems;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	D3D12_PRIMITIVE_TOPOLOGY					m_topology;
-	std::shared_ptr<MeshGroup>					m_meshes; // shared_ptr because it is possible (if not likely) that different layers will want to reference the same mesh
+	std::shared_ptr<MeshGroupBase>				m_meshes; // shared_ptr because it is possible (if not likely) that different layers will want to reference the same mesh
 	bool										m_active = true;
 
 	// Name (for debug/profiling purposes)
