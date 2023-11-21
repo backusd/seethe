@@ -210,6 +210,9 @@ void Application::InitializeMaterials() noexcept
 		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f });
 		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
 	}
+
+	// The very last material will be used for the box resizing arrow
+	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Magenta), { 0.01f, 0.01f, 0.01f }, 0.5f });
 }
 void Application::SaveMaterials() noexcept
 {

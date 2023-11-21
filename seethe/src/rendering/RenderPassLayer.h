@@ -59,7 +59,10 @@ public:
 	void Update(const Timer& timer, int frameIndex)
 	{
 		for (RenderItem& item : m_renderItems)
-			item.Update(timer, frameIndex);
+		{
+			if (item.IsActive())
+				item.Update(timer, frameIndex);
+		}
 
 		// This is a virtual method that only actually does anything for DynamicMesh
 		m_meshes->Update(frameIndex);

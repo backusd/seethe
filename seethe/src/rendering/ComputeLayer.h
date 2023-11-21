@@ -64,7 +64,10 @@ public:
 	void Update(const Timer& timer, int frameIndex)
 	{
 		for (ComputeItem& item : m_computeItems)
-			item.Update(timer, frameIndex);
+		{
+			if (item.IsActive())
+				item.Update(timer, frameIndex);
+		}
 	}
 
 	constexpr void PushBackComputeItem(ComputeItem&& ci) noexcept { m_computeItems.push_back(std::move(ci)); }

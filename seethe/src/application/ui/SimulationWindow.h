@@ -128,7 +128,7 @@ public:
 		ClearMouseDraggingWallState();
 
 		if (!allow)
-			SetBoxWallTransparencyRenderLayerActive(false);
+			SetBoxWallResizeRenderEffectsActive(false);
 	}
 
 private:
@@ -203,9 +203,13 @@ private:
 		return m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallPosZ ||
 			m_mouseHoveringBoxWallNegX || m_mouseHoveringBoxWallNegY || m_mouseHoveringBoxWallNegZ;
 	}
-	inline void SetBoxWallTransparencyRenderLayerActive(bool active) noexcept
+	inline void SetBoxWallResizeRenderEffectsActive(bool active) noexcept
 	{
+		// Box Wall transparency layer
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(active);
+
+		// Arrow Render Item
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
 	}
 
 	std::shared_ptr<DeviceResources> m_deviceResources;

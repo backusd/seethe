@@ -35,6 +35,9 @@ public:
 	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
 	ND constexpr inline std::vector<RootDescriptorTable>& GetRootDescriptorTables() noexcept { return m_descriptorTables; }
 	ND constexpr inline const std::vector<RootDescriptorTable>& GetRootDescriptorTables() const noexcept { return m_descriptorTables; }
+	
+	ND constexpr inline bool IsActive() const noexcept { return m_active; }
+	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
 
 protected:
 	// 0+ constant buffer views for per-item constants
@@ -42,6 +45,8 @@ protected:
 
 	// 0+ descriptor tables for per-item resources
 	std::vector<RootDescriptorTable> m_descriptorTables;
+
+	bool m_active = true;
 };
 
 
@@ -71,7 +76,7 @@ public:
 
 	ND constexpr inline unsigned int GetSubmeshIndex() const noexcept { return m_submeshIndex; }
 	ND constexpr inline unsigned int GetInstanceCount() const noexcept { return m_instanceCount; }
-	
+
 	constexpr inline void SetSubmeshIndex(unsigned int index) noexcept { m_submeshIndex = index; }
 	constexpr inline void SetInstanceCount(unsigned int count) noexcept { m_instanceCount = count; }
 

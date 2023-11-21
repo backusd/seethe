@@ -118,7 +118,7 @@ void SimulationWindow::InitializeRenderPasses()
 	for (GeometryGenerator::Vertex& v : sphereMesh.Vertices)
 		sphereVertices.push_back({ v.Position, v.Normal });
 
-	GeometryGenerator::MeshData arrowMesh = GeometryGenerator::CreateArrow(0.5f, 0.5f, 1.0f, 2.0f, 1.0f, 20, 20);
+	GeometryGenerator::MeshData arrowMesh = GeometryGenerator::CreateArrow(0.25f, 0.25f, 0.5f, 2.0f, 0.8f, 20, 20);
 	std::vector<Vertex> arrowVertices;
 	arrowVertices.reserve(arrowMesh.Vertices.size());
 	for (GeometryGenerator::Vertex& v : arrowMesh.Vertices)
@@ -200,18 +200,53 @@ void SimulationWindow::InitializeRenderPasses()
 
 	// Arrow
 	RenderItem& arrowRI = layer1.EmplaceBackRenderItem(1);
+	arrowRI.SetActive(false);
 	m_arrowConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
 	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
 	arrowInstanceCBV.Update = [this](const Timer& timer, int frameIndex) 
 		{
 			InstanceData d = {};
-			d.MaterialIndex = 1;
 
-			XMStoreFloat4x4(&d.World,
-				XMMatrixTranspose(
-					XMMatrixScaling(1.0f, 1.0f, 1.0f) * DirectX::XMMatrixTranslation(2.0f, 0.0f, 0.0f)
-				)
-			);
+			// We add an extra material at the end of the atom materials vector so we can use it for the arrow
+			d.MaterialIndex = static_cast<uint32_t>(m_atomMaterials.size()) - 1;
+
+			XMFLOAT3 dims = m_simulation.GetDimensionMaxs(); 
+
+			XMMATRIX pos = XMMatrixIdentity();
+			float scale = 1.0f;
+
+			if (m_mouseHoveringBoxWallPosX || m_mouseDraggingBoxWallPosX)
+			{
+				scale = std::max(dims.y, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(-XM_PIDIV2) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallNegX)
+			{
+				scale = std::max(dims.y, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosY || m_mouseDraggingBoxWallPosY)
+			{
+				scale = std::max(dims.x, dims.z) / 10.0f;
+				pos = XMMatrixTranslation(0.0f, dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallNegY)
+			{
+				scale = std::max(dims.x, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(XM_PI) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosZ || m_mouseDraggingBoxWallPosZ)
+			{
+				scale = std::max(dims.x, dims.y) / 10.0f;
+				pos = XMMatrixRotationX(XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
+			}
+			else if (m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallNegZ)
+			{
+				scale = std::max(dims.x, dims.y) / 10.0f;
+				pos = XMMatrixRotationX(-XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
+			}
+
+			XMStoreFloat4x4(&d.World, XMMatrixTranspose(XMMatrixScaling(scale, scale, scale) * pos)); 
 
 			m_arrowConstantBuffer->CopyData(frameIndex, d);
 		};
@@ -462,7 +497,7 @@ bool SimulationWindow::OnMouseMove(float x, float y) noexcept
 		// If we are allowing the box wall to be resized, its possible the transparency layer
 		// is active because the mouse could have been hovering over a box wall and then exited
 		// the viewport. When this happens, we must make sure the layer is deactivated
-		SetBoxWallTransparencyRenderLayerActive(false);
+		SetBoxWallResizeRenderEffectsActive(false);
 	}
 
 	m_mouseLastPos = { x, y }; // Make sure this gets updated AFTER calling HandleMouseMove() so we don't lose the previous position data
@@ -691,7 +726,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 			else
 			{
 				PickBoxWalls(x, y);
-				SetBoxWallTransparencyRenderLayerActive(MouseIsHoveringWall());
+				SetBoxWallResizeRenderEffectsActive(MouseIsHoveringWall());
 			}
 		}
 

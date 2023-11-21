@@ -484,7 +484,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateArrow(float bottomCylinderR
 	// Compute vertices for each stack ring starting at the bottom and moving up.
 	for (uint32 i = 0; i < ringCount; ++i) 
 	{
-		float y = -0.5f * cylinderHeight + i * stackHeight;
+		float y = i * stackHeight;
 		float r = bottomCylinderRadius + i * radiusStep;
 
 		// vertices of ring
@@ -522,7 +522,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateArrow(float bottomCylinderR
 
 		meshData.Vertices.push_back(
 			{
-				{ headRadius * c, 0.5f * cylinderHeight, headRadius * s },
+				{ headRadius * c, cylinderHeight, headRadius * s },
 				{ headRadius * c, 0.0f, headRadius * s },
 				{},
 				{}
@@ -533,7 +533,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateArrow(float bottomCylinderR
 	// Add the top of the cone vertex
 	meshData.Vertices.push_back( 
 		{
-			{ 0.0f, 0.5f * cylinderHeight + headHeight, 0.0f },
+			{ 0.0f, cylinderHeight + headHeight, 0.0f },
 			{ 0.0f, 1.0f, 0.0f }, {}, {}
 		}
 	);
@@ -541,7 +541,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateArrow(float bottomCylinderR
 	// Add the bottom of the cylinder vertex
 	meshData.Vertices.push_back(
 		{
-			{ 0.0f, -0.5f * cylinderHeight, 0.0f },
+			{ 0.0f, 0.0f, 0.0f },
 			{ 0.0f, -1.0f, 0.0f }, {}, {}
 		}
 	);

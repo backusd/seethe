@@ -105,6 +105,9 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 
 			for (const RenderItem& item : layer.GetRenderItems())
 			{
+				if (!item.IsActive())
+					continue;
+
 				// Tables and CBV's ARE allowed to be empty
 				for (const RootDescriptorTable& table : item.GetRootDescriptorTables())
 				{
@@ -149,6 +152,9 @@ void Renderer::RunComputeLayer(const ComputeLayer& layer, const Timer* timer, in
 	// Iterate over each compute item and call dispatch to submit compute work to the GPU
 	for (const ComputeItem& item : layer.GetComputeItems())
 	{
+		if (!item.IsActive())
+			continue;
+
 		// Tables and CBV's ARE allowed to be empty
 		for (const RootDescriptorTable& table : item.GetRootDescriptorTables())
 		{
