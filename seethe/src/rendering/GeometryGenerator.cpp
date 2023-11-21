@@ -471,6 +471,135 @@ GeometryGenerator::MeshData GeometryGenerator::CreateCylinder(float bottomRadius
 	return meshData;
 }
 
+GeometryGenerator::MeshData GeometryGenerator::CreateArrow(float bottomCylinderRadius, float topCylinderRadius, float headRadius, float cylinderHeight, float headHeight, uint32 sliceCount, uint32 stackCount) noexcept
+{
+	MeshData meshData; 
+
+	float stackHeight = cylinderHeight / stackCount;
+	float radiusStep = (topCylinderRadius - bottomCylinderRadius) / stackCount;
+
+	uint32 ringCount = stackCount + 1; 
+	float dTheta = 2.0f * XM_PI / sliceCount;
+
+	// Compute vertices for each stack ring starting at the bottom and moving up.
+	for (uint32 i = 0; i < ringCount; ++i) 
+	{
+		float y = -0.5f * cylinderHeight + i * stackHeight;
+		float r = bottomCylinderRadius + i * radiusStep;
+
+		// vertices of ring
+		for (uint32 j = 0; j <= sliceCount; ++j)
+		{
+			float c = cosf(j * dTheta);
+			float s = sinf(j * dTheta);
+
+			float dr = bottomCylinderRadius - topCylinderRadius;
+			XMFLOAT3 bitangent(dr * c, -cylinderHeight, dr * s); 
+			XMFLOAT3 tangentU(-s, 0.0f, c); 
+			XMFLOAT3 normal = {};
+
+			XMVECTOR T = XMLoadFloat3(&tangentU); 
+			XMVECTOR B = XMLoadFloat3(&bitangent); 
+			XMVECTOR N = XMVector3Normalize(XMVector3Cross(T, B));
+			XMStoreFloat3(&normal, N);
+
+			meshData.Vertices.push_back(
+				{ 
+					{ r * c, y, r * s }, 
+					normal, 
+					tangentU,
+					{ static_cast<float>(j) / sliceCount, static_cast<float>(i) / stackCount } 
+				}
+			);
+		}
+	}
+
+	// Compute the vertices around the base of the cone head
+	for (uint32 iii = 0; iii <= sliceCount; ++iii)
+	{
+		float c = cosf(iii * dTheta);
+		float s = sinf(iii * dTheta);
+
+		meshData.Vertices.push_back(
+			{
+				{ headRadius * c, 0.5f * cylinderHeight, headRadius * s },
+				{ headRadius * c, 0.0f, headRadius * s },
+				{},
+				{}
+			}
+		);
+	}
+
+	// Add the top of the cone vertex
+	meshData.Vertices.push_back( 
+		{
+			{ 0.0f, 0.5f * cylinderHeight + headHeight, 0.0f },
+			{ 0.0f, 1.0f, 0.0f }, {}, {}
+		}
+	);
+
+	// Add the bottom of the cylinder vertex
+	meshData.Vertices.push_back(
+		{
+			{ 0.0f, -0.5f * cylinderHeight, 0.0f },
+			{ 0.0f, -1.0f, 0.0f }, {}, {}
+		}
+	);
+
+	// Add one because we duplicate the first and last vertex per ring
+	// since the texture coordinates are different.
+	uint32 ringVertexCount = sliceCount + 1; 
+
+	// Compute indices for each stack.
+	for (uint32 i = 0; i < stackCount; ++i) 
+	{
+		for (uint32 j = 0; j < sliceCount; ++j) 
+		{
+			meshData.Indices32.push_back(i * ringVertexCount + j); 
+			meshData.Indices32.push_back((i + 1) * ringVertexCount + j); 
+			meshData.Indices32.push_back((i + 1) * ringVertexCount + j + 1); 
+
+			meshData.Indices32.push_back(i * ringVertexCount + j); 
+			meshData.Indices32.push_back((i + 1) * ringVertexCount + j + 1); 
+			meshData.Indices32.push_back(i * ringVertexCount + j + 1); 
+		}
+	}
+
+	// Compute the indices between the top of the cylinder and the base of the cone
+	uint32 firstVertexInTopCylinderRing = ringCount * sliceCount;
+	for (uint32 iii = 0; iii <= sliceCount; ++iii) 
+	{
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii);
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii + sliceCount);
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii + sliceCount + 1);
+
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii);
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii + sliceCount + 1);
+		meshData.Indices32.push_back(firstVertexInTopCylinderRing + iii + 1);
+	}
+
+	// Compute the indices between the base to top of the cone
+	uint32 topOfConeIndex = static_cast<uint32>(meshData.Vertices.size()) - 2;
+	for (uint32 iii = topOfConeIndex - sliceCount - 1; iii < topOfConeIndex; ++iii)  
+	{
+		meshData.Indices32.push_back(iii);
+		meshData.Indices32.push_back(topOfConeIndex);
+		meshData.Indices32.push_back(iii + 1);
+	}
+
+	// Compute the indices for the bottom of the cylinder
+	uint32 bottomIndex = static_cast<uint32>(meshData.Vertices.size()) - 1;
+	for (uint32 iii = 0; iii < sliceCount; ++iii)
+	{
+		meshData.Indices32.push_back(iii + 1);
+		meshData.Indices32.push_back(bottomIndex);
+		meshData.Indices32.push_back(iii);
+	}
+
+	return meshData;  
+}
+
+
 void GeometryGenerator::BuildCylinderTopCap(float bottomRadius, float topRadius, float height,
 	uint32 sliceCount, uint32 stackCount, MeshData& meshData) noexcept
 {

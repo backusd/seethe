@@ -31,7 +31,6 @@ struct Vertex
 struct SolidColorVertex
 {
 	DirectX::XMFLOAT4 Pos;
-//	DirectX::XMFLOAT4 Color;
 
 	// This method is required because we impose the HAS_POSITION concept on MeshGroupT so that we can compute the bounding box
 	ND inline DirectX::XMFLOAT3 Position() const noexcept { return { Pos.x, Pos.y, Pos.z }; }
@@ -243,6 +242,8 @@ private:
 
 	std::unique_ptr<ConstantBuffer<InstanceData>> m_boxFaceConstantBuffer;
 	std::unique_ptr<ConstantBuffer<Material>> m_boxFaceMaterialsConstantBuffer;
+
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_arrowConstantBuffer;
 
 
 	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };

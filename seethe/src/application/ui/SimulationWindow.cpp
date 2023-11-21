@@ -118,11 +118,19 @@ void SimulationWindow::InitializeRenderPasses()
 	for (GeometryGenerator::Vertex& v : sphereMesh.Vertices)
 		sphereVertices.push_back({ v.Position, v.Normal });
 
+	GeometryGenerator::MeshData arrowMesh = GeometryGenerator::CreateArrow(0.5f, 0.5f, 1.0f, 2.0f, 1.0f, 20, 20);
+	std::vector<Vertex> arrowVertices;
+	arrowVertices.reserve(arrowMesh.Vertices.size());
+	for (GeometryGenerator::Vertex& v : arrowMesh.Vertices)
+		arrowVertices.push_back({ v.Position, v.Normal });
+
 	std::vector<std::vector<Vertex>> vertices;
 	vertices.push_back(std::move(sphereVertices));
+	vertices.push_back(std::move(arrowVertices));
 
 	std::vector<std::vector<std::uint16_t>> indices;
 	indices.push_back(std::move(sphereMesh.GetIndices16()));
+	indices.push_back(std::move(arrowMesh.GetIndices16()));
 
 	m_sphereMeshGroup = std::make_shared<MeshGroupT<Vertex>>(m_deviceResources, vertices, indices);
 
@@ -135,7 +143,7 @@ void SimulationWindow::InitializeRenderPasses()
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	}
+		}
 	);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
@@ -155,8 +163,6 @@ void SimulationWindow::InitializeRenderPasses()
 	psoDesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
 	psoDesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
-
-	//RenderPassLayer layer1(m_deviceResources, meshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, m_sphereMeshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
 	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
@@ -191,19 +197,32 @@ void SimulationWindow::InitializeRenderPasses()
 		};
 
 
+
+	// Arrow
+	RenderItem& arrowRI = layer1.EmplaceBackRenderItem(1);
+	m_arrowConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
+	arrowInstanceCBV.Update = [this](const Timer& timer, int frameIndex) 
+		{
+			InstanceData d = {};
+			d.MaterialIndex = 1;
+
+			XMStoreFloat4x4(&d.World,
+				XMMatrixTranspose(
+					XMMatrixScaling(1.0f, 1.0f, 1.0f) * DirectX::XMMatrixTranslation(2.0f, 0.0f, 0.0f)
+				)
+			);
+
+			m_arrowConstantBuffer->CopyData(frameIndex, d);
+		};
+
+
+
+
+
+
 	// Beginning of Layer #2 (Box Layer) -----------------------------------------------------------------------
 
-//	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-//	std::vector<SolidColorVertex> boxVertices = {
-//		{ { 1.0f, 1.0f, 1.0f, 1.0f }, color },		// 0:  x  y  z
-//		{ { -1.0f, 1.0f, 1.0f, 1.0f }, color },		// 1: -x  y  z
-//		{ { 1.0f, -1.0f, 1.0f, 1.0f }, color },		// 2:  x -y  z
-//		{ { 1.0f, 1.0f, -1.0f, 1.0f }, color },		// 3:  x  y -z
-//		{ { -1.0f, -1.0f, 1.0f, 1.0f }, color },	// 4: -x -y  z
-//		{ { -1.0f, 1.0f, -1.0f, 1.0f }, color },	// 5: -x  y -z
-//		{ { 1.0f, -1.0f, -1.0f, 1.0f }, color },	// 6:  x -y -z
-//		{ { -1.0f, -1.0f, -1.0f, 1.0f }, color }	// 7: -x -y -z
-//	};
 	std::vector<SolidColorVertex> boxVertices = {
 		{ { 1.0f, 1.0f, 1.0f, 1.0f } },		// 0:  x  y  z
 		{ { -1.0f, 1.0f, 1.0f, 1.0f } },	// 1: -x  y  z
@@ -245,9 +264,8 @@ void SimulationWindow::InitializeRenderPasses()
 
 	m_solidInputLayout = std::make_unique<InputLayout>(
 		std::vector<D3D12_INPUT_ELEMENT_DESC>{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-//			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	}
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		}
 	);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC boxDesc;
@@ -303,7 +321,8 @@ void SimulationWindow::InitializeRenderPasses()
 
 	// Beginning of Layer #3 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
 
-	// In this layer we render two of the size walls 
+	// In this layer we render two of the six walls. To do so, we create a wall in the yz-place and rotate/scale/translate it depending on
+	// which wall is being hovered/dragged
 	std::vector<std::vector<SolidColorVertex>> boxFaceVerticesList = {
 		{
 			{ {  0.0f,  1.0f,  1.0f, 1.0f } },	// x  y  z

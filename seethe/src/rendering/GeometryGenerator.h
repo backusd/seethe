@@ -83,6 +83,9 @@ public:
 	///</summary>
 	static MeshData CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount) noexcept;
 
+	static MeshData CreateArrow(float bottomCylinderRadius, float topCylinderRadius, float headRadius, float cylinderHeight, float headHeight, uint32 sliceCount, uint32 stackCount) noexcept;
+
+
 	///<summary>
 	/// Creates an mxn grid in the xz-plane with m rows and n columns, centered
 	/// at the origin with the specified width and depth.

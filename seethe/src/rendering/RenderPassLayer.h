@@ -66,7 +66,7 @@ public:
 	}
 
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }
-	constexpr RenderItem& EmplaceBackRenderItem() noexcept { return m_renderItems.emplace_back(); }
+	constexpr RenderItem& EmplaceBackRenderItem(unsigned int submeshIndex = 0, unsigned int instanceCount = 1) noexcept { return m_renderItems.emplace_back(submeshIndex, instanceCount); }
 
 	ND constexpr inline std::vector<RenderItem>& GetRenderItems() noexcept { return m_renderItems; }
 	ND constexpr inline const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
