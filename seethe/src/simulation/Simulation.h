@@ -50,6 +50,7 @@ public:
 	void Update(const seethe::Timer& timer);
 	
 	ND inline const std::vector<Atom>& GetAtoms() const noexcept { return m_atoms; }
+	ND inline std::vector<Atom>& GetAtoms() noexcept { return m_atoms; }
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX * 2, m_boxMaxY * 2, m_boxMaxZ * 2 }; }
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;

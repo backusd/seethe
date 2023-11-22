@@ -351,7 +351,8 @@ void Application::RenderUI()
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
 
-	static bool editMaterials = true;
+	static bool editAtoms = true;
+	static bool editMaterials = false;
 	static bool editLighting = false;
 	static bool editSimulationSettings = false;
 
@@ -384,6 +385,7 @@ void Application::RenderUI()
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
+				ImGui::MenuItem("Atoms", NULL, &editAtoms);
 				ImGui::MenuItem("Materials", NULL, &editMaterials);
 				ImGui::MenuItem("Lighting", NULL, &editLighting);
 				ImGui::MenuItem("Simulation Settings", NULL, &editSimulationSettings);
@@ -623,6 +625,108 @@ void Application::RenderUI()
 
 	// Right Panel
 	{
+		if (editAtoms)
+		{
+			ImGui::Begin("Atoms");
+
+			std::vector<Atom>& atoms = m_simulation.GetAtoms();
+
+			ImGuiTableFlags tableFlags =
+				ImGuiTableFlags_Resizable |						// Ability to drag vertical bar between columns to resize them
+				//ImGuiTableFlags_Reorderable |					// Ability to drag column headers to reorder them
+				//ImGuiTableFlags_Hideable |					// Ability to right click on the header row and toggle columns on/off
+				ImGuiTableFlags_Sortable |						// Ability to click a column header to sort the entire table on that column
+				//ImGuiTableFlags_SortMulti |					// Ability to hold SHIFT to sort on multiple columns
+				//ImGuiTableFlags_RowBg |						// Alternate row colors
+				ImGuiTableFlags_Borders |						// ???
+				ImGuiTableFlags_BordersV |						// Include vertical borders on left and right side of the table
+				ImGuiTableFlags_BordersInnerV |					// Include vertical borders between columns
+				ImGuiTableFlags_BordersOuterV |					// Include vertical borders on left and right side of the table
+				ImGuiTableFlags_BordersH |						// Include horizontal borders on top and bottom of the table
+				ImGuiTableFlags_BordersInnerH |					// Include horizontal borders between rows
+				ImGuiTableFlags_BordersOuterH |					// Include horizontal borders on top and bottom of the table
+				// ImGuiTableFlags_NoBordersInBody |			// Omit vertical borders in the table body
+				ImGuiTableFlags_NoBordersInBodyUntilResize |	// Omit vertical borders until hovering to resize column width
+				ImGuiTableFlags_ScrollX | 
+				ImGuiTableFlags_ScrollY | 
+				ImGuiTableFlags_SizingFixedFit;
+
+			if (ImGui::BeginTable("atoms_table", 4, tableFlags))
+			{
+				ImGui::TableSetupColumn("ID");
+				ImGui::TableSetupColumn("Atom Type");
+				ImGui::TableSetupColumn("Position");
+				ImGui::TableSetupColumn("Velocity");
+				ImGui::TableSetupScrollFreeze(1, 1); // Freeze the header row and first column when scrolling
+
+				ImGui::TableHeadersRow(); 
+
+				static std::vector<int> selectedAtoms = {};
+				DirectX::XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
+
+				ImGuiListClipper clipper; 
+				clipper.Begin(atoms.size());
+				while (clipper.Step())
+				{
+					for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) 
+					{
+						Atom& atom = atoms[row_n];
+
+						ImGui::TableNextRow(ImGuiTableRowFlags_None);
+
+						ImGui::TableSetColumnIndex(0);
+						auto itr = std::find(selectedAtoms.begin(), selectedAtoms.end(), row_n);
+						bool itemIsSelected = (itr != selectedAtoms.end());
+						if (ImGui::Selectable(std::format("{}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns))
+						{
+							if (ImGui::GetIO().KeyCtrl)
+							{
+								if (itemIsSelected)
+									selectedAtoms.erase(itr);
+								else
+									selectedAtoms.push_back(row_n);
+							}
+							else
+							{
+								selectedAtoms.clear();
+								selectedAtoms.push_back(row_n);
+							}
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%s", AtomNames[static_cast<size_t>(atom.type) - 1]);
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Text("X:");
+						ImGui::SameLine();
+						ImGui::DragFloat("##AtomPositionX", &atom.position.x, 1.0f, -boxDims.x + atom.radius, boxDims.x - atom.radius);
+
+						ImGui::TableSetColumnIndex(3);
+						ImGui::Text("%.3f", atom.radius);
+					}
+				}
+
+				ImGui::EndTable();
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			ImGui::End();
+		}
+
 		if (editMaterials)
 		{
 			ImGui::Begin("Materials");
