@@ -633,42 +633,6 @@ void Application::RenderUI()
 			static std::vector<int> selectedAtoms = {};
 			DirectX::XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
 
-			if (selectedAtoms.size() == 1)
-			{
-				Atom& atom = atoms[selectedAtoms[0]];
-
-				ImGui::Text("X");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomPositionX", &atom.position.x, 0.2f, -boxDims.x + atom.radius, boxDims.x - atom.radius);
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Y");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomPositionY", &atom.position.y, 0.2f, -boxDims.y + atom.radius, boxDims.y - atom.radius);
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Z");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomPositionZ", &atom.position.z, 0.2f, -boxDims.z + atom.radius, boxDims.z - atom.radius);
-
-				ImGui::Text("X");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomVelocityX", &atom.velocity.x, 0.5f, -10.0, 10.0);
-				ImGui::Text("Y");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomVelocityY", &atom.velocity.y, 0.5f, -10.0, 10.0);
-				ImGui::Text("Z");
-				ImGui::SameLine();
-				ImGui::DragFloat("##atomVelocityZ", &atom.velocity.z, 0.5f, -10.0, 10.0);
-			}
-			else if (selectedAtoms.size() > 1)
-			{
-				ImGui::Text("Too many atoms selected");
-			}
-			else
-			{
-				ImGui::Text("Nothing selected");
-			}
-
-
 			ImGuiTableFlags tableFlags =
 				ImGuiTableFlags_Resizable |						// Ability to drag vertical bar between columns to resize them
 				//ImGuiTableFlags_Reorderable |					// Ability to drag column headers to reorder them
@@ -688,11 +652,15 @@ void Application::RenderUI()
 				//ImGuiTableFlags_ScrollX | 
 				ImGuiTableFlags_ScrollY | 
 				ImGuiTableFlags_SizingFixedFit
-				//ImGuiTableFlags_NoHostExtendX
+				//ImGuiTableFlags_NoHostExtendX |
+				//ImGuiTableFlags_NoHostExtendY
 				;
 
+			
 			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, 0.0f));
-			if (ImGui::BeginTable("atoms_table", 4, tableFlags))
+
+			// Force the table height to be half of the available window height
+			if (ImGui::BeginTable("atoms_table", 4, tableFlags, ImVec2(0.0f, ImGui::GetWindowHeight() / 2.0f)))
 			{
 				ImGui::TableSetupColumn("ID");
 				ImGui::TableSetupColumn("Atom Type");
@@ -750,6 +718,65 @@ void Application::RenderUI()
 			ImGui::PopStyleVar();
 
 
+
+
+
+			if (selectedAtoms.size() == 1)
+			{
+				Atom& atom = atoms[selectedAtoms[0]];
+
+				ImGui::Spacing();
+
+				ImGui::Indent();
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Position  X");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##atomPositionX", &atom.position.x, 0.2f, -boxDims.x + atom.radius, boxDims.x - atom.radius);
+				ImGui::Unindent();
+
+				ImGui::Indent(77.0f);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Y");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##atomPositionY", &atom.position.y, 0.2f, -boxDims.y + atom.radius, boxDims.y - atom.radius);
+				ImGui::Unindent(77.0f);
+
+				ImGui::Indent(76.0f);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Z");
+				ImGui::SameLine();
+				ImGui::DragFloat("##atomPositionZ", &atom.position.z, 0.2f, -boxDims.z + atom.radius, boxDims.z - atom.radius);
+				ImGui::Unindent(76.0f);
+
+				ImGui::Spacing();
+
+				ImGui::Indent();
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Velocity  X");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##atomVelocityX", &atom.velocity.x, 0.5f, -10.0, 10.0);
+				ImGui::Unindent();
+
+				ImGui::Indent(77.0f);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Y");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##atomVelocityY", &atom.velocity.y, 0.5f, -10.0, 10.0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Z");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##atomVelocityZ", &atom.velocity.z, 0.5f, -10.0, 10.0);
+				ImGui::Unindent(77.0f);
+				
+			}
+			else if (selectedAtoms.size() > 1)
+			{
+				ImGui::Text("Too many atoms selected");
+			}
+			else
+			{
+				ImGui::Text("Nothing selected");
+			}
 
 
 
