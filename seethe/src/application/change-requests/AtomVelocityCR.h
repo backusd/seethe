@@ -8,7 +8,7 @@ namespace seethe
 class AtomVelocityCR : public ChangeRequest
 {
 public:
-	AtomVelocityCR(const DirectX::XMFLOAT3& initialVelocity, const DirectX::XMFLOAT3 & finalVelocity, unsigned int atomUUID) noexcept :
+	AtomVelocityCR(const DirectX::XMFLOAT3& initialVelocity, const DirectX::XMFLOAT3 & finalVelocity, size_t atomUUID) noexcept :
 		m_velocityInitial(initialVelocity),
 		m_velocityFinal(finalVelocity),
 		m_atomUUID(atomUUID)
@@ -24,6 +24,6 @@ public:
 
 	DirectX::XMFLOAT3 m_velocityInitial;
 	DirectX::XMFLOAT3 m_velocityFinal;
-	unsigned int m_atomUUID;
+	size_t m_atomUUID;
 };
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "utils/Timer.h"
+#include "utils/Log.h"
 
 // Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function
 #pragma push_macro("AddAtom")
@@ -39,10 +40,10 @@ public:
 	DirectX::XMFLOAT3 velocity;
 	float radius;
 	AtomType type;
-	unsigned int uuid;
+	size_t uuid;
 
 private:
-	static unsigned int m_nextUUID;
+	static size_t m_nextUUID;
 };
 
 class Simulation
@@ -55,11 +56,12 @@ public:
 	
 	ND inline const std::vector<Atom>& GetAtoms() const noexcept { return m_atoms; }
 	ND inline std::vector<Atom>& GetAtoms() noexcept { return m_atoms; }
-	ND Atom& GetAtomByUUID(unsigned int uuid);
-	ND const Atom& GetAtomByUUID(unsigned int uuid) const;
+	ND Atom& GetAtomByUUID(size_t uuid);
+	ND const Atom& GetAtomByUUID(size_t uuid) const;
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX * 2, m_boxMaxY * 2, m_boxMaxZ * 2 }; }
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;
+	ND const std::vector<size_t>& GetSelectedAtomIndices() const noexcept { return m_selectedAtomIndices; }
 
 	inline void SetAtoms(const std::vector<Atom>& atoms) noexcept { m_atoms = atoms; }
 	inline void SetAtoms(std::vector<Atom>&& atoms) noexcept { m_atoms = std::move(atoms); }
@@ -71,10 +73,22 @@ public:
 	constexpr void StartPlaying() noexcept { m_isPlaying = true; }
 	constexpr void StopPlaying() noexcept { m_isPlaying = false; }
 
+	inline void SelectAtomByIndex(size_t index) noexcept { m_selectedAtomIndices.push_back(index); }
+	void SelectAtomByUUID(size_t uuid) noexcept;
+	ND inline bool AtomWithUUIDIsSelected(size_t uuid) const noexcept { return m_selectedAtomIndices.cend() != std::find(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), uuid); }
+	inline void ClearSelectedAtoms() noexcept { m_selectedAtomIndices.clear(); }
+	inline void UnselectAtomByIndex(size_t index) noexcept
+	{
+		ASSERT(index < m_selectedAtomIndices.size(), "Index too large");
+		m_selectedAtomIndices.erase(m_selectedAtomIndices.begin() + index); 
+	}
+	void UnselectAtomByUUID(size_t uuid) noexcept;
+
 private:
 	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
 
 	std::vector<Atom> m_atoms = {};
+	std::vector<size_t> m_selectedAtomIndices;
 
 	// Note: the box will have dimensions [-m_boxMax*, m_boxMax*] for each axis
 	float m_boxMaxX = 10.0f;

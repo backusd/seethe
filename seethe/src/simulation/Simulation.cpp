@@ -1,5 +1,4 @@
 #include "Simulation.h"
-#include "utils/Log.h"
 
 using namespace DirectX;
 
@@ -18,7 +17,7 @@ static constexpr std::array<float, AtomTypeCount> AtomicRadii = {
 	1.4f
 };
 
-unsigned int Atom::m_nextUUID = 0;
+size_t Atom::m_nextUUID = 0;
 
 Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity) noexcept :
 	type(_type),
@@ -30,7 +29,7 @@ Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity)
 
 
 
-Atom& Simulation::GetAtomByUUID(unsigned int uuid)
+Atom& Simulation::GetAtomByUUID(size_t uuid)
 {
 	// First do a simple check to see if the atom w/ uuid is at index uuid
 	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid)
@@ -48,7 +47,7 @@ Atom& Simulation::GetAtomByUUID(unsigned int uuid)
 
 	throw std::runtime_error(std::format("Could not find atom with uuid: {}", uuid));
 }
-const Atom& Simulation::GetAtomByUUID(unsigned int uuid) const
+const Atom& Simulation::GetAtomByUUID(size_t uuid) const
 {
 	// First do a simple check to see if the atom w/ uuid is at index uuid
 	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid) 
@@ -210,6 +209,30 @@ float Simulation::GetMaxAxisAlignedDistanceFromOrigin() const noexcept
 	return max;
 }
 
+void Simulation::SelectAtomByUUID(size_t uuid) noexcept
+{
+	if (!AtomWithUUIDIsSelected(uuid))
+	{
+		for (size_t iii = 0; iii < m_atoms.size(); ++iii)
+		{
+			if (m_atoms[iii].uuid == uuid)
+			{
+				m_selectedAtomIndices.push_back(iii);
+				return;
+			}
+		}
 
+		LOG_ERROR("ERROR: Simulation::SelectAtomByUUID failed to find atom with uuid: {}", uuid);
+	}
+}
+void Simulation::UnselectAtomByUUID(size_t uuid) noexcept
+{
+	auto itr = std::find(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), uuid);
+
+	if (itr != m_selectedAtomIndices.cend())
+		m_selectedAtomIndices.erase(itr);
+	else
+		LOG_ERROR("ERROR: Simulation::UnselectAtomByUUID failed to find atom with uuid: {}", uuid);
+}
 
 }

@@ -8,7 +8,7 @@ namespace seethe
 	class AtomPositionCR : public ChangeRequest
 	{
 	public:
-		AtomPositionCR(const DirectX::XMFLOAT3& initialPosition, const DirectX::XMFLOAT3& finalPosition, unsigned int atomUUID) noexcept :
+		AtomPositionCR(const DirectX::XMFLOAT3& initialPosition, const DirectX::XMFLOAT3& finalPosition, size_t atomUUID) noexcept :
 			m_positionInitial(initialPosition),
 			m_positionFinal(finalPosition),
 			m_atomUUID(atomUUID)
@@ -24,6 +24,6 @@ namespace seethe
 
 		DirectX::XMFLOAT3 m_positionInitial;
 		DirectX::XMFLOAT3 m_positionFinal;
-		unsigned int m_atomUUID;
+		size_t m_atomUUID;
 	};
 }

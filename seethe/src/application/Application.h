@@ -39,6 +39,9 @@ struct SimulationSettings
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
 	bool forceSidesToBeEqual = true;
 	bool allowMouseToResizeBoxDimensions = false;
+
+	// Atom details
+	std::vector<unsigned int> selectedAtomUUIDs;
 };
 
 class Application

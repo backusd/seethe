@@ -632,8 +632,8 @@ void Application::RenderUI()
 			ImGui::Begin("Atoms");
 
 			std::vector<Atom>& atoms = m_simulation.GetAtoms();
-			static std::vector<unsigned int> selectedAtoms = {};
 			DirectX::XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
+			const std::vector<size_t>& selectedAtomIndices = m_simulation.GetSelectedAtomIndices();
 
 			ImGuiTableFlags tableFlags =
 				ImGuiTableFlags_Resizable |						// Ability to drag vertical bar between columns to resize them
@@ -674,7 +674,7 @@ void Application::RenderUI()
 
 
 				ImGuiListClipper clipper; 
-				clipper.Begin(atoms.size());
+				clipper.Begin(static_cast<int>(atoms.size()));
 				while (clipper.Step())
 				{
 					for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) 
@@ -685,22 +685,33 @@ void Application::RenderUI()
 
 						ImGui::TableSetColumnIndex(0);
 						ImGui::AlignTextToFramePadding();
-						auto itr = std::find(selectedAtoms.begin(), selectedAtoms.end(), atom.uuid);
-						bool itemIsSelected = (itr != selectedAtoms.end());
+						bool itemIsSelected = m_simulation.AtomWithUUIDIsSelected(atom.uuid);
 						if (ImGui::Selectable(std::format(" {}", atom.uuid).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
 						{
-							if (ImGui::GetIO().KeyCtrl)
+							if (ImGui::GetIO().KeyCtrl) 
 							{
-								if (itemIsSelected)
-									selectedAtoms.erase(itr);
+								if (itemIsSelected) 
+									m_simulation.UnselectAtomByUUID(atom.uuid);
 								else
-									selectedAtoms.push_back(atom.uuid);
+									m_simulation.SelectAtomByUUID(atom.uuid);
 							}
 							else
 							{
-								selectedAtoms.clear();
-								selectedAtoms.push_back(atom.uuid);
+								m_simulation.ClearSelectedAtoms();
+								m_simulation.SelectAtomByUUID(atom.uuid);
 							}
+//							if (ImGui::GetIO().KeyCtrl)
+//							{
+//								if (itemIsSelected)
+//									selectedAtoms.erase(itr);
+//								else
+//									selectedAtoms.push_back(atom.uuid);
+//							}
+//							else
+//							{
+//								selectedAtoms.clear();
+//								selectedAtoms.push_back(atom.uuid);
+//							}
 						}
 
 						ImGui::TableSetColumnIndex(1); 
@@ -723,7 +734,7 @@ void Application::RenderUI()
 
 
 
-			if (selectedAtoms.size() == 1)
+			if (selectedAtomIndices.size() == 1)
 			{
 				static bool positionXSliderIsActive = false;
 				static bool positionYSliderIsActive = false;
@@ -732,7 +743,7 @@ void Application::RenderUI()
 				static bool velocityYSliderIsActive = false;
 				static bool velocityZSliderIsActive = false;
 
-				Atom& atom = atoms[selectedAtoms[0]];
+				Atom& atom = atoms[selectedAtomIndices[0]];
 
 				DirectX::XMFLOAT3 initialPosition = atom.position;
 				DirectX::XMFLOAT3 initialVelocity = atom.velocity;
@@ -747,7 +758,7 @@ void Application::RenderUI()
 								AddUndoCR<AtomVelocityCR>(initialVelocity, atom.velocity, atom.uuid);
 							}
 						}
-						else if (sliderActive)
+						else if (sliderActive) 
 						{
 							sliderActive = false;
 							AtomVelocityCR* cr = static_cast<AtomVelocityCR*>(m_undoStack.top().get());
@@ -827,7 +838,7 @@ void Application::RenderUI()
 				ImGui::Unindent(77.0f);
 				
 			}
-			else if (selectedAtoms.size() > 1)
+			else if (selectedAtomIndices.size() > 1)
 			{
 				ImGui::Text("Too many atoms selected");
 			}
