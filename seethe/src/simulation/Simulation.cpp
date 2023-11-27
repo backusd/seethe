@@ -27,7 +27,47 @@ Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity)
 	uuid(m_nextUUID++)
 {}
 
+void Simulation::RemoveAtomByIndex(size_t index) noexcept
+{
+	ASSERT(index < m_atoms.size(), "Index too large");
 
+	// Remove the index from selected list (if it exists)
+	if (AtomAtIndexIsSelected(index)) 
+		UnselectAtomByIndex(index);
+
+	// Decrement all of the selected indices that lie beyond the atom being removed
+	DecrementSelectedIndicesBeyondIndex(index);
+
+	// Erase the atom
+	m_atoms.erase(m_atoms.begin() + index);
+}
+void Simulation::RemoveAtomByUUID(size_t uuid) noexcept
+{
+	auto itr = std::find_if(m_atoms.cbegin(), m_atoms.cend(),
+		[uuid](const Atom& atom) { return atom.uuid == uuid; });
+
+	if (itr != m_atoms.cend())
+	{
+		if (AtomWithUUIDIsSelected(uuid))
+			UnselectAtomByUUID(uuid);
+
+		DecrementSelectedIndicesBeyondIndex(itr - m_atoms.cbegin());
+
+		m_atoms.erase(itr);
+	}
+	else
+	{
+		LOG_ERROR("ERROR: Simulation::RemoveAtomByUUID failed to find atom with uuid: {}", uuid);
+	}
+}
+void Simulation::DecrementSelectedIndicesBeyondIndex(size_t index) noexcept
+{
+	std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [index](size_t& _index) {
+		if (_index > index)
+			_index -= 1;
+		}
+	);
+}
 
 Atom& Simulation::GetAtomByUUID(size_t uuid)
 {
@@ -227,7 +267,8 @@ void Simulation::SelectAtomByUUID(size_t uuid) noexcept
 }
 void Simulation::UnselectAtomByUUID(size_t uuid) noexcept
 {
-	auto itr = std::find(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), uuid);
+	auto itr = std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), 
+		[this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; });
 
 	if (itr != m_selectedAtomIndices.cend())
 		m_selectedAtomIndices.erase(itr);

@@ -700,18 +700,6 @@ void Application::RenderUI()
 								m_simulation.ClearSelectedAtoms();
 								m_simulation.SelectAtomByUUID(atom.uuid);
 							}
-//							if (ImGui::GetIO().KeyCtrl)
-//							{
-//								if (itemIsSelected)
-//									selectedAtoms.erase(itr);
-//								else
-//									selectedAtoms.push_back(atom.uuid);
-//							}
-//							else
-//							{
-//								selectedAtoms.clear();
-//								selectedAtoms.push_back(atom.uuid);
-//							}
 						}
 
 						ImGui::TableSetColumnIndex(1); 
@@ -836,11 +824,15 @@ void Application::RenderUI()
 				ImGui::DragFloat("##atomVelocityZ", &atom.velocity.z, 0.5f, -10.0, 10.0);
 				CheckVelocitySlider(atom, initialVelocity, velocityZSliderIsActive);
 				ImGui::Unindent(77.0f);
+
 				
 			}
 			else if (selectedAtomIndices.size() > 1)
 			{
 				ImGui::Text("Too many atoms selected");
+
+				Atom& atom = atoms[selectedAtomIndices.back()];
+
 			}
 			else
 			{
