@@ -30,15 +30,19 @@ class Atom
 {
 public:
 	Atom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) noexcept;
-	Atom(const Atom&) noexcept = default;
-	Atom(Atom&&) noexcept = default;
+	Atom(const Atom& rhs) noexcept = default;
 	Atom& operator=(const Atom&) noexcept = default;
+	Atom(Atom&&) noexcept = default;
 	Atom& operator=(Atom&&) noexcept = default;
 
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 velocity;
 	float radius;
 	AtomType type;
+	unsigned int uuid;
+
+private:
+	static unsigned int m_nextUUID;
 };
 
 class Simulation
@@ -51,6 +55,8 @@ public:
 	
 	ND inline const std::vector<Atom>& GetAtoms() const noexcept { return m_atoms; }
 	ND inline std::vector<Atom>& GetAtoms() noexcept { return m_atoms; }
+	ND Atom& GetAtomByUUID(unsigned int uuid);
+	ND const Atom& GetAtomByUUID(unsigned int uuid) const;
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX * 2, m_boxMaxY * 2, m_boxMaxZ * 2 }; }
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;

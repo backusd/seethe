@@ -17,7 +17,7 @@ Renderer::Renderer(std::shared_ptr<DeviceResources> deviceResources,
 	//DirectX::XMStoreFloat3(&pos, up);
 	//m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), at, pos);
 
-	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
+	m_camera.LookAt(DirectX::XMFLOAT3(0.0f, 0.0f, -40.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
 
 void Renderer::Update(const Timer& timer, int frameIndex)

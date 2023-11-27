@@ -2,6 +2,8 @@
 #include "utils/Log.h"
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
+#include "application/change-requests/AtomPositionCR.h"
+#include "application/change-requests/AtomVelocityCR.h"
 #include "application/change-requests/BoxResizeCR.h"
 #include "application/change-requests/SimulationPlayCR.h"
 
@@ -630,7 +632,7 @@ void Application::RenderUI()
 			ImGui::Begin("Atoms");
 
 			std::vector<Atom>& atoms = m_simulation.GetAtoms();
-			static std::vector<int> selectedAtoms = {};
+			static std::vector<unsigned int> selectedAtoms = {};
 			DirectX::XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
 
 			ImGuiTableFlags tableFlags =
@@ -683,21 +685,21 @@ void Application::RenderUI()
 
 						ImGui::TableSetColumnIndex(0);
 						ImGui::AlignTextToFramePadding();
-						auto itr = std::find(selectedAtoms.begin(), selectedAtoms.end(), row_n);
+						auto itr = std::find(selectedAtoms.begin(), selectedAtoms.end(), atom.uuid);
 						bool itemIsSelected = (itr != selectedAtoms.end());
-						if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
+						if (ImGui::Selectable(std::format(" {}", atom.uuid).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
 						{
 							if (ImGui::GetIO().KeyCtrl)
 							{
 								if (itemIsSelected)
 									selectedAtoms.erase(itr);
 								else
-									selectedAtoms.push_back(row_n);
+									selectedAtoms.push_back(atom.uuid);
 							}
 							else
 							{
 								selectedAtoms.clear();
-								selectedAtoms.push_back(row_n);
+								selectedAtoms.push_back(atom.uuid);
 							}
 						}
 
@@ -723,15 +725,65 @@ void Application::RenderUI()
 
 			if (selectedAtoms.size() == 1)
 			{
+				static bool positionXSliderIsActive = false;
+				static bool positionYSliderIsActive = false;
+				static bool positionZSliderIsActive = false;
+				static bool velocityXSliderIsActive = false;
+				static bool velocityYSliderIsActive = false;
+				static bool velocityZSliderIsActive = false;
+
 				Atom& atom = atoms[selectedAtoms[0]];
 
-				ImGui::Spacing();
+				DirectX::XMFLOAT3 initialPosition = atom.position;
+				DirectX::XMFLOAT3 initialVelocity = atom.velocity;
 
+				static auto CheckVelocitySlider = [this](const Atom& atom, const DirectX::XMFLOAT3& initialVelocity, bool& sliderActive)
+					{
+						if (ImGui::IsItemActive())
+						{
+							if (!sliderActive)
+							{
+								sliderActive = true;
+								AddUndoCR<AtomVelocityCR>(initialVelocity, atom.velocity, atom.uuid);
+							}
+						}
+						else if (sliderActive)
+						{
+							sliderActive = false;
+							AtomVelocityCR* cr = static_cast<AtomVelocityCR*>(m_undoStack.top().get());
+							cr->m_velocityFinal = atom.velocity;
+						}
+					};
+				static auto CheckPositionSlider = [this](const Atom& atom, const DirectX::XMFLOAT3& initialPosition, bool& sliderActive)
+					{
+						if (ImGui::IsItemActive()) 
+						{
+							if (!sliderActive) 
+							{
+								sliderActive = true; 
+								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, atom.uuid); 
+							}
+						}
+						else if (sliderActive) 
+						{
+							sliderActive = false; 
+							AtomPositionCR* cr = static_cast<AtomPositionCR*>(m_undoStack.top().get()); 
+							cr->m_positionFinal = atom.position;  
+						}
+					};
+
+				ImGui::Spacing();
+				ImGui::Text("Atom:");
+				ImGui::SameLine();
+				ImGui::Text("%d - %s", atom.uuid, AtomNames[static_cast<size_t>(atom.type) - 1]);
+
+				ImGui::Spacing();
 				ImGui::Indent();
 				ImGui::AlignTextToFramePadding();
 				ImGui::Text("Position  X");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomPositionX", &atom.position.x, 0.2f, -boxDims.x + atom.radius, boxDims.x - atom.radius);
+				CheckPositionSlider(atom, initialPosition, positionXSliderIsActive);
 				ImGui::Unindent();
 
 				ImGui::Indent(77.0f);
@@ -739,6 +791,7 @@ void Application::RenderUI()
 				ImGui::Text("Y");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomPositionY", &atom.position.y, 0.2f, -boxDims.y + atom.radius, boxDims.y - atom.radius);
+				CheckPositionSlider(atom, initialPosition, positionYSliderIsActive);
 				ImGui::Unindent(77.0f);
 
 				ImGui::Indent(76.0f);
@@ -746,6 +799,7 @@ void Application::RenderUI()
 				ImGui::Text("Z");
 				ImGui::SameLine();
 				ImGui::DragFloat("##atomPositionZ", &atom.position.z, 0.2f, -boxDims.z + atom.radius, boxDims.z - atom.radius);
+				CheckPositionSlider(atom, initialPosition, positionZSliderIsActive);
 				ImGui::Unindent(76.0f);
 
 				ImGui::Spacing();
@@ -755,6 +809,7 @@ void Application::RenderUI()
 				ImGui::Text("Velocity  X");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomVelocityX", &atom.velocity.x, 0.5f, -10.0, 10.0);
+				CheckVelocitySlider(atom, initialVelocity, velocityXSliderIsActive);
 				ImGui::Unindent();
 
 				ImGui::Indent(77.0f);
@@ -762,10 +817,13 @@ void Application::RenderUI()
 				ImGui::Text("Y");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomVelocityY", &atom.velocity.y, 0.5f, -10.0, 10.0);
+				CheckVelocitySlider(atom, initialVelocity, velocityYSliderIsActive);
+
 				ImGui::AlignTextToFramePadding();
 				ImGui::Text("Z");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomVelocityZ", &atom.velocity.z, 0.5f, -10.0, 10.0);
+				CheckVelocitySlider(atom, initialVelocity, velocityZSliderIsActive);
 				ImGui::Unindent(77.0f);
 				
 			}

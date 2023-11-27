@@ -79,6 +79,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\application\Application.cpp" />
+    <ClCompile Include="src\application\change-requests\AtomPositionCR.cpp" />
+    <ClCompile Include="src\application\change-requests\AtomVelocityCR.cpp" />
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp" />
     <ClCompile Include="src\application\change-requests\SimulationPlayCR.cpp" />
     <ClCompile Include="src\application\EntryPoint.cpp" />
@@ -112,6 +114,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Users\backu\Downloads\IconsFontAwesome6.h" />
     <ClInclude Include="src\application\Application.h" />
+    <ClInclude Include="src\application\change-requests\AtomPositionCR.h" />
+    <ClInclude Include="src\application\change-requests\AtomVelocityCR.h" />
     <ClInclude Include="src\application\change-requests\BoxResizeCR.h" />
     <ClInclude Include="src\application\change-requests\ChangeRequest.h" />
     <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />

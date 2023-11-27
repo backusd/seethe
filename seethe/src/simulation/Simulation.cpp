@@ -18,12 +18,54 @@ static constexpr std::array<float, AtomTypeCount> AtomicRadii = {
 	1.4f
 };
 
+unsigned int Atom::m_nextUUID = 0;
+
 Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity) noexcept :
 	type(_type),
 	position(_position),
 	velocity(_velocity),
-	radius(AtomicRadii[static_cast<int>(_type) - 1])
+	radius(AtomicRadii[static_cast<int>(_type) - 1]),
+	uuid(m_nextUUID++)
 {}
+
+
+
+Atom& Simulation::GetAtomByUUID(unsigned int uuid)
+{
+	// First do a simple check to see if the atom w/ uuid is at index uuid
+	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid)
+		return m_atoms[uuid];
+
+	// If not, then search for it
+	auto pos = std::find_if(m_atoms.begin(), m_atoms.end(), 
+		[uuid](const Atom& atom) -> bool
+		{
+			return atom.uuid == uuid;
+		});
+
+	if (pos != m_atoms.end())
+		return *pos;
+
+	throw std::runtime_error(std::format("Could not find atom with uuid: {}", uuid));
+}
+const Atom& Simulation::GetAtomByUUID(unsigned int uuid) const
+{
+	// First do a simple check to see if the atom w/ uuid is at index uuid
+	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid) 
+		return m_atoms[uuid]; 
+
+	// If not, then search for it
+	auto pos = std::find_if(m_atoms.cbegin(), m_atoms.cend(), 
+		[uuid](const Atom& atom) -> bool 
+		{
+			return atom.uuid == uuid; 
+		});
+
+	if (pos != m_atoms.cend()) 
+		return *pos;
+
+	throw std::runtime_error(std::format("Could not find atom with uuid: {}", uuid)); 
+}
 
 
 
