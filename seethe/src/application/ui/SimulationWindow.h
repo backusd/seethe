@@ -132,15 +132,10 @@ public:
 			SetBoxWallResizeRenderEffectsActive(false);
 	}
 
-	void NotifyMaterialsChanged()
-	{
-		m_oneTimeUpdateFns.push_back(
-			[this]() 
-			{
-				m_materialsConstantBuffer->CopyData(m_atomMaterials);
-			}
-		);
-	}
+	void NotifyMaterialsChanged() noexcept;
+	void NotifyBoxSizeChanged() noexcept;
+	void NotifyBoxFaceHighlightChanged() noexcept;
+	void NotifySelectedAtomsChanged() noexcept;
 
 private:
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
@@ -256,13 +251,14 @@ private:
 	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_instanceConstantBuffer;
 	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_selectedAtomInstanceConstantBuffer;
 	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_selectedAtomInstanceOutlineConstantBuffer;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_boxConstantBuffer;
 	std::unique_ptr<ConstantBufferMapped<PassConstants>>	m_passConstantsBuffer;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_boxFaceConstantBuffer;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_arrowConstantBuffer;
 
 	// Constant Buffers - Static
-	std::unique_ptr<ConstantBufferStatic<Material>> m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<Material>>		m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxFaceConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_arrowConstantBuffer;
+
 
 
 

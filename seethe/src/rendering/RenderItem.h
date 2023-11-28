@@ -46,7 +46,7 @@ protected:
 	// 0+ descriptor tables for per-item resources
 	std::vector<RootDescriptorTable> m_descriptorTables;
 
-	bool m_active;
+	bool m_active = true;
 };
 
 

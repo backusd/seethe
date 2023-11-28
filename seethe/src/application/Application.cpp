@@ -719,6 +719,8 @@ void Application::RenderUI()
 								m_simulation.ClearSelectedAtoms();
 								m_simulation.SelectAtomByUUID(atom.uuid);
 							}
+
+							SelectedAtomsChanged();
 						}
 
 						ImGui::TableSetColumnIndex(1); 
@@ -1005,6 +1007,9 @@ void Application::RenderUI()
 
 					// Update the simulation
 					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+				
+					// Inform the simulation windows
+					BoxSizeChanged();
 				}
 				if (ImGui::IsItemActive())
 				{
@@ -1036,6 +1041,9 @@ void Application::RenderUI()
 				{
 					// Update the simulation
 					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+				
+					// Inform the simulation windows
+					BoxSizeChanged();
 				}
 				if (ImGui::IsItemActive()) 
 				{

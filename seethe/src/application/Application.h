@@ -116,6 +116,16 @@ private:
 
 		SaveMaterials();
 	}
+	inline void BoxSizeChanged()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifyBoxSizeChanged();
+	}
+	inline void SelectedAtomsChanged()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifySelectedAtomsChanged();
+	}
 
 
 

@@ -188,59 +188,9 @@ void SimulationWindow::InitializeRenderPasses()
 	// Arrow
 	RenderItem& arrowRI = layer1.EmplaceBackRenderItem(1);
 	arrowRI.SetActive(false);
-	m_arrowConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
+
+	m_arrowConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1);	
 	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
-	arrowInstanceCBV.Update = [this](const Timer& timer, int frameIndex) 
-		{
-			InstanceData d = {};
-
-			// We add an extra material at the end of the atom materials vector so we can use it for the arrow
-			d.MaterialIndex = g_arrowMaterialIndex;
-
-			XMFLOAT3 dims = m_simulation.GetDimensionMaxs(); 
-
-			XMMATRIX pos = XMMatrixIdentity();
-			float scale = 1.0f;
-
-			if (m_mouseHoveringBoxWallPosX || m_mouseDraggingBoxWallPosX)
-			{
-				scale = std::max(dims.y, dims.z) / 10.0f;
-				pos = XMMatrixRotationZ(-XM_PIDIV2) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallNegX)
-			{
-				scale = std::max(dims.y, dims.z) / 10.0f;
-				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallPosY || m_mouseDraggingBoxWallPosY)
-			{
-				scale = std::max(dims.x, dims.z) / 10.0f;
-				pos = XMMatrixTranslation(0.0f, dims.y, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallNegY)
-			{
-				scale = std::max(dims.x, dims.z) / 10.0f;
-				pos = XMMatrixRotationZ(XM_PI) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallPosZ || m_mouseDraggingBoxWallPosZ)
-			{
-				scale = std::max(dims.x, dims.y) / 10.0f;
-				pos = XMMatrixRotationX(XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
-			}
-			else if (m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallNegZ)
-			{
-				scale = std::max(dims.x, dims.y) / 10.0f;
-				pos = XMMatrixRotationX(-XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
-			}
-
-			XMStoreFloat4x4(&d.World, XMMatrixTranspose(XMMatrixScaling(scale, scale, scale) * pos)); 
-
-			m_arrowConstantBuffer->CopyData(frameIndex, d);
-		};
-
-
-
-
 
 
 	// Beginning of Layer #2 (Box Layer) -----------------------------------------------------------------------
@@ -309,25 +259,12 @@ void SimulationWindow::InitializeRenderPasses()
 
 	RenderPassLayer& layer2 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxMeshGroup, boxDesc, D3D_PRIMITIVE_TOPOLOGY_LINELIST, "Layer #2");
 
-	m_boxConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
+	// Make the box constant buffer a static buffer because it will rarely need updating
+	m_boxConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1);
+	NotifyBoxSizeChanged();
 
 	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
-	boxCBV.Update = [this](const Timer& timer, int frameIndex)
-		{
-			InstanceData d = {};
-			d.MaterialIndex = g_boxMaterialIndex;
-
-			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
-			DirectX::XMStoreFloat4x4(&d.World,
-				DirectX::XMMatrixTranspose(
-					DirectX::XMMatrixScaling(dims.x, dims.y, dims.z)
-				)
-			);
-
-			m_boxConstantBuffer->CopyData(frameIndex, d);
-		};
-
 
 
 	// Beginning of Layer #3 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
@@ -368,47 +305,12 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxFacesMeshGroup, boxFaceDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, "Layer #3");
 	layer3.SetActive(false);
 
-	m_boxFaceConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
+	m_boxFaceConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 2);
+	NotifyBoxFaceHighlightChanged();
 
 	RenderItem& boxFaceRI = layer3.EmplaceBackRenderItem();
 	boxFaceRI.SetInstanceCount(2);
 	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(0, m_boxFaceConstantBuffer.get());
-	boxFaceCBV.Update = [this](const Timer& timer, int frameIndex) 
-		{
-			uint32_t i = MouseIsDraggingWall() ? g_boxFaceWhenClickedMaterialIndex : g_boxFaceWhenHoveredMaterialIndex;
-			InstanceData d[2] = {};
-			d[0].MaterialIndex = i;
-			d[1].MaterialIndex = i;
-
-			XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
-
-			XMMATRIX pos = XMMatrixIdentity();
-			XMMATRIX neg = XMMatrixIdentity();
-
-			if (m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
-			{
-				pos = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
-				neg = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
-			{
-				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, dims.y, 0.0f);
-				neg = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
-			}
-			else if (m_mouseHoveringBoxWallPosZ || m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
-			{
-				pos = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
-				neg = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
-			}
-
-			XMStoreFloat4x4(&d[0].World, XMMatrixTranspose(pos));
-			XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
-
-			m_boxFaceConstantBuffer->CopyData(frameIndex, d);
-		};
-
-
-
 
 
 	// Beginning of Layer #4 (Stencil Layer for selected atoms) -----------------------------------------------------------------------
@@ -480,8 +382,6 @@ void SimulationWindow::InitializeRenderPasses()
 		{
 			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
 			const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
-
-			m_renderer->GetRenderPass(0).GetRenderPassLayers()[3].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(selectedIndices.size()));
 
 			int iii = 0;
  
@@ -557,8 +457,6 @@ void SimulationWindow::InitializeRenderPasses()
 			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
 			const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
 
-			m_renderer->GetRenderPass(0).GetRenderPassLayers()[4].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(selectedIndices.size()));
-
 			int iii = 0; 
 
 			for (size_t index : selectedIndices) 
@@ -595,7 +493,139 @@ void SimulationWindow::Update(const Timer& timer, int frameIndex)
 	}
 }
 
+void SimulationWindow::NotifyMaterialsChanged() noexcept
+{
+	m_oneTimeUpdateFns.push_back(
+		[this]()
+		{
+			m_materialsConstantBuffer->CopyData(m_atomMaterials);
+		}
+	);
+}
+void SimulationWindow::NotifyBoxSizeChanged() noexcept
+{
+	m_oneTimeUpdateFns.push_back(
+		[this]()
+		{
+			InstanceData d = {};
+			d.MaterialIndex = g_boxMaterialIndex;
 
+			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+			DirectX::XMStoreFloat4x4(&d.World,
+				DirectX::XMMatrixTranspose(
+					DirectX::XMMatrixScaling(dims.x, dims.y, dims.z)
+				)
+			);
+
+			m_boxConstantBuffer->CopyData(d);
+		}
+	);
+}
+void SimulationWindow::NotifyBoxFaceHighlightChanged() noexcept
+{
+	m_oneTimeUpdateFns.push_back(
+		[this]()
+		{
+			// Box Highlighted Walls -----------------------------------------------
+			uint32_t i = MouseIsDraggingWall() ? g_boxFaceWhenClickedMaterialIndex : g_boxFaceWhenHoveredMaterialIndex;
+			InstanceData d[2] = {};
+			d[0].MaterialIndex = i;
+			d[1].MaterialIndex = i;
+
+			XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+
+			XMMATRIX pos = XMMatrixIdentity();
+			XMMATRIX neg = XMMatrixIdentity();
+
+			if (m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
+			{
+				pos = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
+				neg = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
+			{
+				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, dims.y, 0.0f);
+				neg = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosZ || m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
+			{
+				pos = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
+				neg = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
+			}
+
+			XMStoreFloat4x4(&d[0].World, XMMatrixTranspose(pos));
+			XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
+
+			m_boxFaceConstantBuffer->CopyData(d);
+
+
+			// Arrow -----------------------------------------------
+			InstanceData arrowData = {};
+
+			// We add an extra material at the end of the atom materials vector so we can use it for the arrow
+			arrowData.MaterialIndex = g_arrowMaterialIndex; 
+
+			pos = XMMatrixIdentity();
+			float scale = 1.0f; 
+
+			if (m_mouseHoveringBoxWallPosX || m_mouseDraggingBoxWallPosX)
+			{
+				scale = std::max(dims.y, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(-XM_PIDIV2) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallNegX)
+			{
+				scale = std::max(dims.y, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosY || m_mouseDraggingBoxWallPosY)
+			{
+				scale = std::max(dims.x, dims.z) / 10.0f;
+				pos = XMMatrixTranslation(0.0f, dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallNegY)
+			{
+				scale = std::max(dims.x, dims.z) / 10.0f;
+				pos = XMMatrixRotationZ(XM_PI) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
+			}
+			else if (m_mouseHoveringBoxWallPosZ || m_mouseDraggingBoxWallPosZ)
+			{
+				scale = std::max(dims.x, dims.y) / 10.0f;
+				pos = XMMatrixRotationX(XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
+			}
+			else if (m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallNegZ)
+			{
+				scale = std::max(dims.x, dims.y) / 10.0f;
+				pos = XMMatrixRotationX(-XM_PIDIV2) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
+			}
+
+			XMStoreFloat4x4(&arrowData.World, XMMatrixTranspose(XMMatrixScaling(scale, scale, scale) * pos));
+
+			m_arrowConstantBuffer->CopyData(arrowData); 
+		}
+	);
+}
+void SimulationWindow::NotifySelectedAtomsChanged() noexcept
+{
+	const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
+	unsigned int count = static_cast<unsigned int>(selectedIndices.size());
+	std::vector<RenderPassLayer>& pass1Layers = m_renderer->GetRenderPass(0).GetRenderPassLayers();
+
+	// Layer at index 3: Stencil layer that writes to the stencil buffer
+	// Layer at index 4: Outline layer that draws the solid outline around selected atoms
+	if (count == 0)
+	{
+		pass1Layers[3].SetActive(false);
+		pass1Layers[4].SetActive(false);
+	}
+	else
+	{
+		pass1Layers[3].SetActive(true);
+		pass1Layers[4].SetActive(true);
+		pass1Layers[3].GetRenderItems()[0].SetInstanceCount(count);
+		pass1Layers[4].GetRenderItems()[0].SetInstanceCount(count);
+	}
+}
 
 bool SimulationWindow::OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)
 {
@@ -721,6 +751,8 @@ void SimulationWindow::HandleLButtonDown() noexcept
 		{
 			m_boxDimensionsInitial = m_simulation.GetDimensions();
 			m_forceSidesToBeEqualInitial = m_application.GetSimulationSettings().forceSidesToBeEqual;
+
+			NotifyBoxFaceHighlightChanged();
 		}
 	}
 }
@@ -736,6 +768,8 @@ void SimulationWindow::HandleLButtonUp() noexcept
 			m_application.AddUndoCR<BoxResizeCR>(m_boxDimensionsInitial, dims, false, m_forceSidesToBeEqualInitial, false);
 			m_application.GetSimulationSettings().forceSidesToBeEqual = false;
 		}
+
+		NotifyBoxFaceHighlightChanged();
 	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
@@ -880,13 +914,33 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 				m_simulation.SetDimensions(dims, false);
 				m_application.GetSimulationSettings().boxDimensions = dims;
 
+				NotifyBoxSizeChanged();
+				NotifyBoxFaceHighlightChanged(); // Must also call this because the face is changing location
+
 				m_mousePrevX = x;
 				m_mousePrevY = y;
 				return;
 			}
 			else
 			{
+				bool hoveringPosXInitial = m_mouseHoveringBoxWallPosX;
+				bool hoveringPosYInitial = m_mouseHoveringBoxWallPosY;
+				bool hoveringPosZInitial = m_mouseHoveringBoxWallPosZ;
+				bool hoveringNegXInitial = m_mouseHoveringBoxWallNegX;
+				bool hoveringNegYInitial = m_mouseHoveringBoxWallNegY;
+				bool hoveringNegZInitial = m_mouseHoveringBoxWallNegZ;
+
 				PickBoxWalls(x, y);
+
+				if (hoveringPosXInitial != m_mouseHoveringBoxWallPosX ||
+					hoveringPosYInitial != m_mouseHoveringBoxWallPosY ||
+					hoveringPosZInitial != m_mouseHoveringBoxWallPosZ ||
+					hoveringNegXInitial != m_mouseHoveringBoxWallNegX ||
+					hoveringNegYInitial != m_mouseHoveringBoxWallNegY ||
+					hoveringNegZInitial != m_mouseHoveringBoxWallNegZ)
+				{
+					NotifyBoxFaceHighlightChanged();
+				}
 				SetBoxWallResizeRenderEffectsActive(MouseIsHoveringWall());
 			}
 		}

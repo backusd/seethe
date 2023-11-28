@@ -222,11 +222,9 @@ public:
 	}
 	void CopyData(const T& singleElement)
 	{
-		LOG_WARN("{}", "WARNING: I haven't tested ConstantBufferStatic::CopyData(const T& singleElement)");
-
 		// Describe the data we want to copy into the default buffer.
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = static_cast<void*>(&singleElement); 
+		subResourceData.pData = static_cast<const void*>(&singleElement); 
 		subResourceData.RowPitch = sizeof(T); 
 		subResourceData.SlicePitch = subResourceData.RowPitch; 
 
@@ -269,7 +267,7 @@ private:
 				&props,
 				D3D12_HEAP_FLAG_NONE,
 				&desc,
-				D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+				D3D12_RESOURCE_STATE_COMMON, // Can go ahead and put in STATE_COMMON - it will warn if you specify STATE_VERTEX_AND_CONSTANT_BUFFER because it said it will effectively put it in STATE_COMMON regardless
 				nullptr,
 				IID_PPV_ARGS(&m_uploadBuffer)
 			)
