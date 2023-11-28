@@ -564,9 +564,8 @@ void SimulationWindow::InitializeRenderPasses()
 			for (size_t index : selectedIndices) 
 			{
 				const Atom& atom = atoms[index]; 
-
 				const DirectX::XMFLOAT3& p = atom.position; 
-				const float radius = atom.radius + 0.1f; 
+				const float radius = atom.radius + 0.1f; // Increase the radius - this creates the outline effect around the atom
 
 				DirectX::XMStoreFloat4x4(&m_selectedAtomsInstanceOutlineData[iii].World,
 					DirectX::XMMatrixTranspose( 
@@ -574,7 +573,7 @@ void SimulationWindow::InitializeRenderPasses()
 					) 
 				);
 
-				m_selectedAtomsInstanceOutlineData[iii].MaterialIndex = 0;
+				m_selectedAtomsInstanceOutlineData[iii].MaterialIndex = g_selectedAtomOutlineMaterialIndex;
 
 				++iii;
 			}
@@ -585,7 +584,15 @@ void SimulationWindow::InitializeRenderPasses()
 
 void SimulationWindow::Update(const Timer& timer, int frameIndex)
 { 
-	m_renderer->Update(timer, frameIndex); 
+	m_renderer->Update(timer, frameIndex);
+
+	if (m_oneTimeUpdateFns.size() > 0)
+	{
+		for (auto& fn : m_oneTimeUpdateFns)
+			fn();
+
+		m_oneTimeUpdateFns.clear();
+	}
 }
 
 

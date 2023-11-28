@@ -97,6 +97,8 @@ public:
 			m_redoStack.pop();
 	}
 
+	inline void SetMaterial(AtomType atomType, const Material& material) noexcept { m_materials[static_cast<size_t>(atomType) - 1] = material; MaterialChanged(); }
+
 private:
 	void InitializeMaterials() noexcept;
 	void SaveMaterials() noexcept;
@@ -107,6 +109,13 @@ private:
 	void Present();
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
+	inline void MaterialChanged()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifyMaterialsChanged();
+
+		SaveMaterials();
+	}
 
 
 

@@ -2,6 +2,7 @@
 #include "utils/Log.h"
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
+#include "application/change-requests/AtomMaterialCR.h"
 #include "application/change-requests/AtomPositionCR.h"
 #include "application/change-requests/AtomVelocityCR.h"
 #include "application/change-requests/BoxResizeCR.h"
@@ -229,6 +230,10 @@ void Application::InitializeMaterials() noexcept
 	g_boxFaceWhenClickedMaterialIndex = g_boxFaceWhenHoveredMaterialIndex + 1;
 	m_materials.push_back({ { 0.0f, 1.0f, 0.0f, 0.5f }, {}, 0.0f });
 	m_materials.push_back({ { 0.0f, 1.0f, 0.0f, 0.3f }, {}, 0.0f });
+
+	// Selected Atom Outline Material
+	g_selectedAtomOutlineMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
+	m_materials.push_back({ { 1.0f, 0.647f, 0.0f, 1.0f }, {}, 0.0f });
 }
 void Application::SaveMaterials() noexcept
 {
@@ -875,23 +880,40 @@ void Application::RenderUI()
 			static int elementIndex = 0;
 			ImGui::Combo("##MaterialEditElementCombo", &elementIndex, "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0");
 
-			Material& material = m_materials[elementIndex];
+			static bool materialDiffuseSliderIsActive = false;
+			static bool materialFresnelSliderIsActive = false;
+			static bool materialRoughnessSliderIsActive = false;
 
-			auto materialChangedFn = [this]()
+			static auto CheckMaterialSlider = [this](AtomType atomType, const Material& mat, bool& sliderActive)
 				{
-					for (auto& window : m_simulationWindows)
-						window.NotifyMaterialsChanged();
-
-					SaveMaterials();
+					if (ImGui::IsItemActive())
+					{
+						if (!sliderActive)
+						{
+							sliderActive = true;
+							AddUndoCR<AtomMaterialCR>(mat, mat, atomType);
+						}
+						MaterialChanged();
+					}
+					else if (sliderActive)
+					{
+						sliderActive = false;
+						AtomMaterialCR* cr = static_cast<AtomMaterialCR*>(m_undoStack.top().get()); 
+						cr->m_materialFinal = mat;
+					}
 				};
 
-			if (ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview))
-				materialChangedFn();
-			if (ImGui::ColorEdit3("FresnelR0", (float*)&material.FresnelR0, ImGuiColorEditFlags_AlphaPreview))
-				materialChangedFn();
-			if (ImGui::DragFloat("Roughness", &material.Roughness, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-				materialChangedFn();
+			Material& material = m_materials[elementIndex];
+			AtomType type = static_cast<AtomType>(elementIndex + 1);
 
+			ImGui::ColorEdit4("Diffuse Albedo", (float*)&material.DiffuseAlbedo, ImGuiColorEditFlags_AlphaPreview);
+			CheckMaterialSlider(type, material, materialDiffuseSliderIsActive);
+
+			ImGui::ColorEdit3("FresnelR0", (float*)&material.FresnelR0, ImGuiColorEditFlags_AlphaPreview);
+			CheckMaterialSlider(type, material, materialFresnelSliderIsActive);
+
+			ImGui::DragFloat("Roughness", &material.Roughness, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+			CheckMaterialSlider(type, material, materialRoughnessSliderIsActive);
 
 			ImGui::End();
 		}

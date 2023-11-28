@@ -134,7 +134,12 @@ public:
 
 	void NotifyMaterialsChanged()
 	{
-		m_materialsConstantBuffer->CopyData(m_atomMaterials);
+		m_oneTimeUpdateFns.push_back(
+			[this]() 
+			{
+				m_materialsConstantBuffer->CopyData(m_atomMaterials);
+			}
+		);
 	}
 
 private:
@@ -218,6 +223,8 @@ private:
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
 	}
 
+	std::vector<std::function<void()>> m_oneTimeUpdateFns;
+
 	std::shared_ptr<DeviceResources> m_deviceResources;
 	std::unique_ptr<Renderer> m_renderer;
 	D3D12_VIEWPORT m_viewport;
@@ -227,31 +234,37 @@ private:
 
 	std::vector<Material>& m_atomMaterials;
 
+	// Shaders
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
-	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_instanceConstantBuffer;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_selectedAtomInstanceConstantBuffer;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_selectedAtomInstanceOutlineConstantBuffer;
+	std::unique_ptr<Shader> m_solidVS = nullptr;
+	std::unique_ptr<Shader> m_solidPS = nullptr;
 
+	// Input Layouts
+	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
+	std::unique_ptr<InputLayout> m_solidInputLayout = nullptr;
+
+	// Mesh Groups
+	std::shared_ptr<MeshGroup<Vertex>> m_sphereMeshGroup = nullptr;
+
+	// Instance Data
 	std::vector<InstanceData> m_instanceData;
 	std::vector<InstanceData> m_selectedAtomsInstanceData;
 	std::vector<InstanceData> m_selectedAtomsInstanceOutlineData;
 
-	std::shared_ptr<MeshGroup<Vertex>> m_sphereMeshGroup = nullptr;
+	// Constant Buffers - Mapped
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_selectedAtomInstanceConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_selectedAtomInstanceOutlineConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_boxConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<PassConstants>>	m_passConstantsBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_boxFaceConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>>		m_arrowConstantBuffer;
 
-	// Box
-	std::unique_ptr<Shader> m_solidVS = nullptr;
-	std::unique_ptr<Shader> m_solidPS = nullptr;
-	std::unique_ptr<InputLayout> m_solidInputLayout = nullptr;
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_boxConstantBuffer;
-
-	std::unique_ptr<ConstantBufferMapped<PassConstants>> m_passConstantsBuffer;
+	// Constant Buffers - Static
 	std::unique_ptr<ConstantBufferStatic<Material>> m_materialsConstantBuffer;
 
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_boxFaceConstantBuffer;
 
-	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_arrowConstantBuffer;
 
 
 	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };

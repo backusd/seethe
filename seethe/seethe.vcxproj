@@ -79,6 +79,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\application\Application.cpp" />
+    <ClCompile Include="src\application\change-requests\AtomMaterialCR.cpp" />
     <ClCompile Include="src\application\change-requests\AtomPositionCR.cpp" />
     <ClCompile Include="src\application\change-requests\AtomVelocityCR.cpp" />
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="src\application\change-requests\AtomVelocityCR.h" />
     <ClInclude Include="src\application\change-requests\BoxResizeCR.h" />
     <ClInclude Include="src\application\change-requests\ChangeRequest.h" />
+    <ClInclude Include="src\application\change-requests\AtomMaterialCR.h" />
     <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />
     <ClInclude Include="src\rendering\GeometryGenerator.h" />
     <ClInclude Include="src\application\ui\fonts\Fonts.h" />
