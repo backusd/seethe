@@ -64,6 +64,7 @@ public:
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;
 	ND const std::vector<size_t>& GetSelectedAtomIndices() const noexcept { return m_selectedAtomIndices; }
+	ND const DirectX::XMFLOAT3& GetSelectedAtomsCenter() const noexcept { return m_selectedAtomsCenter; }
 
 	inline void SetAtoms(const std::vector<Atom>& atoms) noexcept { m_atoms = atoms; }
 	inline void SetAtoms(std::vector<Atom>&& atoms) noexcept { m_atoms = std::move(atoms); }
@@ -75,15 +76,16 @@ public:
 	constexpr void StartPlaying() noexcept { m_isPlaying = true; }
 	constexpr void StopPlaying() noexcept { m_isPlaying = false; }
 
-	inline void SelectAtomByIndex(size_t index) noexcept { m_selectedAtomIndices.push_back(index); }
+	inline void SelectAtomByIndex(size_t index) noexcept { m_selectedAtomIndices.push_back(index); UpdateSelectedAtomsCenter(); }
 	void SelectAtomByUUID(size_t uuid) noexcept;
 	ND inline bool AtomAtIndexIsSelected(size_t index) const noexcept { return m_selectedAtomIndices.cend() != std::find(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), index); }
 	ND inline bool AtomWithUUIDIsSelected(size_t uuid) const noexcept { return m_selectedAtomIndices.cend() != std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), [this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; }); }
-	inline void ClearSelectedAtoms() noexcept { m_selectedAtomIndices.clear(); }
+	inline void ClearSelectedAtoms() noexcept { m_selectedAtomIndices.clear(); UpdateSelectedAtomsCenter(); }
 	inline void UnselectAtomByIndex(size_t index) noexcept 
 	{
 		ASSERT(index < m_selectedAtomIndices.size(), "Index too large");
 		m_selectedAtomIndices.erase(m_selectedAtomIndices.begin() + index); 
+		UpdateSelectedAtomsCenter();
 	}
 	void UnselectAtomByUUID(size_t uuid) noexcept;
 
@@ -91,9 +93,11 @@ private:
 	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
 	
 	void DecrementSelectedIndicesBeyondIndex(size_t index) noexcept;
+	void UpdateSelectedAtomsCenter() noexcept;
 
 	std::vector<Atom> m_atoms = {};
 	std::vector<size_t> m_selectedAtomIndices;
+	DirectX::XMFLOAT3 m_selectedAtomsCenter = { 0.0f, 0.0f, 0.0f };
 
 	// Note: the box will have dimensions [-m_boxMax*, m_boxMax*] for each axis
 	float m_boxMaxX = 10.0f;

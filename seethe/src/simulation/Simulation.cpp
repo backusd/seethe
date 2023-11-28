@@ -258,6 +258,7 @@ void Simulation::SelectAtomByUUID(size_t uuid) noexcept
 			if (m_atoms[iii].uuid == uuid)
 			{
 				m_selectedAtomIndices.push_back(iii);
+				UpdateSelectedAtomsCenter();
 				return;
 			}
 		}
@@ -271,9 +272,32 @@ void Simulation::UnselectAtomByUUID(size_t uuid) noexcept
 		[this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; });
 
 	if (itr != m_selectedAtomIndices.cend())
+	{
 		m_selectedAtomIndices.erase(itr);
+		UpdateSelectedAtomsCenter();
+	}
 	else
 		LOG_ERROR("ERROR: Simulation::UnselectAtomByUUID failed to find atom with uuid: {}", uuid);
+}
+
+void Simulation::UpdateSelectedAtomsCenter() noexcept
+{
+	m_selectedAtomsCenter = { 0.0f, 0.0f, 0.0f };
+	size_t count = m_selectedAtomIndices.size();
+
+	if (count > 0)
+	{
+		const float factor = 1.0f / count;
+
+		for (size_t iii : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[iii];
+
+			m_selectedAtomsCenter.x += (atom.position.x * factor);
+			m_selectedAtomsCenter.y += (atom.position.y * factor);
+			m_selectedAtomsCenter.z += (atom.position.z * factor);
+		}
+	}
 }
 
 }

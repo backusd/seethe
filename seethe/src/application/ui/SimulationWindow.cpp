@@ -459,11 +459,23 @@ void SimulationWindow::InitializeRenderPasses()
 
 			int iii = 0; 
 
+			XMVECTOR cameraPos = m_renderer->GetCamera().GetPosition();
+
 			for (size_t index : selectedIndices) 
 			{
 				const Atom& atom = atoms[index]; 
 				const DirectX::XMFLOAT3& p = atom.position; 
-				const float radius = atom.radius + 0.1f; // Increase the radius - this creates the outline effect around the atom
+
+				float distance = XMVectorGetX(XMVector3Length(cameraPos - XMLoadFloat3(&p)));
+
+				// Increase the radius - this creates the outline effect around the atom
+				// NOTE: 0.006 was used because this width seems appealing. It could easily be made smaller or larger
+				// NOTE: We use simulation.GetSelectedAtomCenter() and compute an increase to the radius based on the 
+				//		 center of the selected atoms and would therefore not need to compute the distance to every
+				//		 single atom. However, this leads to undesirable results when some atoms are far from the selected
+				//		 atoms center. Atoms close to the camera get a noticably larger outline while atoms further get a
+				//		 very thin outline.
+				const float radius = atom.radius + (0.006f * distance);
 
 				DirectX::XMStoreFloat4x4(&m_selectedAtomsInstanceOutlineData[iii].World,
 					DirectX::XMMatrixTranspose( 
