@@ -17,6 +17,11 @@ static constexpr std::array<float, AtomTypeCount> AtomicRadii = {
 	1.4f
 };
 
+float Atom::RadiusOf(AtomType type) noexcept
+{
+	return AtomicRadii[static_cast<size_t>(type) - 1];
+}
+
 size_t Atom::m_nextUUID = 0;
 
 Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity) noexcept :

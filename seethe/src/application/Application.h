@@ -126,6 +126,11 @@ private:
 		for (auto& window : m_simulationWindows)
 			window.NotifySelectedAtomsChanged();
 	}
+	inline void AtomsAdded()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifyAtomsAdded();
+	}
 
 
 

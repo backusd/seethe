@@ -10,6 +10,8 @@
 
 #include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
 
+using namespace DirectX;
+
 // Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function on Simulation
 #pragma push_macro("AddAtom")
 #undef AddAtom
@@ -26,16 +28,16 @@ Application::Application() :
 
 	InitializeMaterials();
 
-	m_simulation.AddAtom(AtomType::HYDROGEN, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::HELIUM, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::LITHIUM, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f));
-	m_simulation.AddAtom(AtomType::BERYLLIUM, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 1.0f));
-	m_simulation.AddAtom(AtomType::BORON, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::CARBON, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f));
-	m_simulation.AddAtom(AtomType::NITROGEN, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(-1.0f, 0.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::OXYGEN, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::FLOURINE, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(-1.0f, 1.0f, 0.0f));
-	m_simulation.AddAtom(AtomType::NEON, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 1.0f, -1.0f));
+	m_simulation.AddAtom(AtomType::HYDROGEN, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::HELIUM, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::LITHIUM, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
+	m_simulation.AddAtom(AtomType::BERYLLIUM, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 1.0f));
+	m_simulation.AddAtom(AtomType::BORON, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::CARBON, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f));
+	m_simulation.AddAtom(AtomType::NITROGEN, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::OXYGEN, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, -1.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::FLOURINE, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(-1.0f, 1.0f, 0.0f));
+	m_simulation.AddAtom(AtomType::NEON, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, -1.0f));
 
 
 
@@ -202,16 +204,16 @@ void Application::InitializeMaterials() noexcept
 	if (!success)
 	{
 		m_materials.clear();
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f });
-		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::ForestGreen), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::AliceBlue), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Aqua), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Azure), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::BlanchedAlmond), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Chartreuse), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::DarkGoldenrod), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Firebrick), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Moccasin), { 0.02f, 0.02f, 0.02f }, 0.1f });
+		m_materials.push_back({ XMFLOAT4(Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
 	}
 
 	// Now that we have loaded the atoms' materials, we need to create the additional materials that
@@ -219,7 +221,7 @@ void Application::InitializeMaterials() noexcept
 	
 	// Box resizing arrow material
 	g_arrowMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
-	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Magenta), { 0.01f, 0.01f, 0.01f }, 0.5f });
+	m_materials.push_back({ XMFLOAT4(Colors::Magenta), { 0.01f, 0.01f, 0.01f }, 0.5f });
 
 	// Box Material
 	g_boxMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
@@ -376,6 +378,8 @@ void Application::RenderUI()
 	static bool editMaterials = false;
 	static bool editLighting = false;
 	static bool editSimulationSettings = false;
+
+	static const char* elementNames = "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0";
 
 	{
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -637,9 +641,92 @@ void Application::RenderUI()
 		window_flags |= ImGuiWindowFlags_NoCollapse;
 		window_flags |= ImGuiWindowFlags_NoTitleBar;
 
-		ImGui::Begin("Left Panel", nullptr, window_flags);
+		ImGui::Begin("Add", nullptr, window_flags);
 
-		ImGui::Text("Text on the Left");
+		if (ImGui::CollapsingHeader("Add Atom", ImGuiTreeNodeFlags_None))
+		{
+			static int elementIndex = 0;
+			ImGui::Combo("##AddAtomElementCombo", &elementIndex, elementNames);
+
+			static XMFLOAT3 pos = { 0.0f, 0.0f, 0.0f };
+			static XMFLOAT3 vel = { 0.0f, 0.0f, 0.0f };
+
+			AtomType type = static_cast<AtomType>(elementIndex + 1);
+			XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
+			float radius = Atom::RadiusOf(type);
+
+			ImGui::Spacing();
+
+			ImGui::Indent();
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Position  X");
+			ImGui::SameLine(100.0f);
+			ImGui::DragFloat("##addAtomPositionX", &pos.x, 0.2f, -boxDims.x + radius, boxDims.x - radius);
+			ImGui::Unindent();
+
+			ImGui::Indent(77.0f);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Y");
+			ImGui::SameLine(100.0f);
+			ImGui::DragFloat("##addAtomPositionY", &pos.y, 0.2f, -boxDims.y + radius, boxDims.y - radius);
+			ImGui::Unindent(77.0f);
+
+			ImGui::Indent(76.0f);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Z");
+			ImGui::SameLine();
+			ImGui::DragFloat("##addAtomPositionZ", &pos.z, 0.2f, -boxDims.z + radius, boxDims.z - radius);
+			ImGui::Unindent(76.0f);
+
+			ImGui::Spacing();
+
+			ImGui::Indent();
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Velocity  X");
+			ImGui::SameLine(100.0f);
+			ImGui::DragFloat("##addAtomVelocityX", &vel.x, 0.5f, -10.0, 10.0);
+			ImGui::Unindent();
+
+			ImGui::Indent(77.0f);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Y");
+			ImGui::SameLine(100.0f);
+			ImGui::DragFloat("##addAtomVelocityY", &vel.y, 0.5f, -10.0, 10.0);
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Z");
+			ImGui::SameLine(100.0f);
+			ImGui::DragFloat("##addAtomVelocityZ", &vel.z, 0.5f, -10.0, 10.0);
+			ImGui::Unindent(77.0f);
+
+			ImGui::Spacing();
+
+			ImGui::Indent(100.0f);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+			if (ImGui::Button(ICON_ADD " Add Atom##AddAtomButton"))
+			{
+				const Atom& atom = m_simulation.AddAtom(type, pos, vel); 
+				AtomsAdded();
+
+			}
+			ImGui::PopStyleColor();
+			ImGui::Unindent(100.0f);
+
+			ImGui::Spacing();
+			ImGui::Spacing();
+		}
+		if (ImGui::CollapsingHeader("Add Molecule", ImGuiTreeNodeFlags_None))
+		{
+			ImGui::Text("Add Molecule...");
+		}
+		if (ImGui::CollapsingHeader("Add From File", ImGuiTreeNodeFlags_None))
+		{
+			ImGui::Text("Add From File...");
+		}
+		if (ImGui::CollapsingHeader("Download PDB File", ImGuiTreeNodeFlags_None))
+		{
+			ImGui::Text("Download PDB File...");
+		}
 
 		ImGui::End();
 	}
@@ -651,7 +738,7 @@ void Application::RenderUI()
 			ImGui::Begin("Atoms");
 
 			std::vector<Atom>& atoms = m_simulation.GetAtoms();
-			DirectX::XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
+			XMFLOAT3 boxDims = m_simulation.GetDimensionMaxs();
 			const std::vector<size_t>& selectedAtomIndices = m_simulation.GetSelectedAtomIndices();
 
 			ImGuiTableFlags tableFlags =
@@ -754,10 +841,10 @@ void Application::RenderUI()
 
 				Atom& atom = atoms[selectedAtomIndices[0]];
 
-				DirectX::XMFLOAT3 initialPosition = atom.position;
-				DirectX::XMFLOAT3 initialVelocity = atom.velocity;
+				XMFLOAT3 initialPosition = atom.position;
+				XMFLOAT3 initialVelocity = atom.velocity;
 
-				static auto CheckVelocitySlider = [this](const Atom& atom, const DirectX::XMFLOAT3& initialVelocity, bool& sliderActive)
+				static auto CheckVelocitySlider = [this](const Atom& atom, const XMFLOAT3& initialVelocity, bool& sliderActive)
 					{
 						if (ImGui::IsItemActive())
 						{
@@ -774,7 +861,7 @@ void Application::RenderUI()
 							cr->m_velocityFinal = atom.velocity;
 						}
 					};
-				static auto CheckPositionSlider = [this](const Atom& atom, const DirectX::XMFLOAT3& initialPosition, bool& sliderActive)
+				static auto CheckPositionSlider = [this](const Atom& atom, const XMFLOAT3& initialPosition, bool& sliderActive)
 					{
 						if (ImGui::IsItemActive()) 
 						{
@@ -865,13 +952,6 @@ void Application::RenderUI()
 
 
 
-
-
-
-
-
-
-
 			ImGui::End();
 		}
 
@@ -880,7 +960,7 @@ void Application::RenderUI()
 			ImGui::Begin("Materials");
 
 			static int elementIndex = 0;
-			ImGui::Combo("##MaterialEditElementCombo", &elementIndex, "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0");
+			ImGui::Combo("##MaterialEditElementCombo", &elementIndex, elementNames);
 
 			static bool materialDiffuseSliderIsActive = false;
 			static bool materialFresnelSliderIsActive = false;
@@ -972,7 +1052,7 @@ void Application::RenderUI()
 			
 			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &m_simulationSettings.forceSidesToBeEqual))
 			{
-				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
+				XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
 
 				if (m_simulationSettings.forceSidesToBeEqual && (initial.x != initial.y || initial.x != initial.z))
 				{
@@ -999,7 +1079,7 @@ void Application::RenderUI()
 			if (m_simulationSettings.forceSidesToBeEqual)
 			{
 				static bool isActive = false;
-				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions;
+				XMFLOAT3 initial = m_simulationSettings.boxDimensions;
 				if (ImGui::DragFloat("Side Length", &m_simulationSettings.boxDimensions.x, 0.5f, minSideLength, 1000.f, "%.1f"))
 				{
 					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
@@ -1036,7 +1116,7 @@ void Application::RenderUI()
 			else
 			{
 				static bool isActive = false;
-				DirectX::XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
+				XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
 				if (ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f"))
 				{
 					// Update the simulation

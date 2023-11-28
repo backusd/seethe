@@ -18,3 +18,4 @@
 #define ICON_BOX_EDIT				"\xee\xaf\x92"	// U+ebd2
 #define ICON_EDIT_PENCIL			"\xee\x9c\x8f"	// U+e70f
 #define ICON_CANCEL					"\xee\x9c\x91"	// U+e711
+#define ICON_ADD					"\xee\x9c\x90"	// U+e710

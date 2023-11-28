@@ -164,7 +164,8 @@ void SimulationWindow::InitializeRenderPasses()
 		{
 			int iii = 0;
 
-			for (const auto& atom : m_simulation.GetAtoms())
+			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
+			for (const auto& atom : atoms)
 			{
 				const DirectX::XMFLOAT3& p = atom.position;
 				const float radius = atom.radius;
@@ -637,6 +638,16 @@ void SimulationWindow::NotifySelectedAtomsChanged() noexcept
 		pass1Layers[3].GetRenderItems()[0].SetInstanceCount(count);
 		pass1Layers[4].GetRenderItems()[0].SetInstanceCount(count);
 	}
+}
+void SimulationWindow::NotifyAtomsAdded() noexcept
+{
+	// Make sure the instance data vector has enough capacity for the new atoms
+	const std::vector<Atom>& atoms = m_simulation.GetAtoms();
+	if (atoms.size() > m_instanceData.size())
+		m_instanceData.resize(atoms.size());
+
+	// Make sure the sphere render item has the appropriate instance count
+	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
 }
 
 bool SimulationWindow::OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)

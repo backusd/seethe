@@ -36,6 +36,8 @@ public:
 	Atom(Atom&&) noexcept = default;
 	Atom& operator=(Atom&&) noexcept = default;
 
+	ND static float RadiusOf(AtomType type) noexcept;
+
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 velocity;
 	float radius;
@@ -50,7 +52,7 @@ class Simulation
 {
 public:
 	void AddAtom(const Atom& atom) { m_atoms.push_back(atom); }
-	void AddAtom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) { m_atoms.emplace_back(type, position, velocity); }
+	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) noexcept { return m_atoms.emplace_back(type, position, velocity); }
 	void RemoveAtomByIndex(size_t index) noexcept;
 	void RemoveAtomByUUID(size_t uuid) noexcept;
 
