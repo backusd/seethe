@@ -85,7 +85,7 @@ public:
 	SimulationWindow(Application& application,
 		std::shared_ptr<DeviceResources> deviceResources, 
 		Simulation& simulation, std::vector<Material>& materials,
-		float top, float left, float height, float width) noexcept;
+		float top, float left, float height, float width);
 
 	void Update(const Timer& timer, int frameIndex);
 	inline void Render(int frameIndex) { m_renderer->Render(m_simulation, frameIndex); }
@@ -231,8 +231,12 @@ private:
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
 	std::unique_ptr<ConstantBuffer<InstanceData>> m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_selectedAtomInstanceConstantBuffer;
+	std::unique_ptr<ConstantBuffer<InstanceData>> m_selectedAtomInstanceOutlineConstantBuffer;
 
 	std::vector<InstanceData> m_instanceData;
+	std::vector<InstanceData> m_selectedAtomsInstanceData;
+	std::vector<InstanceData> m_selectedAtomsInstanceOutlineData;
 
 	std::shared_ptr<MeshGroup<Vertex>> m_sphereMeshGroup = nullptr;
 

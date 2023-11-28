@@ -10,7 +10,7 @@ namespace seethe
 SimulationWindow::SimulationWindow(Application& application,
 								   std::shared_ptr<DeviceResources> deviceResources, 
 								   Simulation& simulation, std::vector<Material>& materials,
-								   float top, float left, float height, float width) noexcept :
+								   float top, float left, float height, float width) :
 	m_application(application),
 	m_deviceResources(deviceResources),
 	m_viewport{ left, top, width, height, 0.0f, 1.0f },
@@ -444,6 +444,181 @@ void SimulationWindow::InitializeRenderPasses()
 				m_boxFaceMaterialsConstantBuffer->CopyData(frameIndex, m_boxFaceMaterials);
 				--m_boxFaceMaterialsDirtyFlag;
 			}
+		};
+
+
+
+
+
+	// Beginning of Layer #4 (Stencil Layer for selected atoms) -----------------------------------------------------------------------
+
+	std::vector<SolidColorVertex> sphereStencilVertices;
+	sphereStencilVertices.reserve(sphereMesh.Vertices.size());
+	for (GeometryGenerator::Vertex& v : sphereMesh.Vertices)
+		sphereStencilVertices.push_back( {{ v.Position.x, v.Position.y, v.Position.z, 1.0f }} );
+
+	std::vector<std::vector<SolidColorVertex>> stencilVertices;
+	stencilVertices.push_back(std::move(sphereStencilVertices));
+
+	std::vector<std::vector<std::uint16_t>> sphereStencilIndices;
+	sphereStencilIndices.push_back(std::move(sphereMesh.GetIndices16()));
+
+	std::shared_ptr<MeshGroup<SolidColorVertex>> stencilMeshGroup = std::make_shared<MeshGroup<SolidColorVertex>>(m_deviceResources, stencilVertices, sphereStencilIndices);
+
+
+	D3D12_DEPTH_STENCIL_DESC selectedAtomsStencilDesc = {};
+	// Depth
+	selectedAtomsStencilDesc.DepthEnable = false;
+	selectedAtomsStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;	// <-- these don't matter because depth is disabled
+	selectedAtomsStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+
+	// Stencil
+	selectedAtomsStencilDesc.StencilEnable = true;
+	selectedAtomsStencilDesc.StencilReadMask = 0xff;
+	selectedAtomsStencilDesc.StencilWriteMask = 0xff;
+
+	selectedAtomsStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	selectedAtomsStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	selectedAtomsStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	selectedAtomsStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	selectedAtomsStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;		// <-- Don't need to worry about back face for atoms
+	selectedAtomsStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	selectedAtomsStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	selectedAtomsStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC stencilPSODesc;
+	ZeroMemory(&stencilPSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	stencilPSODesc.InputLayout = m_solidInputLayout->GetInputLayoutDesc();
+	stencilPSODesc.pRootSignature = rootSig1->Get(); 
+	stencilPSODesc.VS = m_solidVS->GetShaderByteCode();
+	stencilPSODesc.PS = m_solidPS->GetShaderByteCode();
+	stencilPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	stencilPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	stencilPSODesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
+	stencilPSODesc.DepthStencilState = selectedAtomsStencilDesc;
+	stencilPSODesc.SampleMask = UINT_MAX;
+	stencilPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	stencilPSODesc.NumRenderTargets = 1;
+	stencilPSODesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
+	stencilPSODesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
+	stencilPSODesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	stencilPSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
+
+	RenderPassLayer& layer4 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, stencilPSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #4");
+	layer4.SetStencilRef(1); 
+
+	m_selectedAtomInstanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_selectedAtomsInstanceData = std::vector<InstanceData>(10);
+
+	RenderItem& sphereStencilRI = layer4.EmplaceBackRenderItem();
+	sphereStencilRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size()));
+
+	RootConstantBufferView& sphereStencilInstanceCBV = sphereStencilRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceConstantBuffer.get());
+	sphereStencilInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
+		{
+			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
+			const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
+
+			m_renderer->GetRenderPass(0).GetRenderPassLayers()[3].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(selectedIndices.size()));
+
+			int iii = 0;
+ 
+			for (size_t index : selectedIndices)
+			{
+				const Atom& atom = atoms[index];
+
+				const DirectX::XMFLOAT3& p = atom.position; 
+				const float radius = atom.radius; 
+
+				DirectX::XMStoreFloat4x4(&m_selectedAtomsInstanceData[iii].World,
+					DirectX::XMMatrixTranspose( 
+						DirectX::XMMatrixScaling(radius, radius, radius) * DirectX::XMMatrixTranslation(p.x, p.y, p.z) 
+					)
+				);
+
+				m_selectedAtomsInstanceData[iii].MaterialIndex = 0;
+
+				++iii; 
+			}
+
+			m_selectedAtomInstanceConstantBuffer->CopyData(frameIndex, m_selectedAtomsInstanceData);
+		};
+
+	
+	// Beginning of Layer #5 (Sphere outline for selected atoms) -----------------------------------------------------------------------
+	
+	// re-enable depth testing
+	selectedAtomsStencilDesc.DepthEnable = false;
+	selectedAtomsStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL; 
+	selectedAtomsStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS; 
+
+	selectedAtomsStencilDesc.FrontFace.StencilFailOp		= D3D12_STENCIL_OP_KEEP;
+	selectedAtomsStencilDesc.FrontFace.StencilDepthFailOp	= D3D12_STENCIL_OP_KEEP;
+	selectedAtomsStencilDesc.FrontFace.StencilPassOp		= D3D12_STENCIL_OP_KEEP; 
+	selectedAtomsStencilDesc.FrontFace.StencilFunc			= D3D12_COMPARISON_FUNC_EQUAL;
+
+	selectedAtomsStencilDesc.BackFace.StencilFailOp = selectedAtomsStencilDesc.FrontFace.StencilFailOp;
+	selectedAtomsStencilDesc.BackFace.StencilDepthFailOp = selectedAtomsStencilDesc.FrontFace.StencilDepthFailOp;
+	selectedAtomsStencilDesc.BackFace.StencilPassOp = selectedAtomsStencilDesc.FrontFace.StencilPassOp;
+	selectedAtomsStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
+	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC outlinePSODesc;
+	ZeroMemory(&outlinePSODesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	outlinePSODesc.InputLayout = m_solidInputLayout->GetInputLayoutDesc();
+	outlinePSODesc.pRootSignature = rootSig1->Get();
+	outlinePSODesc.VS = m_solidVS->GetShaderByteCode();
+	outlinePSODesc.PS = m_solidPS->GetShaderByteCode();
+	outlinePSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	outlinePSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	outlinePSODesc.DepthStencilState = selectedAtomsStencilDesc;
+	outlinePSODesc.SampleMask = UINT_MAX;
+	outlinePSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	outlinePSODesc.NumRenderTargets = 1;
+	outlinePSODesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
+	outlinePSODesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
+	outlinePSODesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	outlinePSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
+
+
+	RenderPassLayer& layer5 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, outlinePSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #5");
+	layer5.SetStencilRef(0);
+
+	m_selectedAtomInstanceOutlineConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_selectedAtomsInstanceOutlineData = std::vector<InstanceData>(10);
+
+	RenderItem& sphereOutlineRI = layer5.EmplaceBackRenderItem();
+	sphereOutlineRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size())); 
+
+	RootConstantBufferView& outlineStencilInstanceCBV = sphereOutlineRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceOutlineConstantBuffer.get());
+	outlineStencilInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
+		{
+			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
+			const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
+
+			m_renderer->GetRenderPass(0).GetRenderPassLayers()[4].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(selectedIndices.size()));
+
+			int iii = 0; 
+
+			for (size_t index : selectedIndices) 
+			{
+				const Atom& atom = atoms[index]; 
+
+				const DirectX::XMFLOAT3& p = atom.position; 
+				const float radius = atom.radius + 0.1f; 
+
+				DirectX::XMStoreFloat4x4(&m_selectedAtomsInstanceOutlineData[iii].World,
+					DirectX::XMMatrixTranspose( 
+						DirectX::XMMatrixScaling(radius, radius, radius) * DirectX::XMMatrixTranslation(p.x, p.y, p.z) 
+					) 
+				);
+
+				m_selectedAtomsInstanceOutlineData[iii].MaterialIndex = 0;
+
+				++iii;
+			}
+
+			m_selectedAtomInstanceOutlineConstantBuffer->CopyData(frameIndex, m_selectedAtomsInstanceOutlineData);
 		};
 }
 

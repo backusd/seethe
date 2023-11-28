@@ -93,6 +93,13 @@ void Renderer::Render(const Simulation& simulation, int frameIndex)
 			ASSERT(layer.GetPSO() != nullptr, "Layer has no pipeline state");
 			ASSERT(layer.GetMeshGroup() != nullptr, "Layer has no mesh group");
 
+			// Apply stencil ref (if necessary)
+			std::optional<unsigned int> stencilRef = layer.GetStencilRef();
+			if (stencilRef.has_value())
+			{
+				GFX_THROW_INFO_ONLY(commandList->OMSetStencilRef(stencilRef.value()));
+			}
+
 			// PSO / Pre-Work / MeshGroup / Primitive Topology
 			GFX_THROW_INFO_ONLY(commandList->SetPipelineState(layer.GetPSO()));
 

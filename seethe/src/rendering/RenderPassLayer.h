@@ -19,7 +19,8 @@ public:
 		m_pipelineState(nullptr),
 		m_topology(topology), 
 		m_meshes(meshGroup),
-		m_name(name)
+		m_name(name),
+		m_stencilRef(std::nullopt)
 	{
 		ASSERT(meshGroup != nullptr, "MeshGroup must be set in the constructor");
 		CreatePSO(desc); 
@@ -32,7 +33,8 @@ public:
 		m_pipelineState(rhs.m_pipelineState),
 		m_topology(rhs.m_topology),
 		m_meshes(std::move(rhs.m_meshes)),
-		m_name(std::move(rhs.m_name))
+		m_name(std::move(rhs.m_name)),
+		m_stencilRef(rhs.m_stencilRef)
 	{}
 	RenderPassLayer& operator=(RenderPassLayer&& rhs) noexcept
 	{
@@ -44,6 +46,7 @@ public:
 		m_topology = rhs.m_topology;
 		m_meshes = std::move(rhs.m_meshes);
 		m_name = std::move(rhs.m_name);
+		m_stencilRef = rhs.m_stencilRef;
 		return *this;
 	}
 	~RenderPassLayer() noexcept = default;
@@ -79,9 +82,13 @@ public:
 	ND constexpr inline std::string& GetName() noexcept { return m_name; }
 	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
 	ND constexpr inline bool IsActive() const noexcept { return m_active; }
+	ND constexpr inline std::optional<unsigned int> GetStencilRef() const noexcept { return m_stencilRef; }
 
 	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
 	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
+	
+	constexpr inline void SetStencilRef(unsigned int value) noexcept { m_stencilRef = value; }
+	constexpr inline void SetStencilRef(std::optional<unsigned int> value) noexcept { m_stencilRef = value; }
 
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not make a Draw call for this layer)
@@ -100,6 +107,7 @@ private:
 	D3D12_PRIMITIVE_TOPOLOGY					m_topology;
 	std::shared_ptr<MeshGroupBase>				m_meshes; // shared_ptr because it is possible (if not likely) that different layers will want to reference the same mesh
 	bool										m_active = true;
+	std::optional<unsigned int>					m_stencilRef;
 
 	// Name (for debug/profiling purposes)
 	std::string m_name;
