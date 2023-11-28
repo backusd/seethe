@@ -95,6 +95,7 @@
     <ClCompile Include="src\rendering\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\simulation\Simulation.cpp" />
+    <ClCompile Include="src\utils\Constants.cpp" />
     <ClCompile Include="src\utils\DDSTextureLoader.cpp" />
     <ClCompile Include="src\utils\DxgiInfoManager.cpp" />
     <ClCompile Include="src\utils\Log.cpp" />

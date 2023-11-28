@@ -20,7 +20,8 @@ public:
 		m_topology(topology), 
 		m_meshes(meshGroup),
 		m_name(name),
-		m_stencilRef(std::nullopt)
+		m_stencilRef(std::nullopt),
+		m_active(true)
 	{
 		ASSERT(meshGroup != nullptr, "MeshGroup must be set in the constructor");
 		CreatePSO(desc); 
@@ -34,7 +35,8 @@ public:
 		m_topology(rhs.m_topology),
 		m_meshes(std::move(rhs.m_meshes)),
 		m_name(std::move(rhs.m_name)),
-		m_stencilRef(rhs.m_stencilRef)
+		m_stencilRef(rhs.m_stencilRef),
+		m_active(rhs.m_active)
 	{}
 	RenderPassLayer& operator=(RenderPassLayer&& rhs) noexcept
 	{
@@ -47,6 +49,7 @@ public:
 		m_meshes = std::move(rhs.m_meshes);
 		m_name = std::move(rhs.m_name);
 		m_stencilRef = rhs.m_stencilRef;
+		m_active = rhs.m_active;
 		return *this;
 	}
 	~RenderPassLayer() noexcept = default;
@@ -106,7 +109,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	D3D12_PRIMITIVE_TOPOLOGY					m_topology;
 	std::shared_ptr<MeshGroupBase>				m_meshes; // shared_ptr because it is possible (if not likely) that different layers will want to reference the same mesh
-	bool										m_active = true;
+	bool										m_active;
 	std::optional<unsigned int>					m_stencilRef;
 
 	// Name (for debug/profiling purposes)

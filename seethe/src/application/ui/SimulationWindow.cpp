@@ -2,6 +2,7 @@
 #include "application/Application.h"
 #include "application/change-requests/BoxResizeCR.h"
 #include "rendering/GeometryGenerator.h"
+#include "utils/Constants.h"
 
 using namespace DirectX;
 
@@ -21,17 +22,6 @@ SimulationWindow::SimulationWindow(Application& application,
 {
 	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
 
-	// Create the materials that will be used for the box.
-	// 1. White material for the box lines
-	// 2. Green material for when hovering to resize part of the box (fractional alpha for transparency)
-	// 3. 
-	m_boxMaterials.reserve(1);
-	m_boxMaterials.push_back({ { 1.0f, 1.0f, 1.0f, 1.0f }, {}, 0.0f });
-	
-	m_boxFaceMaterials.reserve(1);
-	m_boxFaceMaterials.push_back({ { 0.0f, 1.0f, 0.0f, 0.5f }, {}, 0.0f });
-	m_boxFaceMaterials.push_back({ { 0.0f, 1.0f, 0.0f, 0.3f }, {}, 0.0f });
-
 	InitializeRenderPasses();
 }
 
@@ -49,7 +39,7 @@ void SimulationWindow::InitializeRenderPasses()
 	std::shared_ptr<RootSignature> rootSig1 = std::make_shared<RootSignature>(m_deviceResources, rootSigDesc);
 	RenderPass& pass1 = m_renderer->EmplaceBackRenderPass(rootSig1, "Render Pass #1");
 
-	m_passConstantsBuffer = std::make_unique<ConstantBuffer<PassConstants>>(m_deviceResources);
+	m_passConstantsBuffer = std::make_unique<ConstantBufferMapped<PassConstants>>(m_deviceResources);
 	RootConstantBufferView& perPassConstantsCBV = pass1.EmplaceBackRootConstantBufferView(2, m_passConstantsBuffer.get());
 	perPassConstantsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
@@ -101,17 +91,12 @@ void SimulationWindow::InitializeRenderPasses()
 			m_passConstantsBuffer->CopyData(frameIndex, passConstants);
 		};
 
-
-	m_materialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
+	// For the materials, we use a static constant buffer. This means we don't use a mapped upload heap and transfer material
+	// data to the GPU every frame. Instead, we only upload material data to the GPU when the material data changes.
+	// NOTE: This also means we don't need to supply the CBV Update lambda because we don't need to update this every frame
+	m_materialsConstantBuffer = std::make_unique<ConstantBufferStatic<Material>>(m_deviceResources, static_cast<unsigned int>(m_atomMaterials.size()));
+	m_materialsConstantBuffer->CopyData(m_atomMaterials);
 	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(1, m_materialsConstantBuffer.get());
-	materialsCBV.Update = [this](const Timer& timer, int frameIndex)
-		{
-			if (m_materialsDirtyFlag > 0)
-			{
-				m_materialsConstantBuffer->CopyData(frameIndex, m_atomMaterials);
-				--m_materialsDirtyFlag;
-			}
-		};
 
 
 	// Beginning of Layer #1 -----------------------------------------------------------------------
@@ -137,8 +122,6 @@ void SimulationWindow::InitializeRenderPasses()
 	indices.push_back(std::move(arrowMesh.GetIndices16()));
 
 	m_sphereMeshGroup = std::make_shared<MeshGroup<Vertex>>(m_deviceResources, vertices, indices);
-
-
 
 	m_phongVSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedVS.cso");
 	m_phongPSInstanced = std::make_unique<Shader>("src/shaders/output/PhongInstancedPS.cso");
@@ -169,7 +152,7 @@ void SimulationWindow::InitializeRenderPasses()
 
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, m_sphereMeshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
 
-	m_instanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_instanceConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 
 	RenderItem& sphereRI = layer1.EmplaceBackRenderItem();
 	sphereRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetAtoms().size()));
@@ -205,14 +188,14 @@ void SimulationWindow::InitializeRenderPasses()
 	// Arrow
 	RenderItem& arrowRI = layer1.EmplaceBackRenderItem(1);
 	arrowRI.SetActive(false);
-	m_arrowConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_arrowConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
 	arrowInstanceCBV.Update = [this](const Timer& timer, int frameIndex) 
 		{
 			InstanceData d = {};
 
 			// We add an extra material at the end of the atom materials vector so we can use it for the arrow
-			d.MaterialIndex = static_cast<uint32_t>(m_atomMaterials.size()) - 1;
+			d.MaterialIndex = g_arrowMaterialIndex;
 
 			XMFLOAT3 dims = m_simulation.GetDimensionMaxs(); 
 
@@ -326,14 +309,14 @@ void SimulationWindow::InitializeRenderPasses()
 
 	RenderPassLayer& layer2 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxMeshGroup, boxDesc, D3D_PRIMITIVE_TOPOLOGY_LINELIST, "Layer #2");
 
-	m_boxConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_boxConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 
 	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 	boxCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			InstanceData d = {};
-			d.MaterialIndex = 0;
+			d.MaterialIndex = g_boxMaterialIndex;
 
 			DirectX::XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
 			DirectX::XMStoreFloat4x4(&d.World,
@@ -343,17 +326,6 @@ void SimulationWindow::InitializeRenderPasses()
 			);
 
 			m_boxConstantBuffer->CopyData(frameIndex, d);
-		};
-
-	m_boxMaterialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
-	RootConstantBufferView& boxMaterialsCBV = boxRI.EmplaceBackRootConstantBufferView(1, m_boxMaterialsConstantBuffer.get());
-	boxMaterialsCBV.Update = [this](const Timer& timer, int frameIndex)
-		{
-			if (m_boxMaterialsDirtyFlag > 0)
-			{
-				m_boxMaterialsConstantBuffer->CopyData(frameIndex, m_boxMaterials);
-				--m_boxMaterialsDirtyFlag;
-			}
 		};
 
 
@@ -396,14 +368,14 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxFacesMeshGroup, boxFaceDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, "Layer #3");
 	layer3.SetActive(false);
 
-	m_boxFaceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_boxFaceConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 
 	RenderItem& boxFaceRI = layer3.EmplaceBackRenderItem();
 	boxFaceRI.SetInstanceCount(2);
 	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(0, m_boxFaceConstantBuffer.get());
 	boxFaceCBV.Update = [this](const Timer& timer, int frameIndex) 
 		{
-			uint32_t i = MouseIsDraggingWall() ? 0 : 1;
+			uint32_t i = MouseIsDraggingWall() ? g_boxFaceWhenClickedMaterialIndex : g_boxFaceWhenHoveredMaterialIndex;
 			InstanceData d[2] = {};
 			d[0].MaterialIndex = i;
 			d[1].MaterialIndex = i;
@@ -433,17 +405,6 @@ void SimulationWindow::InitializeRenderPasses()
 			XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
 
 			m_boxFaceConstantBuffer->CopyData(frameIndex, d);
-		};
-
-	m_boxFaceMaterialsConstantBuffer = std::make_unique<ConstantBuffer<Material>>(m_deviceResources);
-	RootConstantBufferView& boxFaceMaterialsCBV = boxFaceRI.EmplaceBackRootConstantBufferView(1, m_boxFaceMaterialsConstantBuffer.get());
-	boxFaceMaterialsCBV.Update = [this](const Timer& timer, int frameIndex)
-		{
-			if (m_boxFaceMaterialsDirtyFlag > 0)
-			{
-				m_boxFaceMaterialsConstantBuffer->CopyData(frameIndex, m_boxFaceMaterials);
-				--m_boxFaceMaterialsDirtyFlag;
-			}
 		};
 
 
@@ -495,7 +456,7 @@ void SimulationWindow::InitializeRenderPasses()
 	stencilPSODesc.PS = m_solidPS->GetShaderByteCode();
 	stencilPSODesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	stencilPSODesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	stencilPSODesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
+	stencilPSODesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;		// IMPORTANT! Disable color writes to the render target. We just want to update stencil values - nothing more
 	stencilPSODesc.DepthStencilState = selectedAtomsStencilDesc;
 	stencilPSODesc.SampleMask = UINT_MAX;
 	stencilPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -508,7 +469,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPassLayer& layer4 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, stencilPSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #4");
 	layer4.SetStencilRef(1); 
 
-	m_selectedAtomInstanceConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_selectedAtomInstanceConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 	m_selectedAtomsInstanceData = std::vector<InstanceData>(10);
 
 	RenderItem& sphereStencilRI = layer4.EmplaceBackRenderItem();
@@ -584,7 +545,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPassLayer& layer5 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, outlinePSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #5");
 	layer5.SetStencilRef(0);
 
-	m_selectedAtomInstanceOutlineConstantBuffer = std::make_unique<ConstantBuffer<InstanceData>>(m_deviceResources);
+	m_selectedAtomInstanceOutlineConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 	m_selectedAtomsInstanceOutlineData = std::vector<InstanceData>(10);
 
 	RenderItem& sphereOutlineRI = layer5.EmplaceBackRenderItem();

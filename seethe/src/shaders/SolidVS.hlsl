@@ -20,11 +20,6 @@ struct InstanceData
     uint Pad2;
 };
 
-//cbuffer cbPerObject : register(b0)
-//{
-//    float4x4 gWorld;
-//};
-
 cbuffer cbInstanceData : register(b0)
 {
     InstanceData gInstanceDataArray[MAX_INSTANCES];

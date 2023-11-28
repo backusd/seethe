@@ -19,7 +19,8 @@ public:
 		m_deviceResources(deviceResources),
 		m_rootSignature(rootSig),
 		m_pipelineState(nullptr),
-		m_name(name)
+		m_name(name),
+		m_active(true)
 	{
 		ASSERT(m_rootSignature != nullptr, "Root Signature should not be nullptr");
 		CreatePSO(desc);
@@ -31,7 +32,8 @@ public:
 		m_deviceResources(deviceResources),
 		m_rootSignature(nullptr),
 		m_pipelineState(nullptr),
-		m_name(name)
+		m_name(name),
+		m_active(true)
 	{
 		m_rootSignature = std::make_shared<RootSignature>(m_deviceResources, rootSigDesc);
 		CreatePSO(computePSODesc);
@@ -42,7 +44,8 @@ public:
 		PostWork(std::move(rhs.PostWork)),
 		m_computeItems(std::move(rhs.m_computeItems)),
 		m_pipelineState(rhs.m_pipelineState),
-		m_name(std::move(rhs.m_name))
+		m_name(std::move(rhs.m_name)),
+		m_active(rhs.m_active)
 	{}
 	ComputeLayer& operator=(ComputeLayer&& rhs) noexcept
 	{
@@ -52,6 +55,7 @@ public:
 		m_computeItems = std::move(rhs.m_computeItems);
 		m_pipelineState = rhs.m_pipelineState;
 		m_name = std::move(rhs.m_name);
+		m_active = rhs.m_active;
 		return *this;
 	}
 	~ComputeLayer() noexcept = default;
@@ -105,7 +109,7 @@ private:
 	std::shared_ptr<RootSignature>				m_rootSignature;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	std::vector<ComputeItem>					m_computeItems;
-	bool										m_active = true;
+	bool										m_active;
 
 	// Name (for debug/profiling purposes)
 	std::string m_name;

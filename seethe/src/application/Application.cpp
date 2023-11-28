@@ -213,8 +213,22 @@ void Application::InitializeMaterials() noexcept
 		m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Thistle), { 0.02f, 0.02f, 0.02f }, 0.1f });
 	}
 
-	// The very last material will be used for the box resizing arrow
+	// Now that we have loaded the atoms' materials, we need to create the additional materials that
+	// will be used in the scene
+	
+	// Box resizing arrow material
+	g_arrowMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
 	m_materials.push_back({ DirectX::XMFLOAT4(DirectX::Colors::Magenta), { 0.01f, 0.01f, 0.01f }, 0.5f });
+
+	// Box Material
+	g_boxMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
+	m_materials.push_back({ { 1.0f, 1.0f, 1.0f, 1.0f }, {}, 0.0f });
+
+	// Box face material when highlighted
+	g_boxFaceWhenHoveredMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
+	g_boxFaceWhenClickedMaterialIndex = g_boxFaceWhenHoveredMaterialIndex + 1;
+	m_materials.push_back({ { 0.0f, 1.0f, 0.0f, 0.5f }, {}, 0.0f });
+	m_materials.push_back({ { 0.0f, 1.0f, 0.0f, 0.3f }, {}, 0.0f });
 }
 void Application::SaveMaterials() noexcept
 {
@@ -866,7 +880,7 @@ void Application::RenderUI()
 			auto materialChangedFn = [this]()
 				{
 					for (auto& window : m_simulationWindows)
-						window.SetMaterialsDirtyFlag();
+						window.NotifyMaterialsChanged();
 
 					SaveMaterials();
 				};

@@ -46,7 +46,7 @@ protected:
 	// 0+ descriptor tables for per-item resources
 	std::vector<RootDescriptorTable> m_descriptorTables;
 
-	bool m_active = true;
+	bool m_active;
 };
 
 
@@ -60,7 +60,9 @@ public:
 	constexpr RenderItem(unsigned int submeshIndex = 0, unsigned int instanceCount = 1) noexcept : 
 		m_submeshIndex(submeshIndex),
 		m_instanceCount(instanceCount)
-	{}
+	{
+		m_active = true;
+	}
 	constexpr RenderItem(RenderItem&& rhs) noexcept : 
 		RenderComputeItemBase(std::move(rhs)), 
 		m_submeshIndex(rhs.m_submeshIndex),

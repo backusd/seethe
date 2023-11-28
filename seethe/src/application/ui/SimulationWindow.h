@@ -122,8 +122,6 @@ public:
 	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
 	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
 
-	constexpr inline void SetMaterialsDirtyFlag() noexcept { m_materialsDirtyFlag = g_numFrameResources; }
-
 	constexpr inline void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept
 	{ 
 		m_allowMouseToResizeBoxDimensions = allow; 
@@ -132,6 +130,11 @@ public:
 
 		if (!allow)
 			SetBoxWallResizeRenderEffectsActive(false);
+	}
+
+	void NotifyMaterialsChanged()
+	{
+		m_materialsConstantBuffer->CopyData(m_atomMaterials);
 	}
 
 private:
@@ -223,16 +226,13 @@ private:
 	Application& m_application;
 
 	std::vector<Material>& m_atomMaterials;
-	unsigned int m_materialsDirtyFlag = g_numFrameResources;
-	unsigned int m_boxMaterialsDirtyFlag = g_numFrameResources;
-	unsigned int m_boxFaceMaterialsDirtyFlag = g_numFrameResources;
 
 	std::unique_ptr<Shader> m_phongVSInstanced = nullptr;
 	std::unique_ptr<Shader> m_phongPSInstanced = nullptr;
 	std::unique_ptr<InputLayout> m_inputLayoutInstanced = nullptr;
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_instanceConstantBuffer;
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_selectedAtomInstanceConstantBuffer;
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_selectedAtomInstanceOutlineConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_instanceConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_selectedAtomInstanceConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_selectedAtomInstanceOutlineConstantBuffer;
 
 	std::vector<InstanceData> m_instanceData;
 	std::vector<InstanceData> m_selectedAtomsInstanceData;
@@ -244,18 +244,14 @@ private:
 	std::unique_ptr<Shader> m_solidVS = nullptr;
 	std::unique_ptr<Shader> m_solidPS = nullptr;
 	std::unique_ptr<InputLayout> m_solidInputLayout = nullptr;
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_boxConstantBuffer;
-	std::vector<Material> m_boxMaterials;
-	std::vector<Material> m_boxFaceMaterials;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_boxConstantBuffer;
 
-	std::unique_ptr<ConstantBuffer<PassConstants>> m_passConstantsBuffer;
-	std::unique_ptr<ConstantBuffer<Material>> m_materialsConstantBuffer;
-	std::unique_ptr<ConstantBuffer<Material>> m_boxMaterialsConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<PassConstants>> m_passConstantsBuffer;
+	std::unique_ptr<ConstantBufferStatic<Material>> m_materialsConstantBuffer;
 
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_boxFaceConstantBuffer;
-	std::unique_ptr<ConstantBuffer<Material>> m_boxFaceMaterialsConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_boxFaceConstantBuffer;
 
-	std::unique_ptr<ConstantBuffer<InstanceData>> m_arrowConstantBuffer;
+	std::unique_ptr<ConstantBufferMapped<InstanceData>> m_arrowConstantBuffer;
 
 
 	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
