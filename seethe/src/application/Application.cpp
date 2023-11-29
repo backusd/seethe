@@ -2,6 +2,7 @@
 #include "utils/Log.h"
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
+#include "application/change-requests/AddAtomCR.h"
 #include "application/change-requests/AtomMaterialCR.h"
 #include "application/change-requests/AtomPositionCR.h"
 #include "application/change-requests/AtomVelocityCR.h"
@@ -705,9 +706,19 @@ void Application::RenderUI()
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
 			if (ImGui::Button(ICON_ADD " Add Atom##AddAtomButton"))
 			{
+				// Create the new atom
 				const Atom& atom = m_simulation.AddAtom(type, pos, vel); 
+
+				// Inform the main simulation window
 				AtomsAdded();
 
+				// Create the Undo Change Request
+				AddUndoCR<AddAtomCR>(atom.uuid);
+
+				// Make the atom the only selected atom
+				m_simulation.ClearSelectedAtoms();
+				m_simulation.SelectAtomByUUID(atom.uuid);
+				SelectedAtomsChanged();
 			}
 			ImGui::PopStyleColor();
 			ImGui::Unindent(100.0f);

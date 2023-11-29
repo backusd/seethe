@@ -648,7 +648,21 @@ void SimulationWindow::NotifyAtomsAdded() noexcept
 
 	// Make sure the sphere render item has the appropriate instance count
 	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
+
+	// It is possible that the atom that was added via a Redo action, in which case, the atom will be selected.
+	// Therefore, to be safe, we want to make sure out selected atoms layer is up to date
+	NotifySelectedAtomsChanged(); 
 }
+void SimulationWindow::NotifyAtomsRemoved() noexcept
+{
+	// Make sure the sphere render item has the appropriate instance count
+	const std::vector<Atom>& atoms = m_simulation.GetAtoms();
+	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
+
+	// It is possible that the atom that was removed was selected, so to be safe, update the selected atoms layer
+	NotifySelectedAtomsChanged();
+}
+
 
 bool SimulationWindow::OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)
 {

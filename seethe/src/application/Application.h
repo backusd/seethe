@@ -99,6 +99,18 @@ public:
 
 	inline void SetMaterial(AtomType atomType, const Material& material) noexcept { m_materials[static_cast<size_t>(atomType) - 1] = material; MaterialChanged(); }
 
+
+	inline void AtomsAdded()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifyAtomsAdded();
+	}
+	inline void AtomsRemoved()
+	{
+		for (auto& window : m_simulationWindows)
+			window.NotifyAtomsRemoved();
+	}
+
 private:
 	void InitializeMaterials() noexcept;
 	void SaveMaterials() noexcept;
@@ -126,11 +138,7 @@ private:
 		for (auto& window : m_simulationWindows)
 			window.NotifySelectedAtomsChanged();
 	}
-	inline void AtomsAdded()
-	{
-		for (auto& window : m_simulationWindows)
-			window.NotifyAtomsAdded();
-	}
+
 
 
 

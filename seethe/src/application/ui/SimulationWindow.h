@@ -137,6 +137,7 @@ public:
 	void NotifyBoxFaceHighlightChanged() noexcept;
 	void NotifySelectedAtomsChanged() noexcept;
 	void NotifyAtomsAdded() noexcept;
+	void NotifyAtomsRemoved() noexcept;
 
 private:
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
