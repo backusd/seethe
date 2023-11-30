@@ -66,7 +66,7 @@ Application::Application() :
 	
 
 	// Must intialize the simulation windows AFTER the command list has been reset
-	m_simulationWindows.emplace_back(*this, m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+	m_mainSimulationWindow = std::make_unique<SimulationWindow>(*this, m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 
 
 
@@ -364,9 +364,7 @@ void Application::Update()
 
 
 	m_simulation.Update(m_timer);
-
-	for (auto& simulationWindow : m_simulationWindows)
-		simulationWindow.Update(m_timer, m_currentFrameIndex);
+	m_mainSimulationWindow->Update(m_timer, m_currentFrameIndex);
 }
 void Application::RenderUI()
 {
@@ -525,8 +523,7 @@ void Application::RenderUI()
 		if (ImGui::Button(ICON_BOX_EDIT))
 		{
 			m_simulationSettings.allowMouseToResizeBoxDimensions = !m_simulationSettings.allowMouseToResizeBoxDimensions;
-			for (auto& window : m_simulationWindows)
-				window.SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
 		}
 		ImGui::SetItemTooltip("Allow Mouse to Resize Simulation Box");
 
@@ -1053,8 +1050,7 @@ void Application::RenderUI()
 			ImGui::SeparatorText("Simulation Box");
 			if (ImGui::Checkbox("Allow Mouse to Resize Box", &m_simulationSettings.allowMouseToResizeBoxDimensions))
 			{
-				for (auto& window : m_simulationWindows)
-					window.SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+				m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
 			}
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 
@@ -1181,7 +1177,7 @@ void Application::RenderUI()
 		bool open = ImGui::Begin("Viewport", nullptr, window_flags);
 		ASSERT(open, "Viewport window should never be closed");
 		ImVec2 pos = ImGui::GetWindowPos();
-		m_simulationWindows[0].SetWindow(pos.y, pos.x, ImGui::GetWindowHeight(), ImGui::GetWindowWidth());
+		m_mainSimulationWindow->SetWindow(pos.y, pos.x, ImGui::GetWindowHeight(), ImGui::GetWindowWidth());
 
 		ImGui::End();
 	}
@@ -1224,8 +1220,7 @@ void Application::Render()
 	//////
 	// RENDER STUFF HERE (on top of UI ??)
 	//////
-	for (auto& simulationWindow : m_simulationWindows) 
-		simulationWindow.Render(m_currentFrameIndex);
+	m_mainSimulationWindow->Render(m_currentFrameIndex);
 
 
 	// Indicate a state transition on the resource usage.
@@ -1272,25 +1267,34 @@ void Application::ForwardMessageToWindows(std::function<bool(SimulationWindow*)>
 		if (fn(m_simulationWindowSelected.value()))
 			return;
 
-		for (SimulationWindow& window : m_simulationWindows)
-		{
-			if (m_simulationWindowSelected.value() != &window && fn(&window))
-			{
-				m_simulationWindowSelected = &window;
-				return;
-			}
-		}
+		// Once we have other windows, you will need to attempt to pass the message to other windows 
+		// and see if any handle it
+		
+//		for (SimulationWindow& window : m_simulationWindows)
+//		{
+//			if (m_simulationWindowSelected.value() != &window && fn(&window))
+//			{
+//				m_simulationWindowSelected = &window;
+//				return;
+//			}
+//		}
 	}
 	else
 	{
-		for (SimulationWindow& window : m_simulationWindows)
-		{
-			if (fn(&window))
-			{
-				m_simulationWindowSelected = &window;
-				return;
-			}
-		}
+		// Ideally we would just loop here and check if any windows want to handle the message. However, 
+		// we only have a single window, so we can just check that for now
+
+		if (fn(m_mainSimulationWindow.get()))
+			m_simulationWindowSelected = m_mainSimulationWindow.get();
+
+//		for (SimulationWindow& window : m_simulationWindows)
+//		{
+//			if (fn(&window))
+//			{
+//				m_simulationWindowSelected = &window;
+//				return;
+//			}
+//		}
 	}
 }
 

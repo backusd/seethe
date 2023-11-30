@@ -39,7 +39,6 @@ struct SimulationSettings
 	float accumulatedFixedTime = 0.0f;
 
 	// Box Settings
-//	DirectX::XMFLOAT3 boxDimensions = { 20.0f, 20.0f, 20.0f };
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
 	bool forceSidesToBeEqual = true;
 	bool allowMouseToResizeBoxDimensions = false;
@@ -149,7 +148,7 @@ private:
 	Timer m_timer;
 	Simulation m_simulation;
 
-	std::vector<SimulationWindow> m_simulationWindows;
+	std::unique_ptr<SimulationWindow> m_mainSimulationWindow = nullptr;
 	std::optional<SimulationWindow*> m_simulationWindowSelected = std::nullopt;
 
 	// EventHandlers
