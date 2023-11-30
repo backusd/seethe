@@ -2,6 +2,10 @@
 
 using namespace DirectX;
 
+// Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function
+#pragma push_macro("AddAtom")
+#undef AddAtom
+
 namespace seethe
 {
 static constexpr std::array<float, AtomTypeCount> AtomicRadii = {
@@ -44,6 +48,14 @@ void Simulation::RemoveAtomByIndex(size_t index) noexcept
 	DecrementSelectedIndicesBeyondIndex(index);
 
 	// Erase the atom
+	// Small convenience here: if we are erasing the last atom, we can go ahead and reuse the uuid
+	if (m_atoms.size() - 1 == index)
+	{
+		// NOTE: If this assert fails, it probably means that we removed one or more atoms and failed to update Atom::m_nextUUID
+		ASSERT(m_atoms.back().uuid + 1 == Atom::m_nextUUID, "The last atom should always have a uuid 1 less than the next uuid");
+		--Atom::m_nextUUID;
+	}
+
 	m_atoms.erase(m_atoms.begin() + index);
 }
 void Simulation::RemoveAtomByUUID(size_t uuid) noexcept
@@ -57,6 +69,14 @@ void Simulation::RemoveAtomByUUID(size_t uuid) noexcept
 			UnselectAtomByUUID(uuid);
 
 		DecrementSelectedIndicesBeyondIndex(itr - m_atoms.cbegin());
+
+		// Small convenience here: if we are erasing the last atom, we can go ahead and reuse the uuid
+		if (itr == m_atoms.cend() - 1)
+		{
+			// NOTE: If this assert fails, it probably means that we removed one or more atoms and failed to update Atom::m_nextUUID
+			ASSERT(itr->uuid + 1 == Atom::m_nextUUID, "The last atom should always have a uuid 1 less than the next uuid");
+			--Atom::m_nextUUID;
+		}
 
 		m_atoms.erase(itr);
 	}
@@ -306,3 +326,5 @@ void Simulation::UpdateSelectedAtomsCenter() noexcept
 }
 
 }
+
+#pragma pop_macro("AddAtom")

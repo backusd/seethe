@@ -9,36 +9,33 @@ namespace seethe
 {
 	void AddAtomCR::Undo(Application* app) noexcept
 	{
-		Simulation& simulation = app->GetSimulation();
-
 		// Save the current values
-		Atom& atom = simulation.GetAtomByUUID(m_uuid);
-		m_position = atom.position;
-		m_velocity = atom.velocity;
-		m_type = atom.type;
+		// NOTE: GetAtomByUUID() will throw if the uuid is not found
+		try
+		{
+			Atom& atom = app->GetSimulation().GetAtomByUUID(m_uuid);
+			m_position = atom.position;
+			m_velocity = atom.velocity;
+			m_type = atom.type;
+		}
+		catch (const std::runtime_error& e)
+		{
+			LOG_ERROR("ERROR: AddAtomCR::Undo action failed with message: {}", e.what());
 
-		// Delete the atom
-		simulation.RemoveAtomByUUID(m_uuid);
+			// These are not guaranteed to have accurate values, so just default them
+			m_position = { 0.0f, 0.0f, 0.0f };
+			m_velocity = { 0.0f, 0.0f, 0.0f };
+			m_type = AtomType::HYDROGEN;
+		}
 
-		// Inform the application
-		app->AtomsRemoved();
+		app->RemoveAtomByUUID(m_uuid);
 	}
 	void AddAtomCR::Redo(Application* app) noexcept
 	{
-		Simulation& simulation = app->GetSimulation();
-
-		// Create the atom
-		const Atom& atom = simulation.AddAtom(m_type, m_position, m_velocity);
-
-		// Save the new uuid - not guaranteed to be the same as before
+		// Add the atom and make it selected
+		const Atom& atom = app->AddAtom(m_type, m_position, m_velocity);
 		m_uuid = atom.uuid;
-
-		// Make the atom selected
-		simulation.SelectAtomByUUID(m_uuid);
-
-		// Inform the application (NOTE: This MUST come last so that the SimulationWindow can
-		//						   see that the atom is selected)
-		app->AtomsAdded();
+		app->SelectAtomByUUID(m_uuid);
 	}
 }
 

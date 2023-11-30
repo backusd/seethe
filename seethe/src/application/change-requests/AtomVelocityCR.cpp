@@ -6,6 +6,7 @@ namespace seethe
 {
 	void AtomVelocityCR::Undo(Application* app) noexcept
 	{
+		// NOTE: GetAtomByUUID() will throw if the uuid is not found
 		try
 		{
 			Atom& atom = app->GetSimulation().GetAtomByUUID(m_atomUUID);

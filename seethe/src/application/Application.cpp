@@ -372,6 +372,19 @@ void Application::RenderUI()
 {
 	ImGuiIO& io = ImGui::GetIO();
 
+	static unsigned int fps = 0;
+	static unsigned int frameCounter = 0;
+	static float startTime = m_timer.TotalTime();
+
+	++frameCounter;
+	float currentTime = m_timer.TotalTime();
+	if (currentTime - startTime > 0.5f)
+	{
+		startTime = currentTime;
+		fps = frameCounter * 2;
+		frameCounter = 0;
+	}
+
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
 
@@ -580,9 +593,6 @@ void Application::RenderUI()
 			// Pause Button
 			if (ImGui::Button(ICON_PAUSE))
 			{
-				SimulationPlayCR* cr = static_cast<SimulationPlayCR*>(m_undoStack.top().get());
-				cr->m_final = m_simulation.GetAtoms();
-
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
 				m_simulationSettings.accumulatedFixedTime = 0.0f;
 				m_simulation.StopPlaying();
@@ -604,9 +614,6 @@ void Application::RenderUI()
 			ImGui::Button(ICON_PLAY_WHILE_CLICKED);
 			if (!ImGui::IsItemActive()) // IsItemActive is true when mouse LButton is being held down 
 			{
-				SimulationPlayCR* cr = static_cast<SimulationPlayCR*>(m_undoStack.top().get());
-				cr->m_final = m_simulation.GetAtoms();
-
 				// Pause the simulation once we release the LButton
 				m_simulationSettings.playState = SimulationSettings::PlayState::PAUSED;
 				m_simulationSettings.accumulatedFixedTime = 0.0f;
@@ -707,18 +714,13 @@ void Application::RenderUI()
 			if (ImGui::Button(ICON_ADD " Add Atom##AddAtomButton"))
 			{
 				// Create the new atom
-				const Atom& atom = m_simulation.AddAtom(type, pos, vel); 
-
-				// Inform the main simulation window
-				AtomsAdded();
+				const Atom& atom = AddAtom(type, pos, vel); 
 
 				// Create the Undo Change Request
 				AddUndoCR<AddAtomCR>(atom.uuid);
 
 				// Make the atom the only selected atom
-				m_simulation.ClearSelectedAtoms();
-				m_simulation.SelectAtomByUUID(atom.uuid);
-				SelectedAtomsChanged();
+				SelectAtomByUUID(atom.uuid, true);
 			}
 			ImGui::PopStyleColor();
 			ImGui::Unindent(100.0f);
@@ -808,17 +810,14 @@ void Application::RenderUI()
 							if (ImGui::GetIO().KeyCtrl) 
 							{
 								if (itemIsSelected) 
-									m_simulation.UnselectAtomByUUID(atom.uuid);
+									UnselectAtomByUUID(atom.uuid);
 								else
-									m_simulation.SelectAtomByUUID(atom.uuid);
+									SelectAtomByUUID(atom.uuid);
 							}
 							else
 							{
-								m_simulation.ClearSelectedAtoms();
-								m_simulation.SelectAtomByUUID(atom.uuid);
+								SelectAtomByUUID(atom.uuid, true);
 							}
-
-							SelectedAtomsChanged();
 						}
 
 						ImGui::TableSetColumnIndex(1); 
@@ -986,7 +985,8 @@ void Application::RenderUI()
 							sliderActive = true;
 							AddUndoCR<AtomMaterialCR>(mat, mat, atomType);
 						}
-						MaterialChanged();
+						InvokeHandlers(m_materialChangedHandlers);
+						SaveMaterials();
 					}
 					else if (sliderActive)
 					{
@@ -1061,14 +1061,15 @@ void Application::RenderUI()
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
 				5.0f : 2 * m_simulation.GetMaxAxisAlignedDistanceFromOrigin();
 			
+			static XMFLOAT3 boxDims = m_simulation.GetDimensions(); 
+			XMFLOAT3 initialBoxDims = boxDims;
+
 			if (ImGui::Checkbox("Force Simulation Box Sides To Be Equal", &m_simulationSettings.forceSidesToBeEqual))
 			{
-				XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
-
-				if (m_simulationSettings.forceSidesToBeEqual && (initial.x != initial.y || initial.x != initial.z))
+				if (m_simulationSettings.forceSidesToBeEqual && (initialBoxDims.x != initialBoxDims.y || initialBoxDims.x != initialBoxDims.z))
 				{
-					m_simulationSettings.boxDimensions.y = initial.x;
-					m_simulationSettings.boxDimensions.z = initial.x;
+					boxDims.y = initialBoxDims.x;
+					boxDims.z = initialBoxDims.x;
 
 					// Get the initial atom positions before setting the new dimensions
 					std::vector<Atom> atomsInitial = {};
@@ -1076,31 +1077,30 @@ void Application::RenderUI()
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions) 
 						atomsInitial = m_simulation.GetAtoms();
 
-					// Update the simulation
-					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+					// Update the simulation's dimensions
+					SetBoxDimensions(boxDims, true, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions); 
 
 					// Get final positions and create the change request
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions) 
 						atomsFinal = m_simulation.GetAtoms();
 
-					AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true, atomsInitial, atomsFinal);
+					AddUndoCR<BoxResizeCR>(initialBoxDims, boxDims, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, false, true, atomsInitial, atomsFinal);
 				}
 			}
 
 			if (m_simulationSettings.forceSidesToBeEqual)
 			{
 				static bool isActive = false;
-				XMFLOAT3 initial = m_simulationSettings.boxDimensions;
-				if (ImGui::DragFloat("Side Length", &m_simulationSettings.boxDimensions.x, 0.5f, minSideLength, 1000.f, "%.1f"))
+				if (ImGui::DragFloat("Side Length", &boxDims.x, 0.5f, minSideLength, 1000.f, "%.1f"))
 				{
-					m_simulationSettings.boxDimensions.y = m_simulationSettings.boxDimensions.x;
-					m_simulationSettings.boxDimensions.z = m_simulationSettings.boxDimensions.x;
+					boxDims.y = boxDims.x;
+					boxDims.z = boxDims.x;
 
-					// Update the simulation
-					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
-				
-					// Inform the simulation windows
-					BoxSizeChanged();
+					// Update the simulation's dimensions
+					SetBoxDimensions(boxDims, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
+
+					// Invoke handlers for when the box size changes
+					InvokeHandlers(m_boxSizeChangedHandlers);
 				}
 				if (ImGui::IsItemActive())
 				{
@@ -1111,7 +1111,7 @@ void Application::RenderUI()
 						std::vector<Atom> atomsInitial = {};
 						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 							atomsInitial = m_simulation.GetAtoms();
-						AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
+						AddUndoCR<BoxResizeCR>(initialBoxDims, boxDims, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
 					}
 				}
 				else if (isActive)
@@ -1119,7 +1119,7 @@ void Application::RenderUI()
 					isActive = false;
 					// Update the final size in the change request
 					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get());
-					cr->m_final = m_simulationSettings.boxDimensions;
+					cr->m_final = boxDims;
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 						cr->m_atomsFinal = m_simulation.GetAtoms();
 				}
@@ -1127,14 +1127,10 @@ void Application::RenderUI()
 			else
 			{
 				static bool isActive = false;
-				XMFLOAT3 initial = m_simulationSettings.boxDimensions; 
-				if (ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&m_simulationSettings.boxDimensions), 0.5, minSideLength, 1000.f, "%.1f"))
+				if (ImGui::DragFloat3("Side Lengths", reinterpret_cast<float*>(&boxDims), 0.5, minSideLength, 1000.f, "%.1f"))
 				{
-					// Update the simulation
-					m_simulation.SetDimensions(m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
-				
-					// Inform the simulation windows
-					BoxSizeChanged();
+					// Update the simulation's dimensions
+					SetBoxDimensions(boxDims, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 				}
 				if (ImGui::IsItemActive()) 
 				{
@@ -1145,7 +1141,7 @@ void Application::RenderUI()
 						std::vector<Atom> atomsInitial = {};
 						if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 							atomsInitial = m_simulation.GetAtoms();
-						AddUndoCR<BoxResizeCR>(initial, m_simulationSettings.boxDimensions, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
+						AddUndoCR<BoxResizeCR>(initialBoxDims, boxDims, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.forceSidesToBeEqual, atomsInitial);
 					}
 				}
 				else if (isActive) 
@@ -1153,7 +1149,7 @@ void Application::RenderUI()
 					isActive = false;
 					// Update the final size in the change request
 					BoxResizeCR* cr = static_cast<BoxResizeCR*>(m_undoStack.top().get()); 
-					cr->m_final = m_simulationSettings.boxDimensions; 
+					cr->m_final = boxDims; 
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 						cr->m_atomsFinal = m_simulation.GetAtoms();
 				}
@@ -1167,7 +1163,7 @@ void Application::RenderUI()
 	{
 		ImGui::Begin("Bottom Panel"); 
 
-		ImGui::Text("Text on the Bottom");
+		ImGui::Text("FPS: %d", fps);
 
 		ImGui::End();
 	}
@@ -1298,14 +1294,64 @@ void Application::ForwardMessageToWindows(std::function<bool(SimulationWindow*)>
 	}
 }
 
-//void Application::AddUndoCR(std::shared_ptr<ChangeRequest> cr) noexcept
-//{
-//	m_undoStack.push(cr);
-//
-//	// Clear the Redo Stack
-//	while (m_redoStack.size() > 0)
-//		m_redoStack.pop();
-//}
+
+void Application::SetMaterial(AtomType atomType, const Material& material) noexcept
+{
+	m_materials[static_cast<size_t>(atomType) - 1] = material;
+	InvokeHandlers(m_materialChangedHandlers);
+	SaveMaterials();
+}
+void Application::SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSidesToBeEqual, bool allowAtomsToRelocate) noexcept
+{
+	m_simulation.SetDimensions(dims, allowAtomsToRelocate);
+	m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions = allowAtomsToRelocate;
+	m_simulationSettings.forceSidesToBeEqual = forceSidesToBeEqual;
+	InvokeHandlers(m_boxSizeChangedHandlers);
+}
+
+void Application::RemoveAtomByUUID(size_t uuid) noexcept
+{
+	bool isSelected = m_simulation.AtomWithUUIDIsSelected(uuid);
+
+	m_simulation.RemoveAtomByUUID(uuid);
+
+	InvokeHandlers(m_atomsRemovedHandlers);
+
+	if (isSelected)
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const XMFLOAT3& velocity) noexcept
+{
+	const Atom& atom = m_simulation.AddAtom(type, position, velocity);
+	InvokeHandlers(m_atomsAddedHandlers);
+	return atom;
+}
+void Application::SelectAtomByUUID(size_t uuid, bool unselectAllOthersFirst) noexcept
+{
+	if (unselectAllOthersFirst)
+		m_simulation.ClearSelectedAtoms();
+
+	m_simulation.SelectAtomByUUID(uuid);
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+void Application::SelectAtomByIndex(size_t index, bool unselectAllOthersFirst) noexcept
+{
+	if (unselectAllOthersFirst)
+		m_simulation.ClearSelectedAtoms();
+
+	m_simulation.SelectAtomByIndex(index);
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+void Application::UnselectAtomByUUID(size_t uuid) noexcept
+{
+	m_simulation.UnselectAtomByUUID(uuid);
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+void Application::UnselectAtomByIndex(size_t index) noexcept
+{
+	m_simulation.UnselectAtomByIndex(index);
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {

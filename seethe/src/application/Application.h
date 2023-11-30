@@ -15,6 +15,10 @@
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx12.h"
 
+// Windows defines an 'AddAtom' macro, so we undefine it here so we can use it for a member function on Simulation
+#pragma push_macro("AddAtom")
+#undef AddAtom
+
 namespace seethe
 {
 struct SimulationSettings
@@ -35,7 +39,7 @@ struct SimulationSettings
 	float accumulatedFixedTime = 0.0f;
 
 	// Box Settings
-	DirectX::XMFLOAT3 boxDimensions = { 20.0f, 20.0f, 20.0f };
+//	DirectX::XMFLOAT3 boxDimensions = { 20.0f, 20.0f, 20.0f };
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
 	bool forceSidesToBeEqual = true;
 	bool allowMouseToResizeBoxDimensions = false;
@@ -46,6 +50,10 @@ struct SimulationSettings
 
 class Application
 {
+public:
+	using EventHandler = std::function<void()>;
+	using EventHandlers = std::vector<EventHandler>;
+
 public:
 	Application();
 	Application(const Application&) = delete;
@@ -97,19 +105,27 @@ public:
 			m_redoStack.pop();
 	}
 
-	inline void SetMaterial(AtomType atomType, const Material& material) noexcept { m_materials[static_cast<size_t>(atomType) - 1] = material; MaterialChanged(); }
+	void SetMaterial(AtomType atomType, const Material& material) noexcept;
+	void SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSidesToBeEqual, bool allowAtomsToRelocate) noexcept;
 
+	void RemoveAtomByUUID(size_t uuid) noexcept;
+	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = { 0.0f, 0.0f, 0.0f }, const DirectX::XMFLOAT3& velocity = { 0.0f, 0.0f, 0.0f }) noexcept;
+	void SelectAtomByUUID(size_t uuid, bool unselectAllOthersFirst = false) noexcept;
+	void SelectAtomByIndex(size_t index, bool unselectAllOthersFirst = false) noexcept;
+	void UnselectAtomByUUID(size_t uuid) noexcept;
+	void UnselectAtomByIndex(size_t index) noexcept;
 
-	inline void AtomsAdded()
-	{
-		for (auto& window : m_simulationWindows)
-			window.NotifyAtomsAdded();
-	}
-	inline void AtomsRemoved()
-	{
-		for (auto& window : m_simulationWindows)
-			window.NotifyAtomsRemoved();
-	}
+	// Handlers
+	inline void RegisterMaterialChangedHandler(const EventHandler& handler) noexcept { m_materialChangedHandlers.push_back(handler); }
+	inline void RegisterMaterialChangedHandler(EventHandler&& handler) noexcept { m_materialChangedHandlers.push_back(handler); }
+	inline void RegisterBoxSizeChangedHandler(const EventHandler& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
+	inline void RegisterBoxSizeChangedHandler(EventHandler&& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
+	inline void RegisterSelectedAtomsChangedHandler(const EventHandler& handler) noexcept { m_selectedAtomsChangedHandlers.push_back(handler); }
+	inline void RegisterSelectedAtomsChangedHandler(EventHandler&& handler) noexcept { m_selectedAtomsChangedHandlers.push_back(handler); }
+	inline void RegisterAtomsAddedHandler(const EventHandler& handler) noexcept { m_atomsAddedHandlers.push_back(handler); }
+	inline void RegisterAtomsAddedHandler(EventHandler&& handler) noexcept { m_atomsAddedHandlers.push_back(handler); }
+	inline void RegisterAtomsRemovedHandler(const EventHandler& handler) noexcept { m_atomsRemovedHandlers.push_back(handler); }
+	inline void RegisterAtomsRemovedHandler(EventHandler&& handler) noexcept { m_atomsRemovedHandlers.push_back(handler); }
 
 private:
 	void InitializeMaterials() noexcept;
@@ -121,25 +137,11 @@ private:
 	void Present();
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
-	inline void MaterialChanged()
+	inline void InvokeHandlers(const EventHandlers& handlers) const noexcept
 	{
-		for (auto& window : m_simulationWindows)
-			window.NotifyMaterialsChanged();
-
-		SaveMaterials();
+		for (auto& handler : handlers)
+			handler();
 	}
-	inline void BoxSizeChanged()
-	{
-		for (auto& window : m_simulationWindows)
-			window.NotifyBoxSizeChanged();
-	}
-	inline void SelectedAtomsChanged()
-	{
-		for (auto& window : m_simulationWindows)
-			window.NotifySelectedAtomsChanged();
-	}
-
-
 
 
 	std::unique_ptr<MainWindow> m_mainWindow;
@@ -149,6 +151,13 @@ private:
 
 	std::vector<SimulationWindow> m_simulationWindows;
 	std::optional<SimulationWindow*> m_simulationWindowSelected = std::nullopt;
+
+	// EventHandlers
+	EventHandlers m_materialChangedHandlers;
+	EventHandlers m_boxSizeChangedHandlers;
+	EventHandlers m_selectedAtomsChangedHandlers;
+	EventHandlers m_atomsAddedHandlers;
+	EventHandlers m_atomsRemovedHandlers;
 
 	// Rendering resources
 	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, g_numFrameResources> m_allocators;
@@ -162,5 +171,10 @@ private:
 
 	std::stack<std::shared_ptr<ChangeRequest>> m_undoStack;
 	std::stack<std::shared_ptr<ChangeRequest>> m_redoStack;
+
+
 };
 }
+
+
+#pragma pop_macro("AddAtom") // See note above for 'AddAtom'

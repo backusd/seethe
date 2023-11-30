@@ -6,26 +6,16 @@ namespace seethe
 {
 void BoxResizeCR::Undo(Application* app) noexcept
 {
-	Simulation& simulation = app->GetSimulation();
-	simulation.SetDimensions(m_initial, m_allowAtomsToRelocate);
-
 	if (m_allowAtomsToRelocate)
-		simulation.SetAtoms(m_atomsInitial);
+		app->GetSimulation().SetAtoms(m_atomsInitial);
 
-	SimulationSettings& settings = app->GetSimulationSettings();
-	settings.boxDimensions = m_initial;
-	settings.forceSidesToBeEqual = m_forceSidesToBeEqualInitial;
+	app->SetBoxDimensions(m_initial, m_forceSidesToBeEqualInitial, m_allowAtomsToRelocate);
 }
 void BoxResizeCR::Redo(Application* app) noexcept
 {
-	Simulation& simulation = app->GetSimulation();
-	simulation.SetDimensions(m_final, m_allowAtomsToRelocate);
-
 	if (m_allowAtomsToRelocate)
-		simulation.SetAtoms(m_atomsFinal);
+		app->GetSimulation().SetAtoms(m_atomsFinal);
 
-	SimulationSettings& settings = app->GetSimulationSettings();
-	settings.boxDimensions = m_final;
-	settings.forceSidesToBeEqual = m_forceSidesToBeEqualFinal;
+	app->SetBoxDimensions(m_final, m_forceSidesToBeEqualFinal, m_allowAtomsToRelocate);
 }
 }

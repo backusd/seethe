@@ -23,6 +23,40 @@ SimulationWindow::SimulationWindow(Application& application,
 	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
 
 	InitializeRenderPasses();
+
+	RegisterEventHandlers();
+}
+
+void SimulationWindow::RegisterEventHandlers() noexcept
+{
+	// Material Changed
+	m_application.RegisterMaterialChangedHandler(
+		[this]()
+		{
+			m_oneTimeUpdateFns.push_back(
+				[this]()
+				{
+					m_materialsConstantBuffer->CopyData(m_atomMaterials);
+				}
+			);
+		}
+	);
+
+	// Box Size Changed
+	m_application.RegisterBoxSizeChangedHandler(
+		[this]()
+		{
+			OnBoxSizeChanged();
+
+			if (MouseIsDraggingWall())
+				OnBoxFaceHighlightChanged();
+		}
+	);
+
+	// Atoms Added/Removed/Selected
+	m_application.RegisterAtomsAddedHandler([this]() { OnAtomsAdded(); });
+	m_application.RegisterAtomsRemovedHandler([this]() { OnAtomsRemoved(); });
+	m_application.RegisterSelectedAtomsChangedHandler([this]() { OnSelectedAtomsChanged(); });
 }
 
 void SimulationWindow::InitializeRenderPasses()
@@ -262,7 +296,7 @@ void SimulationWindow::InitializeRenderPasses()
 
 	// Make the box constant buffer a static buffer because it will rarely need updating
 	m_boxConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1);
-	NotifyBoxSizeChanged();
+	OnBoxSizeChanged();
 
 	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
@@ -307,7 +341,7 @@ void SimulationWindow::InitializeRenderPasses()
 	layer3.SetActive(false);
 
 	m_boxFaceConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 2);
-	NotifyBoxFaceHighlightChanged();
+	OnBoxFaceHighlightChanged();
 
 	RenderItem& boxFaceRI = layer3.EmplaceBackRenderItem();
 	boxFaceRI.SetInstanceCount(2);
@@ -506,16 +540,7 @@ void SimulationWindow::Update(const Timer& timer, int frameIndex)
 	}
 }
 
-void SimulationWindow::NotifyMaterialsChanged() noexcept
-{
-	m_oneTimeUpdateFns.push_back(
-		[this]()
-		{
-			m_materialsConstantBuffer->CopyData(m_atomMaterials);
-		}
-	);
-}
-void SimulationWindow::NotifyBoxSizeChanged() noexcept
+void SimulationWindow::OnBoxSizeChanged() noexcept
 {
 	m_oneTimeUpdateFns.push_back(
 		[this]()
@@ -534,7 +559,7 @@ void SimulationWindow::NotifyBoxSizeChanged() noexcept
 		}
 	);
 }
-void SimulationWindow::NotifyBoxFaceHighlightChanged() noexcept
+void SimulationWindow::OnBoxFaceHighlightChanged() noexcept
 {
 	m_oneTimeUpdateFns.push_back(
 		[this]()
@@ -576,10 +601,10 @@ void SimulationWindow::NotifyBoxFaceHighlightChanged() noexcept
 			InstanceData arrowData = {};
 
 			// We add an extra material at the end of the atom materials vector so we can use it for the arrow
-			arrowData.MaterialIndex = g_arrowMaterialIndex; 
+			arrowData.MaterialIndex = g_arrowMaterialIndex;
 
 			pos = XMMatrixIdentity();
-			float scale = 1.0f; 
+			float scale = 1.0f;
 
 			if (m_mouseHoveringBoxWallPosX || m_mouseDraggingBoxWallPosX)
 			{
@@ -614,11 +639,11 @@ void SimulationWindow::NotifyBoxFaceHighlightChanged() noexcept
 
 			XMStoreFloat4x4(&arrowData.World, XMMatrixTranspose(XMMatrixScaling(scale, scale, scale) * pos));
 
-			m_arrowConstantBuffer->CopyData(arrowData); 
+			m_arrowConstantBuffer->CopyData(arrowData);
 		}
 	);
 }
-void SimulationWindow::NotifySelectedAtomsChanged() noexcept
+void SimulationWindow::OnSelectedAtomsChanged() noexcept
 {
 	const std::vector<size_t>& selectedIndices = m_simulation.GetSelectedAtomIndices();
 	unsigned int count = static_cast<unsigned int>(selectedIndices.size());
@@ -639,7 +664,7 @@ void SimulationWindow::NotifySelectedAtomsChanged() noexcept
 		pass1Layers[4].GetRenderItems()[0].SetInstanceCount(count);
 	}
 }
-void SimulationWindow::NotifyAtomsAdded() noexcept
+void SimulationWindow::OnAtomsAdded() noexcept
 {
 	// Make sure the instance data vector has enough capacity for the new atoms
 	const std::vector<Atom>& atoms = m_simulation.GetAtoms();
@@ -648,19 +673,12 @@ void SimulationWindow::NotifyAtomsAdded() noexcept
 
 	// Make sure the sphere render item has the appropriate instance count
 	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
-
-	// It is possible that the atom that was added via a Redo action, in which case, the atom will be selected.
-	// Therefore, to be safe, we want to make sure out selected atoms layer is up to date
-	NotifySelectedAtomsChanged(); 
 }
-void SimulationWindow::NotifyAtomsRemoved() noexcept
+void SimulationWindow::OnAtomsRemoved() noexcept
 {
 	// Make sure the sphere render item has the appropriate instance count
 	const std::vector<Atom>& atoms = m_simulation.GetAtoms();
 	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
-
-	// It is possible that the atom that was removed was selected, so to be safe, update the selected atoms layer
-	NotifySelectedAtomsChanged();
 }
 
 
@@ -789,7 +807,7 @@ void SimulationWindow::HandleLButtonDown() noexcept
 			m_boxDimensionsInitial = m_simulation.GetDimensions();
 			m_forceSidesToBeEqualInitial = m_application.GetSimulationSettings().forceSidesToBeEqual;
 
-			NotifyBoxFaceHighlightChanged();
+			OnBoxFaceHighlightChanged();
 		}
 	}
 }
@@ -806,7 +824,7 @@ void SimulationWindow::HandleLButtonUp() noexcept
 			m_application.GetSimulationSettings().forceSidesToBeEqual = false;
 		}
 
-		NotifyBoxFaceHighlightChanged();
+		OnBoxFaceHighlightChanged();
 	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
@@ -948,11 +966,9 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 					dims.z = std::max(minimumNewSize, dims.z + scaleFactor);
 				}
 
-				m_simulation.SetDimensions(dims, false);
-				m_application.GetSimulationSettings().boxDimensions = dims;
-
-				NotifyBoxSizeChanged();
-				NotifyBoxFaceHighlightChanged(); // Must also call this because the face is changing location
+				// No need to manually invoke the OnBoxSizeChanged function here. That wll get called in the handler
+				// that is invoked by the Application when SetBoxDimensions is called
+				m_application.SetBoxDimensions(dims, false, false);
 
 				m_mousePrevX = x;
 				m_mousePrevY = y;
@@ -976,7 +992,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 					hoveringNegYInitial != m_mouseHoveringBoxWallNegY ||
 					hoveringNegZInitial != m_mouseHoveringBoxWallNegZ)
 				{
-					NotifyBoxFaceHighlightChanged();
+					OnBoxFaceHighlightChanged();
 				}
 				SetBoxWallResizeRenderEffectsActive(MouseIsHoveringWall());
 			}

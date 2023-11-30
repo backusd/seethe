@@ -27,6 +27,9 @@ enum class AtomType
 	NEON = 10
 };
 
+// Forward declare so that we can make Simulation a friend
+class Simulation;
+
 class Atom
 {
 public:
@@ -46,6 +49,8 @@ public:
 
 private:
 	static size_t m_nextUUID;
+
+	friend Simulation;
 };
 
 class Simulation

@@ -132,14 +132,15 @@ public:
 			SetBoxWallResizeRenderEffectsActive(false);
 	}
 
-	void NotifyMaterialsChanged() noexcept;
-	void NotifyBoxSizeChanged() noexcept;
-	void NotifyBoxFaceHighlightChanged() noexcept;
-	void NotifySelectedAtomsChanged() noexcept;
-	void NotifyAtomsAdded() noexcept;
-	void NotifyAtomsRemoved() noexcept;
-
 private:
+	void RegisterEventHandlers() noexcept;
+
+	void OnBoxSizeChanged() noexcept;
+	void OnBoxFaceHighlightChanged() noexcept;
+	void OnSelectedAtomsChanged() noexcept;
+	void OnAtomsAdded() noexcept;
+	void OnAtomsRemoved() noexcept;
+
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
 	bool OnButtonUpImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
 	bool OnButtonDoubleClickImpl(float x, float y, std::function<void()>&& handler);
