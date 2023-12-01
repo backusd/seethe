@@ -134,6 +134,13 @@ void SimulationWindow::InitializeRenderPasses()
 
 
 	// Beginning of Layer #1 -----------------------------------------------------------------------
+	// Description:		Opaque Items w/ Phong Shading
+	// Shading:			Phong
+	// Vertex Type:		Vertex
+	// Input Layout:	[FLOAT3, FLOAT3] (position, normal)
+	// Topology:		Triangle
+	// Blending:		None
+	// Stenciling:		None
 
 	GeometryGenerator::MeshData sphereMesh = GeometryGenerator::CreateSphere(0.5f, 20, 20);
 	std::vector<Vertex> sphereVertices;
@@ -228,7 +235,15 @@ void SimulationWindow::InitializeRenderPasses()
 	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
 
 
+
 	// Beginning of Layer #2 (Box Layer) -----------------------------------------------------------------------
+	// Description:		Solid Lines
+	// Shading:			Solid
+	// Vertex Type:		SolidColorVertex
+	// Input Layout:	[FLOAT3] (position)
+	// Topology:		Line
+	// Blending:		None
+	// Stenciling:		None
 
 	std::vector<SolidColorVertex> boxVertices = {
 		{ { 1.0f, 1.0f, 1.0f, 1.0f } },		// 0:  x  y  z
@@ -302,7 +317,57 @@ void SimulationWindow::InitializeRenderPasses()
 	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
 
 
-	// Beginning of Layer #3 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
+
+	// Beginning of Layer #3 (Solid Axis Lines Layer) -----------------------------------------------------------------------
+	// Description:		Solid Objects
+	// Shading:			Solid
+	// Vertex Type:		SolidColorVertex
+	// Input Layout:	[FLOAT3] (position)
+	// Topology:		Triangle
+	// Blending:		None
+	// Stenciling:		None
+
+	GeometryGenerator::MeshData cylinderMesh = GeometryGenerator::CreateCylinder(0.1f, 0.1f, 20.0f, 20, 20); 
+	std::vector<SolidColorVertex> cylinderVertices; 
+	cylinderVertices.reserve(cylinderMesh.Vertices.size()); 
+	for (GeometryGenerator::Vertex& v : cylinderMesh.Vertices) 
+		cylinderVertices.push_back({ { v.Position.x,  v.Position.y,  v.Position.z, 1.0f } }); 
+
+	std::vector<std::vector<SolidColorVertex>> layer3Vertices; 
+	layer3Vertices.push_back(std::move(cylinderVertices));
+
+	std::vector<std::vector<std::uint16_t>> layer3Indices;
+	layer3Indices.push_back(std::move(cylinderMesh.GetIndices16()));
+
+	std::shared_ptr<MeshGroup<SolidColorVertex>> layer3MeshGroup = std::make_shared<MeshGroup<SolidColorVertex>>(m_deviceResources, layer3Vertices, layer3Indices);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC layer3PSODesc = boxDesc;
+	layer3PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, layer3MeshGroup, layer3PSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #3");
+
+	// Axis Cylinder
+	RenderItem& axisRI = layer3.EmplaceBackRenderItem(0);
+	//axisRI.SetActive(false);
+
+	m_axisCylinderConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1); 
+	RootConstantBufferView& axisCylinderInstanceCBV = axisRI.EmplaceBackRootConstantBufferView(0, m_axisCylinderConstantBuffer.get()); 
+
+	InstanceData axisData = {}; 
+	XMStoreFloat4x4(&axisData.World, XMMatrixTranspose(XMMatrixIdentity())); 
+	m_axisCylinderConstantBuffer->CopyData(axisData); 
+
+
+
+
+	// Beginning of Layer #4 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
+	// Description:		Transparent & Solid Items
+	// Shading:			Solid
+	// Vertex Type:		SolidColorVertex
+	// Input Layout:	[FLOAT3] (position)
+	// Topology:		Triangle
+	// Blending:		Transparency Blending
+	// Stenciling:		None
 
 	// In this layer we render two of the six walls. To do so, we create a wall in the yz-place and rotate/scale/translate it depending on
 	// which wall is being hovered/dragged
@@ -337,18 +402,26 @@ void SimulationWindow::InitializeRenderPasses()
 	boxFaceDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	boxFaceDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxFacesMeshGroup, boxFaceDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, "Layer #3");
-	layer3.SetActive(false);
+	RenderPassLayer& layer4 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxFacesMeshGroup, boxFaceDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, "Layer #3");
+	layer4.SetActive(false);
 
 	m_boxFaceConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 2);
 	OnBoxFaceHighlightChanged();
 
-	RenderItem& boxFaceRI = layer3.EmplaceBackRenderItem();
+	RenderItem& boxFaceRI = layer4.EmplaceBackRenderItem();
 	boxFaceRI.SetInstanceCount(2);
 	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(0, m_boxFaceConstantBuffer.get());
 
 
-	// Beginning of Layer #4 (Stencil Layer for selected atoms) -----------------------------------------------------------------------
+	// Beginning of Layer #5 (Stencil Layer for selected atoms) -----------------------------------------------------------------------
+	// Description:		Stencil Layer
+	// Shading:			Solid
+	// Vertex Type:		SolidColorVertex
+	// Input Layout:	[FLOAT3] (position)
+	// Topology:		Triangle
+	// Blending:		None
+	// Stenciling:		Write 1 to stencil buffer for each pixel
+
 
 	std::vector<SolidColorVertex> sphereStencilVertices;
 	sphereStencilVertices.reserve(sphereMesh.Vertices.size());
@@ -403,13 +476,13 @@ void SimulationWindow::InitializeRenderPasses()
 	stencilPSODesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
 	stencilPSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
-	RenderPassLayer& layer4 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, stencilPSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #4");
-	layer4.SetStencilRef(1); 
+	RenderPassLayer& layer5 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, stencilPSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #4");
+	layer5.SetStencilRef(1); 
 
 	m_selectedAtomInstanceConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 	m_selectedAtomsInstanceData = std::vector<InstanceData>(10);
 
-	RenderItem& sphereStencilRI = layer4.EmplaceBackRenderItem();
+	RenderItem& sphereStencilRI = layer5.EmplaceBackRenderItem();
 	sphereStencilRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size()));
 
 	RootConstantBufferView& sphereStencilInstanceCBV = sphereStencilRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceConstantBuffer.get());
@@ -442,8 +515,16 @@ void SimulationWindow::InitializeRenderPasses()
 		};
 
 	
-	// Beginning of Layer #5 (Sphere outline for selected atoms) -----------------------------------------------------------------------
-	
+	// Beginning of Layer #6 (Sphere outline for selected atoms) -----------------------------------------------------------------------
+	// Description:		Outline Layer
+	// Shading:			Solid
+	// Vertex Type:		SolidColorVertex
+	// Input Layout:	[FLOAT3] (position)
+	// Topology:		Triangle
+	// Blending:		None
+	// Stenciling:		Write to pixels only where stencil buffer != 1
+
+
 	// re-enable depth testing
 	selectedAtomsStencilDesc.DepthEnable = false;
 	selectedAtomsStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL; 
@@ -477,13 +558,13 @@ void SimulationWindow::InitializeRenderPasses()
 	outlinePSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
 
-	RenderPassLayer& layer5 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, outlinePSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #5");
-	layer5.SetStencilRef(0);
+	RenderPassLayer& layer6 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, outlinePSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #5");
+	layer6.SetStencilRef(0);
 
 	m_selectedAtomInstanceOutlineConstantBuffer = std::make_unique<ConstantBufferMapped<InstanceData>>(m_deviceResources);
 	m_selectedAtomsInstanceOutlineData = std::vector<InstanceData>(10);
 
-	RenderItem& sphereOutlineRI = layer5.EmplaceBackRenderItem();
+	RenderItem& sphereOutlineRI = layer6.EmplaceBackRenderItem();
 	sphereOutlineRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size())); 
 
 	RootConstantBufferView& outlineStencilInstanceCBV = sphereOutlineRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceOutlineConstantBuffer.get());
@@ -649,19 +730,19 @@ void SimulationWindow::OnSelectedAtomsChanged() noexcept
 	unsigned int count = static_cast<unsigned int>(selectedIndices.size());
 	std::vector<RenderPassLayer>& pass1Layers = m_renderer->GetRenderPass(0).GetRenderPassLayers();
 
-	// Layer at index 3: Stencil layer that writes to the stencil buffer
-	// Layer at index 4: Outline layer that draws the solid outline around selected atoms
+	// Layer at index 4: Stencil layer that writes to the stencil buffer
+	// Layer at index 5: Outline layer that draws the solid outline around selected atoms
 	if (count == 0)
 	{
-		pass1Layers[3].SetActive(false);
 		pass1Layers[4].SetActive(false);
+		pass1Layers[5].SetActive(false);
 	}
 	else
 	{
-		pass1Layers[3].SetActive(true);
 		pass1Layers[4].SetActive(true);
-		pass1Layers[3].GetRenderItems()[0].SetInstanceCount(count);
+		pass1Layers[5].SetActive(true);
 		pass1Layers[4].GetRenderItems()[0].SetInstanceCount(count);
+		pass1Layers[5].GetRenderItems()[0].SetInstanceCount(count);
 	}
 }
 void SimulationWindow::OnAtomsAdded() noexcept

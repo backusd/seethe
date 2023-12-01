@@ -215,7 +215,7 @@ private:
 	inline void SetBoxWallResizeRenderEffectsActive(bool active) noexcept
 	{
 		// Box Wall transparency layer
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(active);
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[3].SetActive(active);
 
 		// Arrow Render Item
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
@@ -261,6 +261,7 @@ private:
 	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxConstantBuffer;
 	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxFaceConstantBuffer;
 	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_arrowConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_axisCylinderConstantBuffer;
 
 
 
