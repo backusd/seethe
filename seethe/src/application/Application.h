@@ -107,11 +107,14 @@ public:
 	void SetMaterial(AtomType atomType, const Material& material) noexcept;
 	void SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSidesToBeEqual, bool allowAtomsToRelocate) noexcept;
 
-	void RemoveAtomByUUID(size_t uuid) noexcept;
-	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = { 0.0f, 0.0f, 0.0f }, const DirectX::XMFLOAT3& velocity = { 0.0f, 0.0f, 0.0f }) noexcept;
-	void SelectAtomByUUID(size_t uuid, bool unselectAllOthersFirst = false) noexcept;
+	void RemoveAtomByUUID(AtomUUID uuid, bool createCR = true) noexcept;
+	void RemoveAtomsByUUID(std::vector<AtomUUID>& uuid, bool createCR = true) noexcept;
+	void RemoveAllSelectedAtoms() noexcept;
+	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = { 0.0f, 0.0f, 0.0f }, const DirectX::XMFLOAT3& velocity = { 0.0f, 0.0f, 0.0f }, bool createCR = true) noexcept;
+	std::vector<AtomUUID> AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR = true) noexcept;
+	void SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst = false) noexcept;
 	void SelectAtomByIndex(size_t index, bool unselectAllOthersFirst = false) noexcept;
-	void UnselectAtomByUUID(size_t uuid) noexcept;
+	void UnselectAtomByUUID(AtomUUID uuid) noexcept;
 	void UnselectAtomByIndex(size_t index) noexcept;
 
 	// Handlers
@@ -172,6 +175,10 @@ private:
 	std::stack<std::shared_ptr<ChangeRequest>> m_redoStack;
 
 
+
+
+
+	bool m_openDeletePopup = false;
 };
 }
 

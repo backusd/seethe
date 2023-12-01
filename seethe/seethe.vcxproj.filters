@@ -117,7 +117,10 @@
     <ClCompile Include="src\application\change-requests\AtomMaterialCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\application\change-requests\AddAtomCR.cpp">
+    <ClCompile Include="src\application\change-requests\AddAtomsCR.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\application\change-requests\RemoveAtomsCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -272,7 +275,10 @@
     <ClInclude Include="src\application\change-requests\AtomMaterialCR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\application\change-requests\AddAtomCR.h">
+    <ClInclude Include="src\application\change-requests\AddAtomsCR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\application\change-requests\RemoveAtomsCR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

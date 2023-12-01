@@ -2,11 +2,12 @@
 #include "utils/Log.h"
 #include "utils/String.h"
 #include "application/ui/fonts/Fonts.h"
-#include "application/change-requests/AddAtomCR.h"
+#include "application/change-requests/AddAtomsCR.h"
 #include "application/change-requests/AtomMaterialCR.h"
 #include "application/change-requests/AtomPositionCR.h"
 #include "application/change-requests/AtomVelocityCR.h"
 #include "application/change-requests/BoxResizeCR.h"
+#include "application/change-requests/RemoveAtomsCR.h"
 #include "application/change-requests/SimulationPlayCR.h"
 
 #include <windowsx.h> // Included so we can use GET_X_LPARAM/GET_Y_LPARAM
@@ -710,11 +711,8 @@ void Application::RenderUI()
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
 			if (ImGui::Button(ICON_ADD " Add Atom##AddAtomButton"))
 			{
-				// Create the new atom
-				const Atom& atom = AddAtom(type, pos, vel); 
-
-				// Create the Undo Change Request
-				AddUndoCR<AddAtomCR>(atom.uuid);
+				// Create the new atom (this will also create the change request)
+				const Atom& atom = AddAtom(type, pos, vel);
 
 				// Make the atom the only selected atom
 				SelectAtomByUUID(atom.uuid, true);
@@ -1182,6 +1180,36 @@ void Application::RenderUI()
 		ImGui::End();
 	}
 
+	// Are you sure you want to delete? - Popup
+	{
+		if (m_openDeletePopup)
+		{
+			// Only open the popup if atoms are selected
+			if (m_simulation.GetSelectedAtomIndices().size())
+				ImGui::OpenPopup("Delete Selected Atoms?");
+			m_openDeletePopup = false;
+		}
+
+		// Always center this window when appearing
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();  
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));  
+
+		if (ImGui::BeginPopupModal("Delete Selected Atoms?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Are you sure you want to delete the selected atoms?");
+			if (ImGui::Button("Delete", ImVec2(120, 0)))
+			{
+				RemoveAllSelectedAtoms();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				ImGui::CloseCurrentPopup();
+
+			ImGui::EndPopup();
+		}
+	}
+
 	// Call ImGUI::Render here - NOTE: It will not actually render to the back buffer, but rather an
 	//							 internal buffer. We have to call ImGui_ImplDX12_RenderDrawData below
 	//                           to have it actually render to the back buffer
@@ -1313,9 +1341,13 @@ void Application::SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSide
 	InvokeHandlers(m_boxSizeChangedHandlers);
 }
 
-void Application::RemoveAtomByUUID(size_t uuid) noexcept
+void Application::RemoveAtomByUUID(AtomUUID uuid, bool createCR) noexcept
 {
 	bool isSelected = m_simulation.AtomWithUUIDIsSelected(uuid);
+	const Atom& atom = m_simulation.GetAtomByUUID(uuid);
+
+	if (createCR)
+		AddUndoCR<RemoveAtomsCR>(AtomTPV(atom.type, atom.position, atom.velocity));
 
 	m_simulation.RemoveAtomByUUID(uuid);
 
@@ -1324,13 +1356,68 @@ void Application::RemoveAtomByUUID(size_t uuid) noexcept
 	if (isSelected)
 		InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
-const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const XMFLOAT3& velocity) noexcept
+void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR) noexcept
+{
+	bool atLeastOneIsSelected = m_simulation.AtLeastOneAtomWithUUIDIsSelected(uuids);
+
+	if (createCR)
+	{
+		LOG_WARN("{}", "Application::RemoveAtomsByUUID - have not tested this portion of the function");
+		std::vector<AtomTPV> data;
+		data.reserve(uuids.size());
+		for (AtomUUID uuid : uuids)
+		{
+			const Atom& atom = m_simulation.GetAtomByUUID(uuid);
+			data.emplace_back(atom.type, atom.position, atom.velocity);
+		}
+		AddUndoCR<RemoveAtomsCR>(std::move(data));
+	}
+
+	m_simulation.RemoveAtomsByUUID(uuids);
+
+	InvokeHandlers(m_atomsRemovedHandlers);
+
+	if (atLeastOneIsSelected)
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+void Application::RemoveAllSelectedAtoms() noexcept
+{
+	// First, create the CR
+	const std::vector<size_t>& indices = m_simulation.GetSelectedAtomIndices();
+	std::vector<AtomTPV> data;
+	data.reserve(indices.size());
+	for (size_t index : indices)
+	{
+		const Atom& atom = m_simulation.GetAtomByIndex(index); 
+		data.emplace_back(atom.type, atom.position, atom.velocity); 
+	}
+	AddUndoCR<RemoveAtomsCR>(std::move(data));
+
+	m_simulation.RemoveAllSelectedAtoms();
+	InvokeHandlers(m_atomsRemovedHandlers);
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
+}
+const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const XMFLOAT3& velocity, bool createCR) noexcept
 {
 	const Atom& atom = m_simulation.AddAtom(type, position, velocity);
+
+	if (createCR)
+		AddUndoCR<AddAtomsCR>(atom.uuid);
+
 	InvokeHandlers(m_atomsAddedHandlers);
 	return atom;
 }
-void Application::SelectAtomByUUID(size_t uuid, bool unselectAllOthersFirst) noexcept
+std::vector<AtomUUID> Application::AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR) noexcept
+{
+	std::vector<AtomUUID> uuids = m_simulation.AddAtoms(atomData);
+
+	if (createCR)
+		AddUndoCR<AddAtomsCR>(uuids); 
+
+	InvokeHandlers(m_atomsAddedHandlers);
+	return uuids;
+}
+void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) noexcept
 {
 	if (unselectAllOthersFirst)
 		m_simulation.ClearSelectedAtoms();
@@ -1346,7 +1433,7 @@ void Application::SelectAtomByIndex(size_t index, bool unselectAllOthersFirst) n
 	m_simulation.SelectAtomByIndex(index);
 	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
-void Application::UnselectAtomByUUID(size_t uuid) noexcept
+void Application::UnselectAtomByUUID(AtomUUID uuid) noexcept
 {
 	m_simulation.UnselectAtomByUUID(uuid);
 	InvokeHandlers(m_selectedAtomsChangedHandlers);
@@ -1356,6 +1443,7 @@ void Application::UnselectAtomByIndex(size_t index) noexcept
 	m_simulation.UnselectAtomByIndex(index);
 	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
+
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -1675,6 +1763,12 @@ LRESULT Application::MainWindowOnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARA
 {
 	// wParam - Contains the keycode
 	unsigned int keycode = static_cast<unsigned int>(wParam);
+
+	if (keycode == VK_DELETE)
+	{
+		m_openDeletePopup = true;
+		return 0;
+	}
 
 	// ... Key Up event ...
 	ForwardMessageToWindows([&keycode](SimulationWindow* window) -> bool { return window->OnKeyUp(keycode); });

@@ -7,6 +7,8 @@
 #pragma push_macro("AddAtom")
 #undef AddAtom
 
+using AtomUUID = size_t;
+
 namespace seethe
 {
 static constexpr unsigned int AtomTypeCount = 10;
@@ -30,6 +32,20 @@ enum class AtomType
 // Forward declare so that we can make Simulation a friend
 class Simulation;
 
+// This is a helper struct for grouping the pieces of data that are necessary when
+// adding/removing multiple atoms. Instead of having to all a method like 'AddAtom'
+// multiple times, we can call a method like 'AddAtoms' with a vector of AtomTPV
+struct AtomTPV
+{
+	AtomTPV() noexcept = default;
+	AtomTPV(AtomType _type, const DirectX::XMFLOAT3& _position, const DirectX::XMFLOAT3& _velocity) noexcept :
+		type(_type), position(_position), velocity(_velocity)
+	{}
+	AtomType			type = AtomType::HYDROGEN;
+	DirectX::XMFLOAT3	position = { 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3	velocity = { 0.0f, 0.0f, 0.0f };
+};
+
 class Atom
 {
 public:
@@ -45,10 +61,10 @@ public:
 	DirectX::XMFLOAT3 velocity;
 	float radius;
 	AtomType type;
-	size_t uuid;
+	AtomUUID uuid;
 
 private:
-	static size_t m_nextUUID;
+	static AtomUUID m_nextUUID;
 
 	friend Simulation;
 };
@@ -58,15 +74,23 @@ class Simulation
 public:
 	void AddAtom(const Atom& atom) { m_atoms.push_back(atom); }
 	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = {}, const DirectX::XMFLOAT3& velocity = {}) noexcept { return m_atoms.emplace_back(type, position, velocity); }
+	const Atom& AddAtom(const AtomTPV& data) noexcept { return AddAtom(data.type, data.position, data.velocity); }
+	std::vector<AtomUUID> AddAtoms(const std::vector<AtomTPV>& data) noexcept;
 	void RemoveAtomByIndex(size_t index) noexcept;
-	void RemoveAtomByUUID(size_t uuid) noexcept;
+	void RemoveAtomsByIndex(std::vector<size_t>& indices) noexcept;
+	void RemoveAtomsByIndex(const std::vector<size_t>& indices) noexcept;
+	void RemoveAtomByUUID(AtomUUID uuid) noexcept;
+	void RemoveAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept;
+	void RemoveAllSelectedAtoms() noexcept;
 
 	void Update(const seethe::Timer& timer);
 	
 	ND inline const std::vector<Atom>& GetAtoms() const noexcept { return m_atoms; }
 	ND inline std::vector<Atom>& GetAtoms() noexcept { return m_atoms; }
-	ND Atom& GetAtomByUUID(size_t uuid);
-	ND const Atom& GetAtomByUUID(size_t uuid) const;
+	ND Atom& GetAtomByUUID(AtomUUID uuid);
+	ND const Atom& GetAtomByUUID(AtomUUID uuid) const;
+	ND Atom& GetAtomByIndex(size_t index) noexcept { return m_atoms[index]; }
+	ND const Atom& GetAtomByIndex(size_t index) const noexcept { return m_atoms[index]; }
 	ND inline DirectX::XMFLOAT3 GetDimensions() const noexcept { return { m_boxMaxX * 2, m_boxMaxY * 2, m_boxMaxZ * 2 }; }
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;
@@ -84,21 +108,21 @@ public:
 	constexpr void StopPlaying() noexcept { m_isPlaying = false; }
 
 	inline void SelectAtomByIndex(size_t index) noexcept { m_selectedAtomIndices.push_back(index); UpdateSelectedAtomsCenter(); }
-	void SelectAtomByUUID(size_t uuid) noexcept;
+	void SelectAtomByUUID(AtomUUID uuid) noexcept;
 	ND inline bool AtomAtIndexIsSelected(size_t index) const noexcept { return m_selectedAtomIndices.cend() != std::find(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), index); }
-	ND inline bool AtomWithUUIDIsSelected(size_t uuid) const noexcept { return m_selectedAtomIndices.cend() != std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), [this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; }); }
+	ND inline bool AtomWithUUIDIsSelected(AtomUUID uuid) const noexcept { return m_selectedAtomIndices.cend() != std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), [this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; }); }
+	ND inline bool AtLeastOneAtomWithUUIDIsSelected(const std::vector<size_t>& uuids) const noexcept { return uuids.cend() != std::find_if(uuids.cbegin(), uuids.cend(), [this](const size_t& uuid) { return AtomWithUUIDIsSelected(uuid); }); }
 	inline void ClearSelectedAtoms() noexcept { m_selectedAtomIndices.clear(); UpdateSelectedAtomsCenter(); }
-	inline void UnselectAtomByIndex(size_t index) noexcept 
-	{
-		ASSERT(index < m_selectedAtomIndices.size(), "Index too large");
-		m_selectedAtomIndices.erase(m_selectedAtomIndices.begin() + index); 
-		UpdateSelectedAtomsCenter();
-	}
-	void UnselectAtomByUUID(size_t uuid) noexcept;
+	void UnselectAtomByIndex(size_t index) noexcept;
+	void UnselectAtomsByIndex(const std::vector<size_t> indices) noexcept;
+	void UnselectAtomByUUID(AtomUUID uuid) noexcept;
+	void UnselectAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept;
+
+	inline void ReseatNextUUID() noexcept { Atom::m_nextUUID = m_atoms.size() > 0 ? m_atoms.back().uuid + 1 : 0; }
 
 private:
 	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
-	
+
 	void DecrementSelectedIndicesBeyondIndex(size_t index) noexcept;
 	void UpdateSelectedAtomsCenter() noexcept;
 

@@ -79,11 +79,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\application\Application.cpp" />
-    <ClCompile Include="src\application\change-requests\AddAtomCR.cpp" />
+    <ClCompile Include="src\application\change-requests\AddAtomsCR.cpp" />
     <ClCompile Include="src\application\change-requests\AtomMaterialCR.cpp" />
     <ClCompile Include="src\application\change-requests\AtomPositionCR.cpp" />
     <ClCompile Include="src\application\change-requests\AtomVelocityCR.cpp" />
     <ClCompile Include="src\application\change-requests\BoxResizeCR.cpp" />
+    <ClCompile Include="src\application\change-requests\RemoveAtomsCR.cpp" />
     <ClCompile Include="src\application\change-requests\SimulationPlayCR.cpp" />
     <ClCompile Include="src\application\EntryPoint.cpp" />
     <ClCompile Include="src\rendering\GeometryGenerator.cpp" />
@@ -117,12 +118,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Users\backu\Downloads\IconsFontAwesome6.h" />
     <ClInclude Include="src\application\Application.h" />
-    <ClInclude Include="src\application\change-requests\AddAtomCR.h" />
+    <ClInclude Include="src\application\change-requests\AddAtomsCR.h" />
     <ClInclude Include="src\application\change-requests\AtomPositionCR.h" />
     <ClInclude Include="src\application\change-requests\AtomVelocityCR.h" />
     <ClInclude Include="src\application\change-requests\BoxResizeCR.h" />
     <ClInclude Include="src\application\change-requests\ChangeRequest.h" />
     <ClInclude Include="src\application\change-requests\AtomMaterialCR.h" />
+    <ClInclude Include="src\application\change-requests\RemoveAtomsCR.h" />
     <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />
     <ClInclude Include="src\rendering\GeometryGenerator.h" />
     <ClInclude Include="src\application\ui\fonts\Fonts.h" />

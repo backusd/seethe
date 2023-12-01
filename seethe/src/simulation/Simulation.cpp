@@ -26,7 +26,7 @@ float Atom::RadiusOf(AtomType type) noexcept
 	return AtomicRadii[static_cast<size_t>(type) - 1];
 }
 
-size_t Atom::m_nextUUID = 0;
+AtomUUID Atom::m_nextUUID = 0;
 
 Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity) noexcept :
 	type(_type),
@@ -36,6 +36,35 @@ Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity)
 	uuid(m_nextUUID++)
 {}
 
+std::vector<AtomUUID> Simulation::AddAtoms(const std::vector<AtomTPV>& data) noexcept
+{
+	std::vector<AtomUUID> uuids;
+	uuids.reserve(data.size());
+
+	for (const AtomTPV& d : data)
+		uuids.push_back(AddAtom(d).uuid);
+
+	return uuids;
+}
+void Simulation::RemoveAtomsByIndex(std::vector<size_t>& indices) noexcept
+{
+	// Must first sort the indices because it is only safe to erase largest to smallest
+	std::sort(indices.begin(), indices.end(), std::greater<size_t>());
+	std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index); });
+}
+void Simulation::RemoveAtomsByIndex(const std::vector<size_t>& indices) noexcept
+{
+	// If the indices are not sorted, then we must make a copy because the vector is const which means it can't be sorted
+	if (!std::is_sorted(indices.begin(), indices.end(), std::greater<size_t>()))
+	{
+		std::vector<size_t> copy = indices;
+		RemoveAtomsByIndex(copy);
+	}
+	else
+	{
+		std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index); });
+	}
+}
 void Simulation::RemoveAtomByIndex(size_t index) noexcept
 {
 	ASSERT(index < m_atoms.size(), "Index too large");
@@ -48,17 +77,17 @@ void Simulation::RemoveAtomByIndex(size_t index) noexcept
 	DecrementSelectedIndicesBeyondIndex(index);
 
 	// Erase the atom
-	// Small convenience here: if we are erasing the last atom, we can go ahead and reuse the uuid
-	if (m_atoms.size() - 1 == index)
-	{
-		// NOTE: If this assert fails, it probably means that we removed one or more atoms and failed to update Atom::m_nextUUID
-		ASSERT(m_atoms.back().uuid + 1 == Atom::m_nextUUID, "The last atom should always have a uuid 1 less than the next uuid");
-		--Atom::m_nextUUID;
-	}
+	m_atoms.erase(m_atoms.begin() + index); 
 
-	m_atoms.erase(m_atoms.begin() + index);
+	// Small convenience here: if we just erased the last atom, we can go ahead and reseat the uuid to a lower value
+	if (m_atoms.size() == index)
+		ReseatNextUUID();
 }
-void Simulation::RemoveAtomByUUID(size_t uuid) noexcept
+void Simulation::RemoveAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept
+{
+	std::for_each(uuids.begin(), uuids.end(), [this](const AtomUUID& uuid) { RemoveAtomByUUID(uuid); });
+}
+void Simulation::RemoveAtomByUUID(AtomUUID uuid) noexcept
 {
 	auto itr = std::find_if(m_atoms.cbegin(), m_atoms.cend(),
 		[uuid](const Atom& atom) { return atom.uuid == uuid; });
@@ -70,20 +99,26 @@ void Simulation::RemoveAtomByUUID(size_t uuid) noexcept
 
 		DecrementSelectedIndicesBeyondIndex(itr - m_atoms.cbegin());
 
-		// Small convenience here: if we are erasing the last atom, we can go ahead and reuse the uuid
+		// Small convenience here: if we are erasing the last atom, we can go ahead and reseat the uuid to a lower value
 		if (itr == m_atoms.cend() - 1)
 		{
-			// NOTE: If this assert fails, it probably means that we removed one or more atoms and failed to update Atom::m_nextUUID
-			ASSERT(itr->uuid + 1 == Atom::m_nextUUID, "The last atom should always have a uuid 1 less than the next uuid");
-			--Atom::m_nextUUID;
+			m_atoms.erase(itr);
+			ReseatNextUUID();
 		}
-
-		m_atoms.erase(itr);
+		else
+			m_atoms.erase(itr);
 	}
 	else
 	{
 		LOG_ERROR("ERROR: Simulation::RemoveAtomByUUID failed to find atom with uuid: {}", uuid);
 	}
+}
+void Simulation::RemoveAllSelectedAtoms() noexcept
+{
+	// Make a copy of the indices here because the remove methods will attempt to modify m_selectedAtomIndices
+	std::vector<size_t> copy = m_selectedAtomIndices;
+	RemoveAtomsByIndex(copy);
+	ASSERT(m_selectedAtomIndices.size() == 0, "Something went wrong - this should be empty");
 }
 void Simulation::DecrementSelectedIndicesBeyondIndex(size_t index) noexcept
 {
@@ -94,7 +129,7 @@ void Simulation::DecrementSelectedIndicesBeyondIndex(size_t index) noexcept
 	);
 }
 
-Atom& Simulation::GetAtomByUUID(size_t uuid)
+Atom& Simulation::GetAtomByUUID(AtomUUID uuid)
 {
 	// First do a simple check to see if the atom w/ uuid is at index uuid
 	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid)
@@ -112,7 +147,7 @@ Atom& Simulation::GetAtomByUUID(size_t uuid)
 
 	throw std::runtime_error(std::format("Could not find atom with uuid: {}", uuid));
 }
-const Atom& Simulation::GetAtomByUUID(size_t uuid) const
+const Atom& Simulation::GetAtomByUUID(AtomUUID uuid) const
 {
 	// First do a simple check to see if the atom w/ uuid is at index uuid
 	if (uuid < m_atoms.size() && m_atoms[uuid].uuid == uuid) 
@@ -274,7 +309,7 @@ float Simulation::GetMaxAxisAlignedDistanceFromOrigin() const noexcept
 	return max;
 }
 
-void Simulation::SelectAtomByUUID(size_t uuid) noexcept
+void Simulation::SelectAtomByUUID(AtomUUID uuid) noexcept
 {
 	if (!AtomWithUUIDIsSelected(uuid))
 	{
@@ -291,7 +326,22 @@ void Simulation::SelectAtomByUUID(size_t uuid) noexcept
 		LOG_ERROR("ERROR: Simulation::SelectAtomByUUID failed to find atom with uuid: {}", uuid);
 	}
 }
-void Simulation::UnselectAtomByUUID(size_t uuid) noexcept
+void Simulation::UnselectAtomByIndex(size_t index) noexcept
+{
+	ASSERT(index < m_atoms.size(), "Index too large");
+	std::erase(m_selectedAtomIndices, index); 
+	UpdateSelectedAtomsCenter();
+}
+void Simulation::UnselectAtomsByIndex(const std::vector<size_t> indices) noexcept
+{
+	for (size_t index : indices)
+	{
+		ASSERT(index < m_atoms.size(), "Index too large"); 
+		std::erase(m_selectedAtomIndices, index); 
+	}
+	UpdateSelectedAtomsCenter(); 
+}
+void Simulation::UnselectAtomByUUID(AtomUUID uuid) noexcept
 {
 	auto itr = std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), 
 		[this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; });
@@ -301,8 +351,23 @@ void Simulation::UnselectAtomByUUID(size_t uuid) noexcept
 		m_selectedAtomIndices.erase(itr);
 		UpdateSelectedAtomsCenter();
 	}
-	else
-		LOG_ERROR("ERROR: Simulation::UnselectAtomByUUID failed to find atom with uuid: {}", uuid);
+}
+void Simulation::UnselectAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept
+{
+	size_t numUnselected = std::erase_if(m_selectedAtomIndices,
+		[this, &uuids](const size_t& index)
+		{
+			return std::find_if(uuids.begin(), uuids.end(),  
+				[this, index](const size_t& uuid)  
+				{ 
+					return m_atoms[index].uuid == uuid; 
+				}
+			) != uuids.end();
+		}
+	);
+
+	if (numUnselected > 0)
+		UpdateSelectedAtomsCenter();
 }
 
 void Simulation::UpdateSelectedAtomsCenter() noexcept
