@@ -142,7 +142,7 @@ public:
 			SetBoxWallResizeRenderEffectsActive(false);
 	}
 
-	void StartSelectionMovement(MovementDirection direction) noexcept;
+	void StartSelectionMovement(MovementDirection direction = MovementDirection::X) noexcept;
 	void EndSelectionMovement() noexcept;
 
 private:
@@ -234,8 +234,8 @@ private:
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
 	}
 
-	void StartSelectionMovementImpl() noexcept;
-
+	inline void SelectionMovementDirectionChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDirectionChangedImpl(); }); }
+	void SelectionMovementDirectionChangedImpl() noexcept;
 
 	std::vector<std::function<void()>> m_oneTimeUpdateFns;
 

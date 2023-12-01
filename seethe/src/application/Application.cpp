@@ -530,7 +530,11 @@ void Application::RenderUI()
 
 		if (ImGui::Button(ICON_BOX_EDIT))
 		{
-			allowMouseToMoveAtoms = false;
+			if (allowMouseToMoveAtoms)
+			{
+				allowMouseToMoveAtoms = false;
+				m_mainSimulationWindow->EndSelectionMovement();
+			}
 			allowMouseToResizeBoxDimensions = !allowMouseToResizeBoxDimensions;
 			m_simulationSettings.mouseState = allowMouseToResizeBoxDimensions ? SimulationSettings::MouseState::RESIZING_BOX : SimulationSettings::MouseState::NONE;
 			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions);
@@ -556,9 +560,19 @@ void Application::RenderUI()
 		if (ImGui::Button(ICON_SPHERES))
 		{
 			allowMouseToResizeBoxDimensions = false; 
+			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(false);
+
 			allowMouseToMoveAtoms = !allowMouseToMoveAtoms;
-			m_simulationSettings.mouseState = allowMouseToMoveAtoms ? SimulationSettings::MouseState::MOVING_ATOMS : SimulationSettings::MouseState::NONE;
-			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions);
+			if (allowMouseToMoveAtoms)
+			{
+				m_simulationSettings.mouseState = SimulationSettings::MouseState::MOVING_ATOMS;
+				m_mainSimulationWindow->StartSelectionMovement();
+			}
+			else
+			{
+				m_simulationSettings.mouseState = SimulationSettings::MouseState::NONE;
+				m_mainSimulationWindow->EndSelectionMovement();
+			}			
 		}
 		ImGui::SetItemTooltip("Allow Mouse to Move Atoms");
 		ImGui::PopStyleColor(3);
@@ -921,7 +935,8 @@ void Application::RenderUI()
 							AtomPositionCR* cr = static_cast<AtomPositionCR*>(m_undoStack.top().get()); 
 							cr->m_positionFinal = atom.position;  
 
-							m_mainSimulationWindow->EndSelectionMovement();
+							if (!(m_simulationSettings.mouseState == SimulationSettings::MouseState::MOVING_ATOMS))
+								m_mainSimulationWindow->EndSelectionMovement();
 						}
 					};
 

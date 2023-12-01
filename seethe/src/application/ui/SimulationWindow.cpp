@@ -619,10 +619,17 @@ void SimulationWindow::StartSelectionMovement(MovementDirection direction) noexc
 {
 	m_movementDirection = direction;
 	m_selectionBeingMoved = true;
-	m_oneTimeUpdateFns.push_back([this]() { StartSelectionMovementImpl(); });
+	SelectionMovementDirectionChanged();
 }
-void SimulationWindow::StartSelectionMovementImpl() noexcept
+void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 {
+	// If nothing is selected, turn off the layer that renders the axis
+	if (m_simulation.GetSelectedAtomIndices().size() == 0)
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(false);
+		return;
+	}
+
 	const XMFLOAT3& center = m_simulation.GetSelectedAtomsCenter();
 	XMFLOAT3 dims = m_simulation.GetDimensions();
 	float yScale = 10.0f * std::max(dims.x, std::max(dims.y, dims.z));
@@ -798,6 +805,11 @@ void SimulationWindow::OnSelectedAtomsChanged() noexcept
 		pass1Layers[4].GetRenderItems()[0].SetInstanceCount(count);
 		pass1Layers[5].GetRenderItems()[0].SetInstanceCount(count);
 	}
+
+	// If we are allow the mouse to move the selected atoms, then we need to update the constant buffer
+	// that holds data for axis/plane being rendered
+	if (m_selectionBeingMoved)
+		SelectionMovementDirectionChanged();
 }
 void SimulationWindow::OnAtomsAdded() noexcept
 {
