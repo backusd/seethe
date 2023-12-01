@@ -530,13 +530,40 @@ void Application::RenderUI()
 
 		if (ImGui::Button(ICON_BOX_EDIT))
 		{
+			allowMouseToMoveAtoms = false;
 			allowMouseToResizeBoxDimensions = !allowMouseToResizeBoxDimensions;
 			m_simulationSettings.mouseState = allowMouseToResizeBoxDimensions ? SimulationSettings::MouseState::RESIZING_BOX : SimulationSettings::MouseState::NONE;
 			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions);
 		}
 		ImGui::SetItemTooltip("Allow Mouse to Resize Simulation Box");
-
 		ImGui::PopStyleColor(3);
+
+
+
+		if (allowMouseToMoveAtoms)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.9f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_SPHERES))
+		{
+			allowMouseToResizeBoxDimensions = false; 
+			allowMouseToMoveAtoms = !allowMouseToMoveAtoms;
+			m_simulationSettings.mouseState = allowMouseToMoveAtoms ? SimulationSettings::MouseState::MOVING_ATOMS : SimulationSettings::MouseState::NONE;
+			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions);
+		}
+		ImGui::SetItemTooltip("Allow Mouse to Move Atoms");
+		ImGui::PopStyleColor(3);
+
+
 		
 		ImGui::SameLine();
 		ImGui::Button("Simulation");

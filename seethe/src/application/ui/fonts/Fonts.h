@@ -19,3 +19,6 @@
 #define ICON_EDIT_PENCIL			"\xee\x9c\x8f"	// U+e70f
 #define ICON_CANCEL					"\xee\x9c\x91"	// U+e711
 #define ICON_ADD					"\xee\x9c\x90"	// U+e710
+#define ICON_TOUCH					"\xee\xa0\x95"	// U+e815
+#define ICON_SPHERES				"\xee\xb0\xa6"	// U+ec26
+#define ICON_SPHERES_CONNECTED		"\xef\x88\xac"	// U+f22c
