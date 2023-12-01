@@ -370,7 +370,7 @@ void Simulation::UnselectAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcep
 		UpdateSelectedAtomsCenter();
 }
 
-void Simulation::UpdateSelectedAtomsCenter() noexcept
+constexpr void Simulation::UpdateSelectedAtomsCenter() noexcept
 {
 	m_selectedAtomsCenter = { 0.0f, 0.0f, 0.0f };
 	size_t count = m_selectedAtomIndices.size();

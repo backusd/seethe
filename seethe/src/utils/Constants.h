@@ -10,4 +10,5 @@ namespace seethe
 	extern std::uint32_t g_boxFaceWhenHoveredMaterialIndex;
 	extern std::uint32_t g_boxFaceWhenClickedMaterialIndex;
 	extern std::uint32_t g_selectedAtomOutlineMaterialIndex;
+	extern std::uint32_t g_solidAxisColorMaterialIndex;
 }

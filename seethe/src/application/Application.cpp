@@ -238,6 +238,10 @@ void Application::InitializeMaterials() noexcept
 	// Selected Atom Outline Material
 	g_selectedAtomOutlineMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
 	m_materials.push_back({ { 1.0f, 0.647f, 0.0f, 1.0f }, {}, 0.0f });
+
+	// Solid Axis Material
+	g_solidAxisColorMaterialIndex = static_cast<std::uint32_t>(m_materials.size());
+	m_materials.push_back({ { 1.0f, 0.0f, 0.0f, 1.0f }, {}, 0.0f });
 }
 void Application::SaveMaterials() noexcept
 {
@@ -392,6 +396,9 @@ void Application::RenderUI()
 	static bool editLighting = false;
 	static bool editSimulationSettings = false;
 
+	static bool allowMouseToResizeBoxDimensions = false;
+	static bool allowMouseToMoveAtoms = false;
+
 	static const char* elementNames = "Hydrogen\0Helium\0Lithium\0Beryllium\0Boron\0Carbon\0Nitrogen\0Oxygen\0Flourine\0Neon\0\0";
 
 	{
@@ -508,7 +515,7 @@ void Application::RenderUI()
 
 		ImGui::SameLine(x + 12.0f);
 
-		if (m_simulationSettings.allowMouseToResizeBoxDimensions)
+		if (allowMouseToResizeBoxDimensions)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.9f, 0.0f, 1.0f));
@@ -523,8 +530,9 @@ void Application::RenderUI()
 
 		if (ImGui::Button(ICON_BOX_EDIT))
 		{
-			m_simulationSettings.allowMouseToResizeBoxDimensions = !m_simulationSettings.allowMouseToResizeBoxDimensions;
-			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+			allowMouseToResizeBoxDimensions = !allowMouseToResizeBoxDimensions;
+			m_simulationSettings.mouseState = allowMouseToResizeBoxDimensions ? SimulationSettings::MouseState::RESIZING_BOX : SimulationSettings::MouseState::NONE;
+			m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions);
 		}
 		ImGui::SetItemTooltip("Allow Mouse to Resize Simulation Box");
 
@@ -866,21 +874,27 @@ void Application::RenderUI()
 							cr->m_velocityFinal = atom.velocity;
 						}
 					};
-				static auto CheckPositionSlider = [this](const Atom& atom, const XMFLOAT3& initialPosition, bool& sliderActive)
+				static auto CheckPositionSlider = [this](const Atom& atom, const XMFLOAT3& initialPosition, bool& sliderActive, MovementDirection direction)
 					{
 						if (ImGui::IsItemActive()) 
 						{
 							if (!sliderActive) 
 							{
 								sliderActive = true; 
-								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, atom.uuid); 
+								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, atom.uuid);
+								m_mainSimulationWindow->StartSelectionMovement(direction);
 							}
+
+							// Have to call this because we are manually moving a selected atom
+							m_simulation.UpdateSelectedAtomsCenter();
 						}
 						else if (sliderActive) 
 						{
 							sliderActive = false; 
 							AtomPositionCR* cr = static_cast<AtomPositionCR*>(m_undoStack.top().get()); 
 							cr->m_positionFinal = atom.position;  
+
+							m_mainSimulationWindow->EndSelectionMovement();
 						}
 					};
 
@@ -895,7 +909,7 @@ void Application::RenderUI()
 				ImGui::Text("Position  X");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomPositionX", &atom.position.x, 0.2f, -boxDims.x + atom.radius, boxDims.x - atom.radius);
-				CheckPositionSlider(atom, initialPosition, positionXSliderIsActive);
+				CheckPositionSlider(atom, initialPosition, positionXSliderIsActive, MovementDirection::X);
 				ImGui::Unindent();
 
 				ImGui::Indent(77.0f);
@@ -903,7 +917,7 @@ void Application::RenderUI()
 				ImGui::Text("Y");
 				ImGui::SameLine(100.0f);
 				ImGui::DragFloat("##atomPositionY", &atom.position.y, 0.2f, -boxDims.y + atom.radius, boxDims.y - atom.radius);
-				CheckPositionSlider(atom, initialPosition, positionYSliderIsActive);
+				CheckPositionSlider(atom, initialPosition, positionYSliderIsActive, MovementDirection::Y);
 				ImGui::Unindent(77.0f);
 
 				ImGui::Indent(76.0f);
@@ -911,7 +925,7 @@ void Application::RenderUI()
 				ImGui::Text("Z");
 				ImGui::SameLine();
 				ImGui::DragFloat("##atomPositionZ", &atom.position.z, 0.2f, -boxDims.z + atom.radius, boxDims.z - atom.radius);
-				CheckPositionSlider(atom, initialPosition, positionZSliderIsActive);
+				CheckPositionSlider(atom, initialPosition, positionZSliderIsActive, MovementDirection::Z);
 				ImGui::Unindent(76.0f);
 
 				ImGui::Spacing();
@@ -1046,10 +1060,25 @@ void Application::RenderUI()
 
 			// Simulation Box
 			ImGui::SeparatorText("Simulation Box");
-			if (ImGui::Checkbox("Allow Mouse to Resize Box", &m_simulationSettings.allowMouseToResizeBoxDimensions))
+
+
+			bool disablingBox = !(m_simulationSettings.mouseState == SimulationSettings::MouseState::NONE ||
+								  m_simulationSettings.mouseState == SimulationSettings::MouseState::RESIZING_BOX);
+			if (disablingBox)
+				ImGui::BeginDisabled();
+
+			if (ImGui::Checkbox("Allow Mouse to Resize Box", &allowMouseToResizeBoxDimensions))
 			{
-				m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(m_simulationSettings.allowMouseToResizeBoxDimensions);
+				m_simulationSettings.mouseState = allowMouseToResizeBoxDimensions ? SimulationSettings::MouseState::RESIZING_BOX : SimulationSettings::MouseState::NONE;
+				m_mainSimulationWindow->SetAllowMouseToResizeBoxDimensions(allowMouseToResizeBoxDimensions); 
 			}
+			if (disablingBox)
+			{
+				ImGui::EndDisabled();
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+					ImGui::SetTooltip("Cannot go into box edit mode because a different mouse mode is active");
+			}
+
 			ImGui::Checkbox("Allow Atoms to Relocate When Resizing", &m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
 
 			float minSideLength = m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions ? 
@@ -1147,6 +1176,26 @@ void Application::RenderUI()
 					if (m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions)
 						cr->m_atomsFinal = m_simulation.GetAtoms();
 				}
+			}
+
+
+			// Atoms
+			ImGui::SeparatorText("Atoms");
+
+			bool disablingAtoms = !(m_simulationSettings.mouseState == SimulationSettings::MouseState::NONE ||
+									m_simulationSettings.mouseState == SimulationSettings::MouseState::MOVING_ATOMS);
+			if (disablingAtoms)
+				ImGui::BeginDisabled();
+
+			if (ImGui::Checkbox("Allow Mouse to Move Atoms", &allowMouseToMoveAtoms))
+			{
+				m_simulationSettings.mouseState = allowMouseToMoveAtoms ? SimulationSettings::MouseState::MOVING_ATOMS : SimulationSettings::MouseState::NONE;
+			}
+			if (disablingAtoms)
+			{
+				ImGui::EndDisabled();
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+					ImGui::SetTooltip("Cannot allow mouse to move atoms because a different mouse mode is active");
 			}
 
 			ImGui::End();

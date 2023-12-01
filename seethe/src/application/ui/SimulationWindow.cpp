@@ -327,7 +327,7 @@ void SimulationWindow::InitializeRenderPasses()
 	// Blending:		None
 	// Stenciling:		None
 
-	GeometryGenerator::MeshData cylinderMesh = GeometryGenerator::CreateCylinder(0.1f, 0.1f, 20.0f, 20, 20); 
+	GeometryGenerator::MeshData cylinderMesh = GeometryGenerator::CreateCylinder(0.05f, 0.05f, 1.0f, 20, 1); 
 	std::vector<SolidColorVertex> cylinderVertices; 
 	cylinderVertices.reserve(cylinderMesh.Vertices.size()); 
 	for (GeometryGenerator::Vertex& v : cylinderMesh.Vertices) 
@@ -345,19 +345,13 @@ void SimulationWindow::InitializeRenderPasses()
 	layer3PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
 	RenderPassLayer& layer3 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, layer3MeshGroup, layer3PSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #3");
+	layer3.SetActive(false);
 
 	// Axis Cylinder
 	RenderItem& axisRI = layer3.EmplaceBackRenderItem(0);
-	//axisRI.SetActive(false);
 
 	m_axisCylinderConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1); 
 	RootConstantBufferView& axisCylinderInstanceCBV = axisRI.EmplaceBackRootConstantBufferView(0, m_axisCylinderConstantBuffer.get()); 
-
-	InstanceData axisData = {}; 
-	XMStoreFloat4x4(&axisData.World, XMMatrixTranspose(XMMatrixIdentity())); 
-	m_axisCylinderConstantBuffer->CopyData(axisData); 
-
-
 
 
 	// Beginning of Layer #4 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
@@ -620,6 +614,66 @@ void SimulationWindow::Update(const Timer& timer, int frameIndex)
 		m_oneTimeUpdateFns.clear();
 	}
 }
+
+void SimulationWindow::StartSelectionMovement(MovementDirection direction) noexcept
+{
+	m_movementDirection = direction;
+	m_selectionBeingMoved = true;
+	m_oneTimeUpdateFns.push_back([this]() { StartSelectionMovementImpl(); });
+}
+void SimulationWindow::StartSelectionMovementImpl() noexcept
+{
+	const XMFLOAT3& center = m_simulation.GetSelectedAtomsCenter();
+	XMFLOAT3 dims = m_simulation.GetDimensions();
+	float yScale = 10.0f * std::max(dims.x, std::max(dims.y, dims.z));
+
+	switch (m_movementDirection)
+	{
+	case MovementDirection::X:
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+
+		InstanceData axisData = {};
+		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
+		XMStoreFloat4x4(&axisData.World, XMMatrixTranspose(XMMatrixScaling(1.0f, yScale, 1.0f) * XMMatrixRotationZ(XM_PIDIV2) * XMMatrixTranslation(center.x, center.y, center.z)));
+		m_axisCylinderConstantBuffer->CopyData(axisData);
+		break;
+	}
+	case MovementDirection::Y:
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+
+		InstanceData axisData = {};
+		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
+		XMStoreFloat4x4(&axisData.World, XMMatrixTranspose(XMMatrixScaling(1.0f, yScale, 1.0f) * XMMatrixTranslation(center.x, center.y, center.z)));
+		m_axisCylinderConstantBuffer->CopyData(axisData);
+		break;
+	}
+	case MovementDirection::Z:
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+
+		InstanceData axisData = {};
+		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
+		XMStoreFloat4x4(&axisData.World, XMMatrixTranspose(XMMatrixScaling(1.0f, yScale, 1.0f) * XMMatrixRotationX(XM_PIDIV2) * XMMatrixTranslation(center.x, center.y, center.z)));
+		m_axisCylinderConstantBuffer->CopyData(axisData);
+		break;
+	}
+	}
+}
+void SimulationWindow::EndSelectionMovement() noexcept
+{
+	m_selectionBeingMoved = false;
+
+	switch (m_movementDirection)
+	{
+	case MovementDirection::X:
+	case MovementDirection::Y:
+	case MovementDirection::Z: m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(false); break;
+	}
+}
+
+
 
 void SimulationWindow::OnBoxSizeChanged() noexcept
 {

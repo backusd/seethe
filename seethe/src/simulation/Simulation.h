@@ -95,7 +95,12 @@ public:
 	ND inline DirectX::XMFLOAT3 GetDimensionMaxs() const noexcept { return { m_boxMaxX, m_boxMaxY, m_boxMaxZ }; }
 	ND float GetMaxAxisAlignedDistanceFromOrigin() const noexcept;
 	ND const std::vector<size_t>& GetSelectedAtomIndices() const noexcept { return m_selectedAtomIndices; }
-	ND const DirectX::XMFLOAT3& GetSelectedAtomsCenter() const noexcept { return m_selectedAtomsCenter; }
+	ND const DirectX::XMFLOAT3& GetSelectedAtomsCenter() noexcept 
+	{ 
+		if (m_isPlaying)
+			UpdateSelectedAtomsCenter(); 
+		return m_selectedAtomsCenter; 
+	}
 
 	inline void SetAtoms(const std::vector<Atom>& atoms) noexcept { m_atoms = atoms; }
 	inline void SetAtoms(std::vector<Atom>&& atoms) noexcept { m_atoms = std::move(atoms); }
@@ -105,7 +110,7 @@ public:
 
 	ND constexpr inline bool IsPlaying() const noexcept { return m_isPlaying; }
 	constexpr void StartPlaying() noexcept { m_isPlaying = true; }
-	constexpr void StopPlaying() noexcept { m_isPlaying = false; }
+	constexpr void StopPlaying() noexcept { m_isPlaying = false; UpdateSelectedAtomsCenter(); }
 
 	inline void SelectAtomByIndex(size_t index) noexcept { m_selectedAtomIndices.push_back(index); UpdateSelectedAtomsCenter(); }
 	void SelectAtomByUUID(AtomUUID uuid) noexcept;
@@ -120,11 +125,12 @@ public:
 
 	inline void ReseatNextUUID() noexcept { Atom::m_nextUUID = m_atoms.size() > 0 ? m_atoms.back().uuid + 1 : 0; }
 
+	constexpr void UpdateSelectedAtomsCenter() noexcept;
+
 private:
 	bool DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept;
 
 	void DecrementSelectedIndicesBeyondIndex(size_t index) noexcept;
-	void UpdateSelectedAtomsCenter() noexcept;
 
 	std::vector<Atom> m_atoms = {};
 	std::vector<size_t> m_selectedAtomIndices;

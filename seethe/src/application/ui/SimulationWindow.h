@@ -77,6 +77,16 @@ struct PassConstants
 
 namespace seethe
 {
+enum class MovementDirection
+{
+	X,
+	Y,
+	Z,
+	XY,
+	XZ,
+	YZ
+};
+
 class Application;
 
 class SimulationWindow
@@ -131,6 +141,9 @@ public:
 		if (!allow)
 			SetBoxWallResizeRenderEffectsActive(false);
 	}
+
+	void StartSelectionMovement(MovementDirection direction) noexcept;
+	void EndSelectionMovement() noexcept;
 
 private:
 	void RegisterEventHandlers() noexcept;
@@ -220,6 +233,9 @@ private:
 		// Arrow Render Item
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
 	}
+
+	void StartSelectionMovementImpl() noexcept;
+
 
 	std::vector<std::function<void()>> m_oneTimeUpdateFns;
 
@@ -317,5 +333,9 @@ private:
 	bool m_mouseDraggingBoxUpIsLarger = false;
 	DirectX::XMFLOAT3 m_boxDimensionsInitial = {};
 	bool m_forceSidesToBeEqualInitial = true;
+
+	// State when atom(s) is being moved
+	bool m_selectionBeingMoved = false;
+	MovementDirection m_movementDirection = MovementDirection::X;
 };
 }

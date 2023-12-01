@@ -31,8 +31,18 @@ struct SimulationSettings
 		PLAYING_FOR_FIXED_TIME
 	};
 
+	enum class MouseState
+	{
+		NONE,
+		RESIZING_BOX,
+		MOVING_ATOMS
+	};
+
 	// State of Play / Pause
 	PlayState playState = PlayState::PAUSED;
+
+	// Mouse State
+	MouseState mouseState = MouseState::NONE;
 
 	// Fixed Time Settings
 	float fixedTimePlayDuration = 5.0f;
@@ -41,10 +51,6 @@ struct SimulationSettings
 	// Box Settings
 	bool allowAtomsToRelocateWhenUpdatingBoxDimensions = false;
 	bool forceSidesToBeEqual = true;
-	bool allowMouseToResizeBoxDimensions = false;
-
-	// Atom details
-	std::vector<unsigned int> selectedAtomUUIDs;
 };
 
 class Application
