@@ -1031,8 +1031,17 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 	// Disallow picking when the simulation is actively playing
 	if (!m_simulation.IsPlaying())
 	{
+		// Check if the mouse is allowed to move atoms
+		if (m_selectionBeingMoved)
+		{
+			m_atomHoveredOverUUID = PickAtom(x, y);
+			if (m_atomHoveredOverUUID.has_value())
+			{
+				m_simulation.SelectAtomByUUID(m_atomHoveredOverUUID.value());
+			}
+		}
 		// Check if mouse resizing the box is enabled
-		if (m_allowMouseToResizeBoxDimensions)
+		else if (m_allowMouseToResizeBoxDimensions)
 		{
 			// If we are actively expanding/contracting the box walls, handle that first
 			if (MouseIsDraggingWall())
@@ -1397,8 +1406,10 @@ void SimulationWindow::HandleChar(char c) noexcept
 }
 
 
-void SimulationWindow::Pick(float x, float y)
+std::optional<AtomUUID> SimulationWindow::PickAtom(float x, float y)
 {
+	std::optional<AtomUUID> pickedAtom = std::nullopt;
+
 	Camera& camera = m_renderer->GetCamera();
 	XMMATRIX projection = camera.GetProj();
 	XMMATRIX view = camera.GetView();
@@ -1452,8 +1463,12 @@ void SimulationWindow::Pick(float x, float y)
 		if (sphere.Intersects(origin, direction, distance))
 		{
 			LOG_TRACE("***** SPHERE: {}", distance);
+
+			pickedAtom = atom.uuid;
 		}
 	}
+
+	return pickedAtom;
 }
 void SimulationWindow::PickBoxWalls(float x, float y)
 {

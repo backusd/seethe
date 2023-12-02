@@ -193,7 +193,7 @@ private:
 
 	void InitializeRenderPasses();
 
-	void Pick(float x, float y);
+	std::optional<AtomUUID> PickAtom(float x, float y);
 	void PickBoxWalls(float x, float y);
 
 	constexpr inline void ClearMouseHoverWallState() noexcept
@@ -337,5 +337,6 @@ private:
 	// State when atom(s) is being moved
 	bool m_selectionBeingMoved = false;
 	MovementDirection m_movementDirection = MovementDirection::X;
+	std::optional<AtomUUID> m_atomHoveredOverUUID = std::nullopt;
 };
 }
