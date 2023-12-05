@@ -56,10 +56,6 @@ struct SimulationSettings
 class Application
 {
 public:
-	using EventHandler = std::function<void()>;
-	using EventHandlers = std::vector<EventHandler>;
-
-public:
 	Application();
 	Application(const Application&) = delete;
 	Application(Application&&) = delete;
@@ -126,14 +122,7 @@ public:
 	// Handlers
 	inline void RegisterMaterialChangedHandler(const EventHandler& handler) noexcept { m_materialChangedHandlers.push_back(handler); }
 	inline void RegisterMaterialChangedHandler(EventHandler&& handler) noexcept { m_materialChangedHandlers.push_back(handler); }
-	inline void RegisterBoxSizeChangedHandler(const EventHandler& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
-	inline void RegisterBoxSizeChangedHandler(EventHandler&& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
-	inline void RegisterSelectedAtomsChangedHandler(const EventHandler& handler) noexcept { m_selectedAtomsChangedHandlers.push_back(handler); }
-	inline void RegisterSelectedAtomsChangedHandler(EventHandler&& handler) noexcept { m_selectedAtomsChangedHandlers.push_back(handler); }
-	inline void RegisterAtomsAddedHandler(const EventHandler& handler) noexcept { m_atomsAddedHandlers.push_back(handler); }
-	inline void RegisterAtomsAddedHandler(EventHandler&& handler) noexcept { m_atomsAddedHandlers.push_back(handler); }
-	inline void RegisterAtomsRemovedHandler(const EventHandler& handler) noexcept { m_atomsRemovedHandlers.push_back(handler); }
-	inline void RegisterAtomsRemovedHandler(EventHandler&& handler) noexcept { m_atomsRemovedHandlers.push_back(handler); }
+
 
 private:
 	void InitializeMaterials() noexcept;
@@ -145,11 +134,6 @@ private:
 	void Present();
 
 	void ForwardMessageToWindows(std::function<bool(SimulationWindow*)>&& fn);
-	inline void InvokeHandlers(const EventHandlers& handlers) const noexcept
-	{
-		for (auto& handler : handlers)
-			handler();
-	}
 
 
 	std::unique_ptr<MainWindow> m_mainWindow;
@@ -162,10 +146,6 @@ private:
 
 	// EventHandlers
 	EventHandlers m_materialChangedHandlers;
-	EventHandlers m_boxSizeChangedHandlers;
-	EventHandlers m_selectedAtomsChangedHandlers;
-	EventHandlers m_atomsAddedHandlers;
-	EventHandlers m_atomsRemovedHandlers;
 
 	// Rendering resources
 	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, g_numFrameResources> m_allocators;

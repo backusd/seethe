@@ -43,7 +43,7 @@ void SimulationWindow::RegisterEventHandlers() noexcept
 	);
 
 	// Box Size Changed
-	m_application.RegisterBoxSizeChangedHandler(
+	m_simulation.RegisterBoxSizeChangedHandler(
 		[this]()
 		{
 			OnBoxSizeChanged();
@@ -54,9 +54,9 @@ void SimulationWindow::RegisterEventHandlers() noexcept
 	);
 
 	// Atoms Added/Removed/Selected
-	m_application.RegisterAtomsAddedHandler([this]() { OnAtomsAdded(); });
-	m_application.RegisterAtomsRemovedHandler([this]() { OnAtomsRemoved(); });
-	m_application.RegisterSelectedAtomsChangedHandler([this]() { OnSelectedAtomsChanged(); });
+	m_simulation.RegisterAtomsAddedHandler([this]() { OnAtomsAdded(); });
+	m_simulation.RegisterAtomsRemovedHandler([this]() { OnAtomsRemoved(); });
+	m_simulation.RegisterSelectedAtomsChangedHandler([this]() { OnSelectedAtomsChanged(); });
 }
 
 void SimulationWindow::InitializeRenderPasses()

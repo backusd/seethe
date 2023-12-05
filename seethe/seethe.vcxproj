@@ -154,6 +154,7 @@
     <ClInclude Include="src\utils\d3dx12.h" />
     <ClInclude Include="src\utils\DDSTextureLoader.h" />
     <ClInclude Include="src\utils\DxgiInfoManager.h" />
+    <ClInclude Include="src\utils\Event.h" />
     <ClInclude Include="src\utils\Log.h" />
     <ClInclude Include="src\utils\MathHelper.h" />
     <ClInclude Include="src\utils\String.h" />

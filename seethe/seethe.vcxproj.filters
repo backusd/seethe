@@ -281,6 +281,9 @@
     <ClInclude Include="src\application\change-requests\RemoveAtomsCR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils\Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vendor\imgui\misc\debuggers\imgui.natstepfilter" />

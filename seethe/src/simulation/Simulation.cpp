@@ -35,7 +35,12 @@ Atom::Atom(AtomType _type, const XMFLOAT3& _position, const XMFLOAT3& _velocity)
 	radius(AtomicRadii[static_cast<int>(_type) - 1]),
 	uuid(m_nextUUID++)
 {}
-
+const Atom& Simulation::AddAtom(AtomType type, const XMFLOAT3& position, const XMFLOAT3& velocity) noexcept
+{
+	const Atom& atom = m_atoms.emplace_back(type, position, velocity);
+	InvokeHandlers(m_atomsAddedHandlers);
+	return atom;
+}
 std::vector<AtomUUID> Simulation::AddAtoms(const std::vector<AtomTPV>& data) noexcept
 {
 	std::vector<AtomUUID> uuids;
@@ -44,13 +49,20 @@ std::vector<AtomUUID> Simulation::AddAtoms(const std::vector<AtomTPV>& data) noe
 	for (const AtomTPV& d : data)
 		uuids.push_back(AddAtom(d).uuid);
 
+	InvokeHandlers(m_atomsAddedHandlers);
 	return uuids;
 }
 void Simulation::RemoveAtomsByIndex(std::vector<size_t>& indices) noexcept
 {
+	bool oneIsSelected = AtLeastOneAtomWithIndexIsSelected(indices);
+
 	// Must first sort the indices because it is only safe to erase largest to smallest
 	std::sort(indices.begin(), indices.end(), std::greater<size_t>());
-	std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index); });
+	std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index, false); });
+	
+	if (oneIsSelected)
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+	InvokeHandlers(m_atomsRemovedHandlers);
 }
 void Simulation::RemoveAtomsByIndex(const std::vector<size_t>& indices) noexcept
 {
@@ -62,16 +74,17 @@ void Simulation::RemoveAtomsByIndex(const std::vector<size_t>& indices) noexcept
 	}
 	else
 	{
-		std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index); });
+		std::for_each(indices.begin(), indices.end(), [this](const size_t& index) { RemoveAtomByIndex(index, false); });
+		InvokeHandlers(m_atomsRemovedHandlers);
 	}
 }
-void Simulation::RemoveAtomByIndex(size_t index) noexcept
+void Simulation::RemoveAtomByIndex(size_t index, bool invokeHandlers) noexcept
 {
 	ASSERT(index < m_atoms.size(), "Index too large");
 
 	// Remove the index from selected list (if it exists)
 	if (AtomAtIndexIsSelected(index)) 
-		UnselectAtomByIndex(index);
+		UnselectAtomByIndex(index, invokeHandlers);
 
 	// Decrement all of the selected indices that lie beyond the atom being removed
 	DecrementSelectedIndicesBeyondIndex(index);
@@ -79,15 +92,26 @@ void Simulation::RemoveAtomByIndex(size_t index) noexcept
 	// Erase the atom
 	m_atoms.erase(m_atoms.begin() + index); 
 
+	// Invoke the handlers
+	if (invokeHandlers)
+		InvokeHandlers(m_atomsRemovedHandlers);
+
 	// Small convenience here: if we just erased the last atom, we can go ahead and reseat the uuid to a lower value
 	if (m_atoms.size() == index)
 		ReseatNextUUID();
 }
 void Simulation::RemoveAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept
 {
-	std::for_each(uuids.begin(), uuids.end(), [this](const AtomUUID& uuid) { RemoveAtomByUUID(uuid); });
+	bool oneIsSelected = AtLeastOneAtomWithUUIDIsSelected(uuids);
+
+	// Pass false to RemoveAtomByUUID so that we only invoke the handlers once
+	std::for_each(uuids.begin(), uuids.end(), [this](const AtomUUID& uuid) { RemoveAtomByUUID(uuid, false); });
+	
+	if (oneIsSelected)
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+	InvokeHandlers(m_atomsRemovedHandlers);
 }
-void Simulation::RemoveAtomByUUID(AtomUUID uuid) noexcept
+void Simulation::RemoveAtomByUUID(AtomUUID uuid, bool invokeHandlers) noexcept
 {
 	auto itr = std::find_if(m_atoms.cbegin(), m_atoms.cend(),
 		[uuid](const Atom& atom) { return atom.uuid == uuid; });
@@ -95,9 +119,12 @@ void Simulation::RemoveAtomByUUID(AtomUUID uuid) noexcept
 	if (itr != m_atoms.cend())
 	{
 		if (AtomWithUUIDIsSelected(uuid))
-			UnselectAtomByUUID(uuid);
+			UnselectAtomByUUID(uuid, invokeHandlers);
 
 		DecrementSelectedIndicesBeyondIndex(itr - m_atoms.cbegin());
+
+		if (invokeHandlers)
+			InvokeHandlers(m_atomsRemovedHandlers);
 
 		// Small convenience here: if we are erasing the last atom, we can go ahead and reseat the uuid to a lower value
 		if (itr == m_atoms.cend() - 1)
@@ -166,7 +193,40 @@ const Atom& Simulation::GetAtomByUUID(AtomUUID uuid) const
 	throw std::runtime_error(std::format("Could not find atom with uuid: {}", uuid)); 
 }
 
+void Simulation::SetAtoms(const std::vector<Atom>& atoms) noexcept 
+{ 
+	// In probably most cases, we are calling this function because of an undo/redo action and therefore,
+	// don't have to worry about atom selection because the atoms themselves are not changing (they are 
+	// just changing location). However, it's possible we use this method as a means of completely resetting
+	// the entire simulation, in which case, we need to make sure that the selected indices don't exceed the 
+	// new number of atoms. To be safe, we are just going to clear the selected indices because the actual 
+	// selected indices probably wouldn't make sense anyways
+	if (atoms.size() != m_atoms.size())
+	{
+		m_selectedAtomIndices.clear();
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+	}
+	
+	m_atoms = atoms; 
+	InvokeHandlers(m_atomsAddedHandlers);
+}
+void Simulation::SetAtoms(std::vector<Atom>&& atoms) noexcept 
+{ 
+	// In probably most cases, we are calling this function because of an undo/redo action and therefore,
+	// don't have to worry about atom selection because the atoms themselves are not changing (they are 
+	// just changing location). However, it's possible we use this method as a means of completely resetting
+	// the entire simulation, in which case, we need to make sure that the selected indices don't exceed the 
+	// new number of atoms. To be safe, we are just going to clear the selected indices because the actual 
+	// selected indices probably wouldn't make sense anyways
+	if (atoms.size() != m_atoms.size()) 
+	{
+		m_selectedAtomIndices.clear(); 
+		InvokeHandlers(m_selectedAtomsChangedHandlers); 
+	}
 
+	m_atoms = std::move(atoms);
+	InvokeHandlers(m_atomsAddedHandlers); 
+}
 
 void Simulation::Update(const seethe::Timer& timer)
 {
@@ -268,9 +328,9 @@ bool Simulation::SetDimensions(float lengthX, float lengthY, float lengthZ, bool
 	m_boxMaxY = newMaxY;
 	m_boxMaxZ = newMaxZ;
 
+	InvokeHandlers(m_boxSizeChangedHandlers);
 	return true;
 }
-
 bool Simulation::DimensionUpdateTryRelocation(float& position, float radius, float newMax, bool allowRelocation) noexcept
 {
 	// Check positive max
@@ -292,7 +352,6 @@ bool Simulation::DimensionUpdateTryRelocation(float& position, float radius, flo
 
 	return true;
 }
-
 float Simulation::GetMaxAxisAlignedDistanceFromOrigin() const noexcept
 {
 	float max = 0.0f;
@@ -319,6 +378,7 @@ void Simulation::SelectAtomByUUID(AtomUUID uuid) noexcept
 			{
 				m_selectedAtomIndices.push_back(iii);
 				UpdateSelectedAtomsCenter();
+				InvokeHandlers(m_selectedAtomsChangedHandlers);
 				return;
 			}
 		}
@@ -326,11 +386,14 @@ void Simulation::SelectAtomByUUID(AtomUUID uuid) noexcept
 		LOG_ERROR("ERROR: Simulation::SelectAtomByUUID failed to find atom with uuid: {}", uuid);
 	}
 }
-void Simulation::UnselectAtomByIndex(size_t index) noexcept
+void Simulation::UnselectAtomByIndex(size_t index, bool invokeHandlers) noexcept
 {
 	ASSERT(index < m_atoms.size(), "Index too large");
 	std::erase(m_selectedAtomIndices, index); 
 	UpdateSelectedAtomsCenter();
+
+	if (invokeHandlers)
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Simulation::UnselectAtomsByIndex(const std::vector<size_t> indices) noexcept
 {
@@ -340,8 +403,9 @@ void Simulation::UnselectAtomsByIndex(const std::vector<size_t> indices) noexcep
 		std::erase(m_selectedAtomIndices, index); 
 	}
 	UpdateSelectedAtomsCenter(); 
+	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
-void Simulation::UnselectAtomByUUID(AtomUUID uuid) noexcept
+void Simulation::UnselectAtomByUUID(AtomUUID uuid, bool invokeHandlers) noexcept
 {
 	auto itr = std::find_if(m_selectedAtomIndices.cbegin(), m_selectedAtomIndices.cend(), 
 		[this, uuid](const size_t& index) { return m_atoms[index].uuid == uuid; });
@@ -350,6 +414,9 @@ void Simulation::UnselectAtomByUUID(AtomUUID uuid) noexcept
 	{
 		m_selectedAtomIndices.erase(itr);
 		UpdateSelectedAtomsCenter();
+
+		if(invokeHandlers)
+			InvokeHandlers(m_selectedAtomsChangedHandlers);
 	}
 }
 void Simulation::UnselectAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcept
@@ -367,7 +434,10 @@ void Simulation::UnselectAtomsByUUID(const std::vector<AtomUUID>& uuids) noexcep
 	);
 
 	if (numUnselected > 0)
+	{
 		UpdateSelectedAtomsCenter();
+		InvokeHandlers(m_selectedAtomsChangedHandlers);
+	}
 }
 
 constexpr void Simulation::UpdateSelectedAtomsCenter() noexcept

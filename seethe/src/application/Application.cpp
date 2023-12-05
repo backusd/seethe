@@ -1163,9 +1163,6 @@ void Application::RenderUI()
 
 					// Update the simulation's dimensions
 					SetBoxDimensions(boxDims, m_simulationSettings.forceSidesToBeEqual, m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions);
-
-					// Invoke handlers for when the box size changes
-					InvokeHandlers(m_boxSizeChangedHandlers);
 				}
 				if (ImGui::IsItemActive())
 				{
@@ -1429,28 +1426,19 @@ void Application::SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSide
 	m_simulation.SetDimensions(dims, allowAtomsToRelocate);
 	m_simulationSettings.allowAtomsToRelocateWhenUpdatingBoxDimensions = allowAtomsToRelocate;
 	m_simulationSettings.forceSidesToBeEqual = forceSidesToBeEqual;
-	InvokeHandlers(m_boxSizeChangedHandlers);
 }
 
 void Application::RemoveAtomByUUID(AtomUUID uuid, bool createCR) noexcept
 {
-	bool isSelected = m_simulation.AtomWithUUIDIsSelected(uuid);
 	const Atom& atom = m_simulation.GetAtomByUUID(uuid);
 
 	if (createCR)
 		AddUndoCR<RemoveAtomsCR>(AtomTPV(atom.type, atom.position, atom.velocity));
 
 	m_simulation.RemoveAtomByUUID(uuid);
-
-	InvokeHandlers(m_atomsRemovedHandlers);
-
-	if (isSelected)
-		InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR) noexcept
 {
-	bool atLeastOneIsSelected = m_simulation.AtLeastOneAtomWithUUIDIsSelected(uuids);
-
 	if (createCR)
 	{
 		LOG_WARN("{}", "Application::RemoveAtomsByUUID - have not tested this portion of the function");
@@ -1465,11 +1453,6 @@ void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR)
 	}
 
 	m_simulation.RemoveAtomsByUUID(uuids);
-
-	InvokeHandlers(m_atomsRemovedHandlers);
-
-	if (atLeastOneIsSelected)
-		InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Application::RemoveAllSelectedAtoms() noexcept
 {
@@ -1485,8 +1468,6 @@ void Application::RemoveAllSelectedAtoms() noexcept
 	AddUndoCR<RemoveAtomsCR>(std::move(data));
 
 	m_simulation.RemoveAllSelectedAtoms();
-	InvokeHandlers(m_atomsRemovedHandlers);
-	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const XMFLOAT3& velocity, bool createCR) noexcept
 {
@@ -1495,7 +1476,6 @@ const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const 
 	if (createCR)
 		AddUndoCR<AddAtomsCR>(atom.uuid);
 
-	InvokeHandlers(m_atomsAddedHandlers);
 	return atom;
 }
 std::vector<AtomUUID> Application::AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR) noexcept
@@ -1505,7 +1485,6 @@ std::vector<AtomUUID> Application::AddAtoms(const std::vector<AtomTPV>& atomData
 	if (createCR)
 		AddUndoCR<AddAtomsCR>(uuids); 
 
-	InvokeHandlers(m_atomsAddedHandlers);
 	return uuids;
 }
 void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) noexcept
@@ -1514,7 +1493,6 @@ void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) n
 		m_simulation.ClearSelectedAtoms();
 
 	m_simulation.SelectAtomByUUID(uuid);
-	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Application::SelectAtomByIndex(size_t index, bool unselectAllOthersFirst) noexcept
 {
@@ -1522,17 +1500,14 @@ void Application::SelectAtomByIndex(size_t index, bool unselectAllOthersFirst) n
 		m_simulation.ClearSelectedAtoms();
 
 	m_simulation.SelectAtomByIndex(index);
-	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Application::UnselectAtomByUUID(AtomUUID uuid) noexcept
 {
 	m_simulation.UnselectAtomByUUID(uuid);
-	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 void Application::UnselectAtomByIndex(size_t index) noexcept
 {
 	m_simulation.UnselectAtomByIndex(index);
-	InvokeHandlers(m_selectedAtomsChangedHandlers);
 }
 
 
