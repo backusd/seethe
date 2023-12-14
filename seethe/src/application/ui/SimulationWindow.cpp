@@ -1034,10 +1034,10 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 		// Check if the mouse is allowed to move atoms
 		if (m_selectionBeingMoved)
 		{
-			m_atomHoveredOverUUID = PickAtom(x, y);
-			if (m_atomHoveredOverUUID.has_value())
+			m_atomHoveredOverIndex = PickAtom(x, y);
+			if (m_atomHoveredOverIndex.has_value())
 			{
-				m_simulation.SelectAtomByUUID(m_atomHoveredOverUUID.value());
+				m_simulation.SelectAtom(m_atomHoveredOverIndex.value());
 			}
 		}
 		// Check if mouse resizing the box is enabled
@@ -1406,9 +1406,9 @@ void SimulationWindow::HandleChar(char c) noexcept
 }
 
 
-std::optional<AtomUUID> SimulationWindow::PickAtom(float x, float y)
+std::optional<size_t> SimulationWindow::PickAtom(float x, float y)
 {
-	std::optional<AtomUUID> pickedAtom = std::nullopt;
+	std::optional<size_t> pickedAtom = std::nullopt;
 
 	Camera& camera = m_renderer->GetCamera();
 	XMMATRIX projection = camera.GetProj();
@@ -1464,7 +1464,7 @@ std::optional<AtomUUID> SimulationWindow::PickAtom(float x, float y)
 		{
 			LOG_TRACE("***** SPHERE: {}", distance);
 
-			pickedAtom = atom.uuid;
+			pickedAtom = m_simulation.IndexOf(atom);
 		}
 	}
 

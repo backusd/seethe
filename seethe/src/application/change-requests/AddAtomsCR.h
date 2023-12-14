@@ -8,17 +8,18 @@ namespace seethe
 class AddAtomsCR : public ChangeRequest
 {
 public:
-	AddAtomsCR(const std::vector<AtomUUID>& uuids) noexcept :
-		m_uuids(uuids),
-		m_atomData(std::vector<AtomTPV>(uuids.size()))
+	AddAtomsCR(const std::vector<AtomTPV>& data) noexcept :
+		m_atomData(data)
 	{
-		ASSERT(uuids.size() > 0, "Invalid for uuids to be empty");
-
-		LOG_WARN("AddAtomsCR(const std::vector<AtomUUID>& uuids) - Have not validated this constructor yet");
+		ASSERT(data.size() > 0, "Invalid for data to be empty");
 	}
-	AddAtomsCR(AtomUUID uuid) noexcept :
-		m_uuids{uuid},
-		m_atomData{{}}
+	AddAtomsCR(std::vector<AtomTPV>&& data) noexcept :
+		m_atomData(std::move(data))
+	{
+		ASSERT(m_atomData.size() > 0, "Invalid for data to be empty");
+	}
+	AddAtomsCR(const AtomTPV& data) noexcept :
+		m_atomData{ data }
 	{}
 	AddAtomsCR(const AddAtomsCR&) noexcept = default;
 	AddAtomsCR(AddAtomsCR&&) noexcept = default;
@@ -30,7 +31,6 @@ public:
 	void Redo(Application* app) noexcept override;
 
 private:
-	std::vector<AtomUUID>	 m_uuids;
 	std::vector<AtomTPV> m_atomData;
 };
 }

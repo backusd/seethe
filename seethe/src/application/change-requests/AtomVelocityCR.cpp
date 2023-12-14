@@ -4,29 +4,14 @@
 
 namespace seethe
 {
-	void AtomVelocityCR::Undo(Application* app) noexcept
-	{
-		// NOTE: GetAtomByUUID() will throw if the uuid is not found
-		try
-		{
-			Atom& atom = app->GetSimulation().GetAtomByUUID(m_atomUUID);
-			atom.velocity = m_velocityInitial;
-		}
-		catch (const std::runtime_error& e)
-		{
-			LOG_ERROR("ERROR: AtomVelocityCR::Undo action failed with message: {}", e.what());
-		}
-	}
-	void AtomVelocityCR::Redo(Application* app) noexcept
-	{
-		try
-		{
-			Atom& atom = app->GetSimulation().GetAtomByUUID(m_atomUUID);
-			atom.velocity = m_velocityFinal;
-		}
-		catch (const std::runtime_error& e)
-		{
-			LOG_ERROR("ERROR: AtomVelocityCR::Redo action failed with message: {}", e.what());
-		}
-	}
+void AtomVelocityCR::Undo(Application* app) noexcept
+{
+	Atom& atom = app->GetSimulation().GetAtom(m_index);
+	atom.velocity = m_velocityInitial;
+}
+void AtomVelocityCR::Redo(Application* app) noexcept
+{
+	Atom& atom = app->GetSimulation().GetAtom(m_index);
+	atom.velocity = m_velocityFinal;
+}
 }

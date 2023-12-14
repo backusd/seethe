@@ -8,25 +8,18 @@ namespace seethe
 class RemoveAtomsCR : public ChangeRequest
 {
 public:
-	RemoveAtomsCR(const std::vector<AtomTPV>& atomData) noexcept :
-		m_uuids(std::vector<AtomUUID>(atomData.size())),
-		m_atomData(atomData)
+	RemoveAtomsCR(const std::vector<std::tuple<size_t, AtomTPV>>& indicesAndData) noexcept :
+		m_indicesAndData(indicesAndData)
 	{
-		ASSERT(m_atomData.size() > 0, "Invalid for atom data to be empty");
+		ASSERT(m_indicesAndData.size() > 0, "Invalid for atom data to be empty");
 	}
-	RemoveAtomsCR(std::vector<AtomTPV>&& atomData) noexcept :
-		m_uuids(std::vector<AtomUUID>(atomData.size())),
-		m_atomData(std::move(atomData))
+	RemoveAtomsCR(std::vector<std::tuple<size_t, AtomTPV>>&& indicesAndData) noexcept :
+		m_indicesAndData(std::move(indicesAndData))
 	{
-		ASSERT(m_atomData.size() > 0, "Invalid for atom data to be empty");
+		ASSERT(m_indicesAndData.size() > 0, "Invalid for atom data to be empty");
 	}
-	RemoveAtomsCR(const AtomTPV& atomData) noexcept :
-		m_uuids{ 0 }, // Initialize with 0 so the size of the vectors match
-		m_atomData{ atomData }
-	{}
-	RemoveAtomsCR(AtomTPV&& atomData) noexcept :
-		m_uuids{ 0 }, // Initialize with 0 so the size of the vectors match
-		m_atomData{ std::move(atomData) }
+	RemoveAtomsCR(size_t index, const AtomTPV& atomData) noexcept :
+		m_indicesAndData{ { index, atomData } }
 	{}
 	RemoveAtomsCR(const RemoveAtomsCR&) noexcept = default;
 	RemoveAtomsCR(RemoveAtomsCR&&) noexcept = default;
@@ -38,7 +31,6 @@ public:
 	void Redo(Application* app) noexcept override;
 
 private:
-	std::vector<AtomUUID>	m_uuids;
-	std::vector<AtomTPV>	m_atomData;
+	std::vector<std::tuple<size_t, AtomTPV>> m_indicesAndData;
 };
 }

@@ -8,10 +8,10 @@ namespace seethe
 class AtomVelocityCR : public ChangeRequest
 {
 public:
-	AtomVelocityCR(const DirectX::XMFLOAT3& initialVelocity, const DirectX::XMFLOAT3 & finalVelocity, size_t atomUUID) noexcept :
+	AtomVelocityCR(const DirectX::XMFLOAT3& initialVelocity, const DirectX::XMFLOAT3 & finalVelocity, size_t index) noexcept :
 		m_velocityInitial(initialVelocity),
 		m_velocityFinal(finalVelocity),
-		m_atomUUID(atomUUID)
+		m_index(index)
 	{}
 	AtomVelocityCR(const AtomVelocityCR&) noexcept = default;
 	AtomVelocityCR(AtomVelocityCR&&) noexcept = default;
@@ -24,6 +24,6 @@ public:
 
 	DirectX::XMFLOAT3 m_velocityInitial;
 	DirectX::XMFLOAT3 m_velocityFinal;
-	size_t m_atomUUID;
+	size_t m_index;
 };
 }

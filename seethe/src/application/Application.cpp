@@ -764,7 +764,8 @@ void Application::RenderUI()
 				const Atom& atom = AddAtom(type, pos, vel);
 
 				// Make the atom the only selected atom
-				SelectAtomByUUID(atom.uuid, true);
+				//SelectAtomByUUID(atom.uuid, true);
+				m_simulation.SelectAtom(atom, true);
 			}
 			ImGui::PopStyleColor();
 			ImGui::Unindent(100.0f);
@@ -848,19 +849,19 @@ void Application::RenderUI()
 
 						ImGui::TableSetColumnIndex(0);
 						ImGui::AlignTextToFramePadding();
-						bool itemIsSelected = m_simulation.AtomWithUUIDIsSelected(atom.uuid);
-						if (ImGui::Selectable(std::format(" {}", atom.uuid).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
+						bool itemIsSelected = m_simulation.AtomIsSelected(row_n);
+						if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
 						{
 							if (ImGui::GetIO().KeyCtrl) 
 							{
 								if (itemIsSelected) 
-									UnselectAtomByUUID(atom.uuid);
+									m_simulation.UnselectAtom(row_n);
 								else
-									SelectAtomByUUID(atom.uuid);
+									m_simulation.SelectAtom(row_n);
 							}
 							else
 							{
-								SelectAtomByUUID(atom.uuid, true);
+								m_simulation.SelectAtom(row_n, true);
 							}
 						}
 
@@ -905,7 +906,7 @@ void Application::RenderUI()
 							if (!sliderActive)
 							{
 								sliderActive = true;
-								AddUndoCR<AtomVelocityCR>(initialVelocity, atom.velocity, atom.uuid);
+								AddUndoCR<AtomVelocityCR>(initialVelocity, atom.velocity, m_simulation.IndexOf(atom));
 							}
 						}
 						else if (sliderActive) 
@@ -922,7 +923,7 @@ void Application::RenderUI()
 							if (!sliderActive) 
 							{
 								sliderActive = true; 
-								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, atom.uuid);
+								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, m_simulation.IndexOf(atom));
 								m_mainSimulationWindow->StartSelectionMovement(direction);
 							}
 
@@ -943,7 +944,7 @@ void Application::RenderUI()
 				ImGui::Spacing();
 				ImGui::Text("Atom:");
 				ImGui::SameLine();
-				ImGui::Text("%d - %s", atom.uuid, AtomNames[static_cast<size_t>(atom.type) - 1]);
+				ImGui::Text("%d - %s", m_simulation.IndexOf(atom), AtomNames[static_cast<size_t>(atom.type) - 1]);
 
 				ImGui::Spacing();
 				ImGui::Indent();
@@ -1228,7 +1229,16 @@ void Application::RenderUI()
 
 			if (ImGui::Checkbox("Allow Mouse to Move Atoms", &allowMouseToMoveAtoms))
 			{
-				m_simulationSettings.mouseState = allowMouseToMoveAtoms ? SimulationSettings::MouseState::MOVING_ATOMS : SimulationSettings::MouseState::NONE;
+				if (allowMouseToMoveAtoms)
+				{
+					m_simulationSettings.mouseState = SimulationSettings::MouseState::MOVING_ATOMS;
+					m_mainSimulationWindow->StartSelectionMovement();
+				}
+				else
+				{
+					m_simulationSettings.mouseState = SimulationSettings::MouseState::NONE;
+					m_mainSimulationWindow->EndSelectionMovement();
+				}
 			}
 			if (disablingAtoms)
 			{
@@ -1428,42 +1438,42 @@ void Application::SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSide
 	m_simulationSettings.forceSidesToBeEqual = forceSidesToBeEqual;
 }
 
-void Application::RemoveAtomByUUID(AtomUUID uuid, bool createCR) noexcept
-{
-	const Atom& atom = m_simulation.GetAtomByUUID(uuid);
-
-	if (createCR)
-		AddUndoCR<RemoveAtomsCR>(AtomTPV(atom.type, atom.position, atom.velocity));
-
-	m_simulation.RemoveAtomByUUID(uuid);
-}
-void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR) noexcept
-{
-	if (createCR)
-	{
-		LOG_WARN("{}", "Application::RemoveAtomsByUUID - have not tested this portion of the function");
-		std::vector<AtomTPV> data;
-		data.reserve(uuids.size());
-		for (AtomUUID uuid : uuids)
-		{
-			const Atom& atom = m_simulation.GetAtomByUUID(uuid);
-			data.emplace_back(atom.type, atom.position, atom.velocity);
-		}
-		AddUndoCR<RemoveAtomsCR>(std::move(data));
-	}
-
-	m_simulation.RemoveAtomsByUUID(uuids);
-}
+//void Application::RemoveAtomByUUID(AtomUUID uuid, bool createCR) noexcept
+//{
+//	const Atom& atom = m_simulation.GetAtomByUUID(uuid);
+//
+//	if (createCR)
+//		AddUndoCR<RemoveAtomsCR>(AtomTPV(atom.type, atom.position, atom.velocity));
+//
+//	m_simulation.RemoveAtomByUUID(uuid);
+//}
+//void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR) noexcept
+//{
+//	if (createCR)
+//	{
+//		LOG_WARN("{}", "Application::RemoveAtomsByUUID - have not tested this portion of the function");
+//		std::vector<AtomTPV> data;
+//		data.reserve(uuids.size());
+//		for (AtomUUID uuid : uuids)
+//		{
+//			const Atom& atom = m_simulation.GetAtomByUUID(uuid);
+//			data.emplace_back(atom.type, atom.position, atom.velocity);
+//		}
+//		AddUndoCR<RemoveAtomsCR>(std::move(data));
+//	}
+//
+//	m_simulation.RemoveAtomsByUUID(uuids);
+//}
 void Application::RemoveAllSelectedAtoms() noexcept
 {
 	// First, create the CR
 	const std::vector<size_t>& indices = m_simulation.GetSelectedAtomIndices();
-	std::vector<AtomTPV> data;
+	std::vector<std::tuple<size_t, AtomTPV>> data; 
 	data.reserve(indices.size());
 	for (size_t index : indices)
 	{
-		const Atom& atom = m_simulation.GetAtomByIndex(index); 
-		data.emplace_back(atom.type, atom.position, atom.velocity); 
+		const Atom& atom = m_simulation.GetAtom(index); 
+		data.emplace_back(index, AtomTPV(atom.type, atom.position, atom.velocity)); 
 	}
 	AddUndoCR<RemoveAtomsCR>(std::move(data));
 
@@ -1474,41 +1484,44 @@ const Atom& Application::AddAtom(AtomType type, const XMFLOAT3& position, const 
 	const Atom& atom = m_simulation.AddAtom(type, position, velocity);
 
 	if (createCR)
-		AddUndoCR<AddAtomsCR>(atom.uuid);
+		AddUndoCR<AddAtomsCR>(AtomTPV(type, position, velocity));
 
 	return atom;
 }
-std::vector<AtomUUID> Application::AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR) noexcept
+std::vector<Atom*> Application::AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR) noexcept
 {
-	std::vector<AtomUUID> uuids = m_simulation.AddAtoms(atomData);
+	std::vector<Atom*> atoms = m_simulation.AddAtoms(atomData);
 
 	if (createCR)
-		AddUndoCR<AddAtomsCR>(uuids); 
+		AddUndoCR<AddAtomsCR>(atomData); 
 
-	return uuids;
+	return atoms;
 }
-void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) noexcept
-{
-	if (unselectAllOthersFirst)
-		m_simulation.ClearSelectedAtoms();
-
-	m_simulation.SelectAtomByUUID(uuid);
-}
-void Application::SelectAtomByIndex(size_t index, bool unselectAllOthersFirst) noexcept
-{
-	if (unselectAllOthersFirst)
-		m_simulation.ClearSelectedAtoms();
-
-	m_simulation.SelectAtomByIndex(index);
-}
-void Application::UnselectAtomByUUID(AtomUUID uuid) noexcept
-{
-	m_simulation.UnselectAtomByUUID(uuid);
-}
-void Application::UnselectAtomByIndex(size_t index) noexcept
-{
-	m_simulation.UnselectAtomByIndex(index);
-}
+//void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) noexcept
+//{
+//	if (unselectAllOthersFirst)
+//		m_simulation.ClearSelectedAtoms();
+//
+//	m_simulation.SelectAtomByUUID(uuid);
+//}
+//void Application::SelectAtom(size_t index, bool unselectAllOthersFirst) noexcept
+//{
+//	if (!m_simulation.AtomIsSelected(index))
+//	{
+//		if (unselectAllOthersFirst)
+//			m_simulation.ClearSelectedAtoms();
+//
+//		m_simulation.SelectAtom(index);
+//	}
+//}
+//void Application::UnselectAtomByUUID(AtomUUID uuid) noexcept
+//{
+//	m_simulation.UnselectAtomByUUID(uuid);
+//}
+//void Application::UnselectAtom(size_t index) noexcept
+//{
+//	m_simulation.UnselectAtomByIndex(index);
+//}
 
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
