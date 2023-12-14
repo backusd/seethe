@@ -764,7 +764,6 @@ void Application::RenderUI()
 				const Atom& atom = AddAtom(type, pos, vel);
 
 				// Make the atom the only selected atom
-				//SelectAtomByUUID(atom.uuid, true);
 				m_simulation.SelectAtom(atom, true);
 			}
 			ImGui::PopStyleColor();
@@ -1438,32 +1437,6 @@ void Application::SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSide
 	m_simulationSettings.forceSidesToBeEqual = forceSidesToBeEqual;
 }
 
-//void Application::RemoveAtomByUUID(AtomUUID uuid, bool createCR) noexcept
-//{
-//	const Atom& atom = m_simulation.GetAtomByUUID(uuid);
-//
-//	if (createCR)
-//		AddUndoCR<RemoveAtomsCR>(AtomTPV(atom.type, atom.position, atom.velocity));
-//
-//	m_simulation.RemoveAtomByUUID(uuid);
-//}
-//void Application::RemoveAtomsByUUID(std::vector<AtomUUID>& uuids, bool createCR) noexcept
-//{
-//	if (createCR)
-//	{
-//		LOG_WARN("{}", "Application::RemoveAtomsByUUID - have not tested this portion of the function");
-//		std::vector<AtomTPV> data;
-//		data.reserve(uuids.size());
-//		for (AtomUUID uuid : uuids)
-//		{
-//			const Atom& atom = m_simulation.GetAtomByUUID(uuid);
-//			data.emplace_back(atom.type, atom.position, atom.velocity);
-//		}
-//		AddUndoCR<RemoveAtomsCR>(std::move(data));
-//	}
-//
-//	m_simulation.RemoveAtomsByUUID(uuids);
-//}
 void Application::RemoveAllSelectedAtoms() noexcept
 {
 	// First, create the CR
@@ -1497,31 +1470,6 @@ std::vector<Atom*> Application::AddAtoms(const std::vector<AtomTPV>& atomData, b
 
 	return atoms;
 }
-//void Application::SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst) noexcept
-//{
-//	if (unselectAllOthersFirst)
-//		m_simulation.ClearSelectedAtoms();
-//
-//	m_simulation.SelectAtomByUUID(uuid);
-//}
-//void Application::SelectAtom(size_t index, bool unselectAllOthersFirst) noexcept
-//{
-//	if (!m_simulation.AtomIsSelected(index))
-//	{
-//		if (unselectAllOthersFirst)
-//			m_simulation.ClearSelectedAtoms();
-//
-//		m_simulation.SelectAtom(index);
-//	}
-//}
-//void Application::UnselectAtomByUUID(AtomUUID uuid) noexcept
-//{
-//	m_simulation.UnselectAtomByUUID(uuid);
-//}
-//void Application::UnselectAtom(size_t index) noexcept
-//{
-//	m_simulation.UnselectAtomByIndex(index);
-//}
 
 
 LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

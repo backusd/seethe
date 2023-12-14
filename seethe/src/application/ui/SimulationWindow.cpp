@@ -57,6 +57,10 @@ void SimulationWindow::RegisterEventHandlers() noexcept
 	m_simulation.RegisterAtomsAddedHandler([this]() { OnAtomsAdded(); });
 	m_simulation.RegisterAtomsRemovedHandler([this]() { OnAtomsRemoved(); });
 	m_simulation.RegisterSelectedAtomsChangedHandler([this]() { OnSelectedAtomsChanged(); });
+
+	// Simulation Play/Paused
+	m_simulation.RegisterSimulationStartedHandler([this]() { OnSimulationPlay(); });
+	m_simulation.RegisterSimulationStoppedHandler([this]() { OnSimulationPause(); });
 }
 
 void SimulationWindow::InitializeRenderPasses()
@@ -827,7 +831,23 @@ void SimulationWindow::OnAtomsRemoved() noexcept
 	const std::vector<Atom>& atoms = m_simulation.GetAtoms();
 	m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[0].SetInstanceCount(static_cast<unsigned int>(atoms.size()));
 }
-
+void SimulationWindow::OnSimulationPlay() noexcept
+{
+	// If we are in the state where we are allowing the mouse to select and drag atoms, then we will want to turn off
+	// the axis cylinder when the simulation plays
+	if (m_selectionBeingMoved)
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(false);
+	}
+}
+void SimulationWindow::OnSimulationPause() noexcept
+{
+	if (m_selectionBeingMoved)
+	{
+		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+		SelectionMovementDirectionChanged();
+	}
+}
 
 bool SimulationWindow::OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler)
 {

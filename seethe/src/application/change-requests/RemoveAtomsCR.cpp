@@ -10,38 +10,13 @@ namespace seethe
 void RemoveAtomsCR::Undo(Application* app) noexcept
 {
 	app->GetSimulation().AddAtoms(m_indicesAndData);
-
-//	ASSERT(m_uuids.size() == m_atomData.size(), "Sizes should always match");
-//
-//	// Specify false here so we don't add an additional CR to the undo stack
-//	m_uuids = app->AddAtoms(m_atomData, false);
 }
 void RemoveAtomsCR::Redo(Application* app) noexcept
 {
 	std::vector<size_t> indices;
 	indices.reserve(m_indicesAndData.size());
 	std::for_each(m_indicesAndData.begin(), m_indicesAndData.end(), [&indices](const std::tuple<size_t, AtomTPV>& tup) { indices.push_back(std::get<0>(tup)); });
-	app->GetSimulation().RemoveAtoms(indices); 
-
-//	ASSERT(m_uuids.size() == m_atomData.size(), "Sizes should always match");
-//
-//	for (size_t iii = 0; iii < m_uuids.size(); ++iii)
-//	{
-//		// Save the current values
-//		// NOTE: GetAtomByUUID() will throw if the uuid is not found
-//		try
-//		{
-//			Atom& atom = app->GetSimulation().GetAtomByUUID(m_uuids[iii]); 
-//			m_atomData[iii] = { atom.type, atom.position, atom.velocity }; 
-//		}
-//		catch (const std::runtime_error& e) 
-//		{
-//			LOG_ERROR("ERROR: RemoveAtomsCR::Redo action failed with message: {}", e.what()); 
-//		}
-//	}
-//
-//	// Specify false here so we don't add an additional CR to the undo stack
-//	app->RemoveAtomsByUUID(m_uuids, false); 
+	app->GetSimulation().RemoveAtoms(indices);
 }
 }
 

@@ -153,6 +153,8 @@ private:
 	void OnSelectedAtomsChanged() noexcept;
 	void OnAtomsAdded() noexcept;
 	void OnAtomsRemoved() noexcept;
+	void OnSimulationPlay() noexcept;
+	void OnSimulationPause() noexcept;
 
 	bool OnButtonDownImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);
 	bool OnButtonUpImpl(bool& buttonFlag, float x, float y, std::function<void()>&& handler);

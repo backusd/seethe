@@ -109,18 +109,9 @@ public:
 	void SetMaterial(AtomType atomType, const Material& material) noexcept;
 	void SetBoxDimensions(const DirectX::XMFLOAT3& dims, bool forceSidesToBeEqual, bool allowAtomsToRelocate) noexcept;
 
-//	void RemoveAtomByUUID(AtomUUID uuid, bool createCR = true) noexcept;
-//	void RemoveAtomsByUUID(std::vector<AtomUUID>& uuid, bool createCR = true) noexcept;
 	void RemoveAllSelectedAtoms() noexcept;
 	const Atom& AddAtom(AtomType type, const DirectX::XMFLOAT3& position = { 0.0f, 0.0f, 0.0f }, const DirectX::XMFLOAT3& velocity = { 0.0f, 0.0f, 0.0f }, bool createCR = true) noexcept;
 	std::vector<Atom*> AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR = true) noexcept;
-//	std::vector<AtomUUID> AddAtoms(const std::vector<AtomTPV>& atomData, bool createCR = true) noexcept;
-//	void SelectAtomByUUID(AtomUUID uuid, bool unselectAllOthersFirst = false) noexcept;
-//	void SelectAtom(size_t index, bool unselectAllOthersFirst = false) noexcept;
-//	inline void SelectAtom(const Atom& atom, bool unselectAllOthersFirst = false) noexcept { SelectAtom(m_simulation.IndexOf(atom), unselectAllOthersFirst); }
-//	void UnselectAtomByUUID(AtomUUID uuid) noexcept;
-//	inline void UnselectAtom(size_t index) noexcept { m_simulation.UnselectAtom(index); }
-//	inline void UnselectAtom(const Atom& atom) noexcept { m_simulation.UnselectAtom(atom); }
 
 	// Handlers
 	inline void RegisterMaterialChangedHandler(const EventHandler& handler) noexcept { m_materialChangedHandlers.push_back(handler); }
