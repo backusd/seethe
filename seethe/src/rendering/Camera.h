@@ -58,7 +58,7 @@ public:
 	void LookAt(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& target, const DirectX::XMFLOAT3& up) noexcept;
 
 	// Get View/Proj matrices.
-	ND inline DirectX::XMMATRIX GetView() const noexcept { return XMLoadFloat4x4(&m_view); }
+	ND inline DirectX::XMMATRIX GetView() const noexcept { return DirectX::XMLoadFloat4x4(&m_view); }
 	ND inline DirectX::XMMATRIX GetProj() const noexcept { return DirectX::XMLoadFloat4x4(&m_proj); }
 
 	ND constexpr DirectX::XMFLOAT4X4 GetView4x4f() const noexcept { return m_view; }

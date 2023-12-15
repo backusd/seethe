@@ -622,7 +622,8 @@ void SimulationWindow::Update(const Timer& timer, int frameIndex)
 void SimulationWindow::StartSelectionMovement(MovementDirection direction) noexcept
 {
 	m_movementDirection = direction;
-	m_selectionBeingMoved = true;
+	m_selectionBeingMovedStateIsActive = true;
+	m_selectionIsBeingDragged = false;
 	SelectionMovementDirectionChanged();
 }
 void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
@@ -674,7 +675,8 @@ void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 }
 void SimulationWindow::EndSelectionMovement() noexcept
 {
-	m_selectionBeingMoved = false;
+	m_selectionBeingMovedStateIsActive = false;
+	m_selectionIsBeingDragged = false;
 
 	switch (m_movementDirection)
 	{
@@ -812,7 +814,7 @@ void SimulationWindow::OnSelectedAtomsChanged() noexcept
 
 	// If we are allow the mouse to move the selected atoms, then we need to update the constant buffer
 	// that holds data for axis/plane being rendered
-	if (m_selectionBeingMoved)
+	if (m_selectionBeingMovedStateIsActive)
 		SelectionMovementDirectionChanged();
 }
 void SimulationWindow::OnAtomsAdded() noexcept
@@ -835,14 +837,14 @@ void SimulationWindow::OnSimulationPlay() noexcept
 {
 	// If we are in the state where we are allowing the mouse to select and drag atoms, then we will want to turn off
 	// the axis cylinder when the simulation plays
-	if (m_selectionBeingMoved)
+	if (m_selectionBeingMovedStateIsActive)
 	{
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(false);
 	}
 }
 void SimulationWindow::OnSimulationPause() noexcept
 {
-	if (m_selectionBeingMoved)
+	if (m_selectionBeingMovedStateIsActive)
 	{
 		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
 		SelectionMovementDirectionChanged();
@@ -977,6 +979,10 @@ void SimulationWindow::HandleLButtonDown() noexcept
 			OnBoxFaceHighlightChanged();
 		}
 	}
+	else if (m_selectionBeingMovedStateIsActive)
+	{
+		m_selectionIsBeingDragged = m_atomHoveredOverIndex.has_value() && m_simulation.AtomIsSelected(m_atomHoveredOverIndex.value());
+	}
 }
 void SimulationWindow::HandleLButtonUp() noexcept
 {
@@ -992,6 +998,15 @@ void SimulationWindow::HandleLButtonUp() noexcept
 		}
 
 		OnBoxFaceHighlightChanged();
+	}
+	else if (m_selectionBeingMovedStateIsActive)
+	{
+		if (m_selectionIsBeingDragged)
+			m_selectionIsBeingDragged = false;
+		else if (m_atomHoveredOverIndex.has_value())
+		{
+			m_simulation.SelectAtom(m_atomHoveredOverIndex.value());
+		}
 	}
 }
 void SimulationWindow::HandleLButtonDoubleClick() noexcept
@@ -1052,12 +1067,15 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 	if (!m_simulation.IsPlaying())
 	{
 		// Check if the mouse is allowed to move atoms
-		if (m_selectionBeingMoved)
+		if (m_selectionBeingMovedStateIsActive)
 		{
-			m_atomHoveredOverIndex = PickAtom(x, y);
-			if (m_atomHoveredOverIndex.has_value())
+			if (m_selectionIsBeingDragged)
 			{
-				m_simulation.SelectAtom(m_atomHoveredOverIndex.value());
+				LOG_TRACE("{}", "Dragging...");
+			}
+			else
+			{
+				m_atomHoveredOverIndex = PickAtom(x, y); 
 			}
 		}
 		// Check if mouse resizing the box is enabled
@@ -1179,7 +1197,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 
 	Camera& camera = m_renderer->GetCamera();
 
-	if (m_mouseLButtonDown)
+	if (m_mouseLButtonDown && !m_selectionIsBeingDragged)
 	{
 		// If the camera is in a constant rotation (because arrow keys are down), disable dragging
 		if (camera.IsInConstantRotation())
@@ -1442,6 +1460,7 @@ std::optional<size_t> SimulationWindow::PickAtom(float x, float y)
 
 	XMVECTOR origin, destination, direction; 
 
+	float minDistance = FLT_MAX; 
 	float distance = FLT_MAX;
 	for (const Atom& atom : m_simulation.GetAtoms()) 
 	{
@@ -1476,15 +1495,21 @@ std::optional<size_t> SimulationWindow::PickAtom(float x, float y)
 
 		direction = XMVector3Normalize(destination - origin); 
 
-		if (bounds.Intersects(origin, direction, distance))
-		{
-			LOG_TRACE("INTERSECTION: {}", distance); 
-		}
+//		if (bounds.Intersects(origin, direction, distance))
+//		{
+//			LOG_TRACE("INTERSECTION: {}", distance); 
+//		}
 		if (sphere.Intersects(origin, direction, distance))
 		{
-			LOG_TRACE("***** SPHERE: {}", distance);
+			// The distance we get back is relative to the scale that was used when calling XMVector3Unproject
+			// In order to get them back to the same scale, we must multiply by the scale factor that was used
+			distance *= radius;
 
-			pickedAtom = m_simulation.IndexOf(atom);
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				pickedAtom = m_simulation.IndexOf(atom);
+			}
 		}
 	}
 

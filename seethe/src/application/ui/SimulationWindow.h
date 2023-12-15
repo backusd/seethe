@@ -337,7 +337,8 @@ private:
 	bool m_forceSidesToBeEqualInitial = true;
 
 	// State when atom(s) is being moved
-	bool m_selectionBeingMoved = false;
+	bool m_selectionBeingMovedStateIsActive = false;
+	bool m_selectionIsBeingDragged = false;
 	MovementDirection m_movementDirection = MovementDirection::X;
 	std::optional<size_t> m_atomHoveredOverIndex = std::nullopt;
 };
