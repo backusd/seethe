@@ -11,7 +11,7 @@ public:
     DescriptorVector(std::shared_ptr<DeviceResources> deviceResources,
         D3D12_DESCRIPTOR_HEAP_TYPE type,
         unsigned int initialCapacity = 8);
-    DescriptorVector(DescriptorVector&& rhs) noexcept :
+    inline DescriptorVector(DescriptorVector&& rhs) noexcept :
         m_deviceResources(rhs.m_deviceResources),
         m_count(rhs.m_count),
         m_capacity(rhs.m_capacity),
@@ -25,7 +25,7 @@ public:
     {
         LOG_WARN("{}", "DescriptorVector Move Constructor has been called, but I've never tested this function.");
     }
-    DescriptorVector& operator=(DescriptorVector&& rhs) noexcept
+    inline DescriptorVector& operator=(DescriptorVector&& rhs) noexcept
     {
         LOG_WARN("{}", "DescriptorVector Move Assignment operator has been called, but I've never tested this function.");
 
@@ -42,11 +42,11 @@ public:
 
         return *this;
     }
-    ~DescriptorVector() noexcept {}
+    inline ~DescriptorVector() noexcept {}
 
-    ND constexpr inline unsigned int Count() const noexcept { return m_count; }
-    ND constexpr inline unsigned int Capacity() const noexcept { return m_capacity; }
-    ND constexpr inline D3D12_DESCRIPTOR_HEAP_TYPE Type() const noexcept { return m_type; }
+    ND constexpr unsigned int Count() const noexcept { return m_count; }
+    ND constexpr unsigned int Capacity() const noexcept { return m_capacity; }
+    ND constexpr D3D12_DESCRIPTOR_HEAP_TYPE Type() const noexcept { return m_type; }
 
     ND D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleAt(UINT index) const noexcept;
     ND D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleAt(UINT index) const noexcept;
@@ -56,8 +56,8 @@ public:
     unsigned int EmplaceBackConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC* desc);
     unsigned int EmplaceBackUnorderedAccessView(ID3D12Resource* pResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc);
 
-    constexpr inline void IncrementCount() noexcept { ++m_count; }
-    constexpr inline void DecrementCount() noexcept { --m_count; }
+    constexpr void IncrementCount() noexcept { ++m_count; }
+    constexpr void DecrementCount() noexcept { --m_count; }
 
     void ReleaseAt(unsigned int index) noexcept;
 

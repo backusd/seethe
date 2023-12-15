@@ -12,20 +12,20 @@ namespace seethe
 class RenderPass
 {
 public:
-	RenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept :
+	inline RenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept :
 		m_rootSignature(rootSig),
 		m_name(name)
 	{
 		ASSERT(m_rootSignature != nullptr, "Root signature should not be nullptr");
 	}
-	RenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") :
+	inline RenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") :
 		m_rootSignature(nullptr),
 		m_name(name)
 	{
 		m_rootSignature = std::make_shared<RootSignature>(deviceResources, desc);
 		ASSERT(m_rootSignature != nullptr, "Root signature should not be nullptr");
 	}
-	RenderPass(RenderPass&& rhs) noexcept :
+	inline RenderPass(RenderPass&& rhs) noexcept :
 		PreWork(std::move(rhs.PreWork)),
 		PostWork(std::move(rhs.PostWork)),
 		m_rootSignature(rhs.m_rootSignature),
@@ -34,7 +34,7 @@ public:
 		m_computeLayers(std::move(rhs.m_computeLayers)),
 		m_name(std::move(rhs.m_name))
 	{}
-	RenderPass& operator=(RenderPass&& rhs) noexcept
+	inline RenderPass& operator=(RenderPass&& rhs) noexcept
 	{
 		PreWork = std::move(rhs.PreWork);
 		PostWork = std::move(rhs.PostWork);
@@ -46,9 +46,9 @@ public:
 
 		return *this;
 	}
-	~RenderPass() noexcept = default;
+	inline ~RenderPass() noexcept = default;
 
-	void Update(const Timer& timer, int frameIndex)
+	inline void Update(const Timer& timer, int frameIndex)
 	{
 		// Loop over the constant buffer views to update per-pass constants
 		for (auto& rcbv : m_constantBufferViews)
@@ -57,25 +57,22 @@ public:
 
 
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
-	ND constexpr inline std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
-	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
-	ND constexpr inline std::vector<RenderPassLayer>& GetRenderPassLayers() noexcept { return m_renderPassLayers; }
-	ND constexpr inline const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
-	ND constexpr inline std::vector<ComputeLayer>& GetComputeLayers() noexcept { return m_computeLayers; }
-	ND constexpr inline const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
-	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
+	ND constexpr std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
+	ND constexpr const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
+	ND constexpr std::vector<RenderPassLayer>& GetRenderPassLayers() noexcept { return m_renderPassLayers; }
+	ND constexpr const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
+	ND constexpr std::vector<ComputeLayer>& GetComputeLayers() noexcept { return m_computeLayers; }
+	ND constexpr const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
+	ND constexpr std::string_view GetName() const noexcept { return m_name; }
 
 	inline void SetRootSignature(std::shared_ptr<RootSignature> rs) noexcept { m_rootSignature = rs; }
-	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
+	constexpr void SetName(std::string_view name) noexcept { m_name = name; }
 
 	constexpr void PushBackRootConstantBufferView(RootConstantBufferView&& rcbv) noexcept { m_constantBufferViews.push_back(std::move(rcbv)); }
 	constexpr void PushBackRenderPassLayer(RenderPassLayer&& rpl) noexcept { m_renderPassLayers.push_back(std::move(rpl)); }
 	constexpr void PushBackComputeLayer(ComputeLayer&& cl) noexcept { m_computeLayers.push_back(std::move(cl)); }
 
-	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb)
-	{
-		return m_constantBufferViews.emplace_back(rootParameterIndex, cb);
-	}
+	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept { return m_constantBufferViews.emplace_back(rootParameterIndex, cb); }
 	RenderPassLayer& EmplaceBackRenderPassLayer(std::shared_ptr<DeviceResources> deviceResources,
 		std::shared_ptr<MeshGroupBase> meshGroup,
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,

@@ -6,7 +6,7 @@ using EventHandlers = std::vector<EventHandler>;
 
 namespace seethe
 {
-static inline void InvokeHandlers(const EventHandlers& handlers) noexcept
+static constexpr void InvokeHandlers(const EventHandlers& handlers) noexcept
 {
 	std::for_each(handlers.begin(), handlers.end(), [](const EventHandler& h) { h(); });
 }

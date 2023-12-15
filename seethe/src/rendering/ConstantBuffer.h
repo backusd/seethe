@@ -9,26 +9,26 @@ namespace seethe
 class ConstantBufferBase
 {
 public:
-	ConstantBufferBase(std::shared_ptr<DeviceResources> deviceResources) :
+	inline ConstantBufferBase(std::shared_ptr<DeviceResources> deviceResources) :
 		m_deviceResources(deviceResources),
 		m_uploadBuffer(nullptr),
 		m_elementByteSizeOffsetter(0)
 	{
 		ASSERT(m_deviceResources != nullptr, "No device resources");
 	}
-	ConstantBufferBase(ConstantBufferBase&& rhs) noexcept :
+	inline ConstantBufferBase(ConstantBufferBase&& rhs) noexcept :
 		m_deviceResources(rhs.m_deviceResources),
 		m_uploadBuffer(nullptr),
 		m_elementByteSizeOffsetter(rhs.m_elementByteSizeOffsetter)
 	{}
-	ConstantBufferBase& operator=(ConstantBufferBase&& rhs) noexcept
+	inline ConstantBufferBase& operator=(ConstantBufferBase&& rhs) noexcept
 	{
 		m_deviceResources = rhs.m_deviceResources;
 		m_uploadBuffer = nullptr;
 		m_elementByteSizeOffsetter = rhs.m_elementByteSizeOffsetter;
 		return *this;
 	}
-	virtual ~ConstantBufferBase() noexcept
+	inline virtual ~ConstantBufferBase() noexcept
 	{
 		if (m_uploadBuffer != nullptr)
 			m_uploadBuffer->Unmap(0, nullptr);
@@ -63,14 +63,14 @@ class ConstantBufferMapped : public ConstantBufferBase
 public:
 	// Let the element count be the maximum by default
 	// Maximum allowed constant buffer size is 4096 float4's which is 65536 bytes
-	ConstantBufferMapped(std::shared_ptr<DeviceResources> deviceResources, unsigned int elementCount = 65536 / sizeof(T)) :
+	inline ConstantBufferMapped(std::shared_ptr<DeviceResources> deviceResources, unsigned int elementCount = 65536 / sizeof(T)) :
 		ConstantBufferBase(deviceResources),
 		m_elementCount(elementCount),
 		m_mappedData(nullptr)
 	{
 		Initialize();
 	}
-	ConstantBufferMapped(ConstantBufferMapped&& rhs) :
+	inline ConstantBufferMapped(ConstantBufferMapped&& rhs) :
 		ConstantBufferBase(std::move(rhs)),
 		m_elementCount(rhs.m_elementCount),
 		m_mappedData(nullptr),
@@ -78,7 +78,7 @@ public:
 	{
 		Initialize();
 	}
-	ConstantBufferMapped& operator=(ConstantBufferMapped&& rhs)
+	inline ConstantBufferMapped& operator=(ConstantBufferMapped&& rhs)
 	{
 		ConstantBufferBase::operator=(std::move(rhs));
 		m_elementCount = rhs.m_elementCount;
@@ -87,7 +87,7 @@ public:
 		Initialize();
 		return *this;
 	}
-	virtual ~ConstantBufferMapped() noexcept override
+	inline virtual ~ConstantBufferMapped() noexcept override
 	{
 		if (m_uploadBuffer != nullptr) 
 			m_uploadBuffer->Unmap(0, nullptr); 
@@ -115,7 +115,7 @@ private:
 	ConstantBufferMapped(const ConstantBufferMapped& rhs) = delete;
 	ConstantBufferMapped& operator=(const ConstantBufferMapped& rhs) = delete;
 
-	void Initialize()
+	inline void Initialize()
 	{
 		ASSERT(sizeof(T) <= 65536, "Size of T is too large"); 
 		ASSERT(m_elementCount > 0, "Invalid to create a 0 sized constant buffer");
@@ -173,14 +173,14 @@ class ConstantBufferStatic : public ConstantBufferBase
 public:
 	// Let the element count be the maximum by default
 	// Maximum allowed constant buffer size is 4096 float4's which is 65536 bytes
-	ConstantBufferStatic(std::shared_ptr<DeviceResources> deviceResources, unsigned int elementCount = 65536 / sizeof(T)) :
+	inline ConstantBufferStatic(std::shared_ptr<DeviceResources> deviceResources, unsigned int elementCount = 65536 / sizeof(T)) :
 		ConstantBufferBase(deviceResources),
 		m_elementCount(elementCount),
 		m_intermediateBuffer(nullptr)
 	{
 		Initialize();
 	}
-	ConstantBufferStatic(ConstantBufferStatic&& rhs) :
+	inline ConstantBufferStatic(ConstantBufferStatic&& rhs) :
 		ConstantBufferBase(std::move(rhs)),
 		m_elementCount(rhs.m_elementCount),
 		m_intermediateBuffer(nullptr),
@@ -188,7 +188,7 @@ public:
 	{
 		Initialize();
 	}
-	ConstantBufferStatic& operator=(ConstantBufferStatic&& rhs)
+	inline ConstantBufferStatic& operator=(ConstantBufferStatic&& rhs)
 	{
 		ConstantBufferBase::operator=(std::move(rhs));
 		m_elementCount = rhs.m_elementCount;
@@ -197,7 +197,7 @@ public:
 		Initialize();
 		return *this;
 	}
-	virtual ~ConstantBufferStatic() noexcept override
+	inline virtual ~ConstantBufferStatic() noexcept override
 	{
 		// Upload & intermediate buffer might still be in use by the GPU, so do a delayed delete
 		m_deviceResources->DelayedDelete(m_uploadBuffer);
@@ -207,7 +207,7 @@ public:
 		m_intermediateBuffer = nullptr;
 	}
 
-	void CopyData(std::span<T> elements)
+	inline void CopyData(std::span<T> elements)
 	{
 		// Ensure that we are not sending more data than the buffer was created for
 		ASSERT(elements.size() <= m_elementCount, "More data than expected");
@@ -220,7 +220,7 @@ public:
 
 		CopyData(&subResourceData);
 	}
-	void CopyData(const T& singleElement)
+	inline void CopyData(const T& singleElement)
 	{
 		// Describe the data we want to copy into the default buffer.
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
@@ -235,7 +235,7 @@ private:
 	ConstantBufferStatic(const ConstantBufferStatic& rhs) = delete;
 	ConstantBufferStatic& operator=(const ConstantBufferStatic& rhs) = delete;
 
-	void CopyData(D3D12_SUBRESOURCE_DATA* data)
+	inline void CopyData(D3D12_SUBRESOURCE_DATA* data)
 	{
 		// Schedule to copy the data to the constant buffer resource. At a high level, the helper function UpdateSubresources
 		// will copy the CPU memory into the intermediate upload heap. Then, using ID3D12CommandList::CopySubresourceRegion,
@@ -251,7 +251,7 @@ private:
 		GFX_THROW_INFO_ONLY(commandList->ResourceBarrier(1, &_b2));
 	}
 
-	void Initialize()
+	inline void Initialize()
 	{
 		ASSERT(sizeof(T) <= 65536, "Size of T is too large");
 		ASSERT(m_elementCount > 0, "Invalid to create a 0 sized constant buffer");

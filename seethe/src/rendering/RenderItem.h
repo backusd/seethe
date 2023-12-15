@@ -13,7 +13,7 @@ namespace seethe
 class RenderComputeItemBase
 {
 public:
-	void Update(const Timer& timer, int frameIndex)
+	inline void Update(const Timer& timer, int frameIndex)
 	{
 		// Loop over the constant buffer views and descriptor tables to update them
 		for (auto& rcbv : m_constantBufferViews)
@@ -23,21 +23,21 @@ public:
 			dt.Update(&dt, timer, frameIndex);
 	}
 
-	constexpr inline void PushBackRootConstantBufferView(RootConstantBufferView&& rcbv) noexcept { m_constantBufferViews.push_back(std::move(rcbv)); }
-	constexpr inline void PushBackRootConstantBufferView(const RootConstantBufferView& rcbv) noexcept { m_constantBufferViews.push_back(rcbv); }
-	constexpr inline RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept { return m_constantBufferViews.emplace_back(rootParameterIndex, cb); }
+	constexpr void PushBackRootConstantBufferView(RootConstantBufferView&& rcbv) noexcept { m_constantBufferViews.push_back(std::move(rcbv)); }
+	constexpr void PushBackRootConstantBufferView(const RootConstantBufferView& rcbv) noexcept { m_constantBufferViews.push_back(rcbv); }
+	constexpr RootConstantBufferView& EmplaceBackRootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept { return m_constantBufferViews.emplace_back(rootParameterIndex, cb); }
 
-	constexpr inline void PushBackRootDescriptorTable(RootDescriptorTable&& rdt) noexcept { m_descriptorTables.push_back(std::move(rdt)); }
-	constexpr inline void PushBackRootDescriptorTable(const RootDescriptorTable& rdt) noexcept { m_descriptorTables.push_back(rdt); }
-	constexpr inline RootDescriptorTable& EmplaceBackRootDescriptorTable(UINT rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE descriptorHandle) noexcept { return m_descriptorTables.emplace_back(rootParameterIndex, descriptorHandle); }
+	constexpr void PushBackRootDescriptorTable(RootDescriptorTable&& rdt) noexcept { m_descriptorTables.push_back(std::move(rdt)); }
+	constexpr void PushBackRootDescriptorTable(const RootDescriptorTable& rdt) noexcept { m_descriptorTables.push_back(rdt); }
+	constexpr RootDescriptorTable& EmplaceBackRootDescriptorTable(UINT rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE descriptorHandle) noexcept { return m_descriptorTables.emplace_back(rootParameterIndex, descriptorHandle); }
 
-	ND constexpr inline std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
-	ND constexpr inline const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
-	ND constexpr inline std::vector<RootDescriptorTable>& GetRootDescriptorTables() noexcept { return m_descriptorTables; }
-	ND constexpr inline const std::vector<RootDescriptorTable>& GetRootDescriptorTables() const noexcept { return m_descriptorTables; }
+	ND constexpr std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
+	ND constexpr const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
+	ND constexpr std::vector<RootDescriptorTable>& GetRootDescriptorTables() noexcept { return m_descriptorTables; }
+	ND constexpr const std::vector<RootDescriptorTable>& GetRootDescriptorTables() const noexcept { return m_descriptorTables; }
 	
-	ND constexpr inline bool IsActive() const noexcept { return m_active; }
-	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
+	ND constexpr bool IsActive() const noexcept { return m_active; }
+	constexpr void SetActive(bool active) noexcept { m_active = active; }
 
 protected:
 	// 0+ constant buffer views for per-item constants
@@ -76,11 +76,11 @@ public:
 		return *this;
 	}
 
-	ND constexpr inline unsigned int GetSubmeshIndex() const noexcept { return m_submeshIndex; }
-	ND constexpr inline unsigned int GetInstanceCount() const noexcept { return m_instanceCount; }
+	ND constexpr unsigned int GetSubmeshIndex() const noexcept { return m_submeshIndex; }
+	ND constexpr unsigned int GetInstanceCount() const noexcept { return m_instanceCount; }
 
-	constexpr inline void SetSubmeshIndex(unsigned int index) noexcept { m_submeshIndex = index; }
-	constexpr inline void SetInstanceCount(unsigned int count) noexcept { m_instanceCount = count; }
+	constexpr void SetSubmeshIndex(unsigned int index) noexcept { m_submeshIndex = index; }
+	constexpr void SetInstanceCount(unsigned int count) noexcept { m_instanceCount = count; }
 
 private:
 	RenderItem(const RenderItem&) = delete;
@@ -89,7 +89,6 @@ private:
 	// The PSO will hold and bind the mesh-group for all of the render items it will render.
 	// Here, we just need to keep track of which submesh index the render item references
 	unsigned int m_submeshIndex;
-
 	unsigned int m_instanceCount;
 };
 
@@ -123,13 +122,13 @@ public:
 		return *this;
 	}
 
-	ND constexpr inline unsigned int GetThreadGroupCountX() const noexcept { return m_threadGroupCountX; }
-	ND constexpr inline unsigned int GetThreadGroupCountY() const noexcept { return m_threadGroupCountY; }
-	ND constexpr inline unsigned int GetThreadGroupCountZ() const noexcept { return m_threadGroupCountZ; }
+	ND constexpr unsigned int GetThreadGroupCountX() const noexcept { return m_threadGroupCountX; }
+	ND constexpr unsigned int GetThreadGroupCountY() const noexcept { return m_threadGroupCountY; }
+	ND constexpr unsigned int GetThreadGroupCountZ() const noexcept { return m_threadGroupCountZ; }
 
-	constexpr inline void SetThreadGroupCountX(unsigned int count) noexcept { m_threadGroupCountX = count; }
-	constexpr inline void SetThreadGroupCountY(unsigned int count) noexcept { m_threadGroupCountY = count; }
-	constexpr inline void SetThreadGroupCountZ(unsigned int count) noexcept { m_threadGroupCountZ = count; }
+	constexpr void SetThreadGroupCountX(unsigned int count) noexcept { m_threadGroupCountX = count; }
+	constexpr void SetThreadGroupCountY(unsigned int count) noexcept { m_threadGroupCountY = count; }
+	constexpr void SetThreadGroupCountZ(unsigned int count) noexcept { m_threadGroupCountZ = count; }
 
 private:
 	ComputeItem(const ComputeItem&) = delete;

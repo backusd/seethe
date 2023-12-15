@@ -21,23 +21,23 @@ public:
 
 	// Get/Set world camera position.
 	ND inline DirectX::XMVECTOR GetPosition() const noexcept { return DirectX::XMLoadFloat3(&m_position); }
-	ND inline DirectX::XMFLOAT3 GetPosition3f() const noexcept { return m_position; }
+	ND constexpr DirectX::XMFLOAT3 GetPosition3f() const noexcept { return m_position; }
 	void SetPosition(float x, float y, float z) noexcept;
 	void SetPosition(const DirectX::XMFLOAT3& v) noexcept;
 
 	// Get camera basis vectors.
 //	ND inline DirectX::XMVECTOR GetRight() const noexcept { return DirectX::XMLoadFloat3(&m_right); }
-//	ND inline DirectX::XMFLOAT3 GetRight3f() const noexcept { return m_right; }
+//	ND constexpr DirectX::XMFLOAT3 GetRight3f() const noexcept { return m_right; }
 	ND inline DirectX::XMVECTOR GetUp() const noexcept { return DirectX::XMLoadFloat3(&m_up); }
-	ND inline DirectX::XMFLOAT3 GetUp3f() const noexcept { return m_up; }
+	ND constexpr DirectX::XMFLOAT3 GetUp3f() const noexcept { return m_up; }
 	ND inline DirectX::XMVECTOR GetLook() const noexcept { return DirectX::XMLoadFloat3(&m_lookAt); }
-	ND inline DirectX::XMFLOAT3 GetLook3f() const noexcept { return m_lookAt; }
+	ND constexpr DirectX::XMFLOAT3 GetLook3f() const noexcept { return m_lookAt; }
 
 	// Get frustum properties.
-	ND inline float GetNearZ() const noexcept { return m_nearZ; }
-	ND inline float GetFarZ() const noexcept { return m_farZ; }
-	ND inline float GetAspect() const noexcept { return m_aspect; }
-	ND inline float GetFovY() const noexcept { return m_fovY; }
+	ND constexpr float GetNearZ() const noexcept { return m_nearZ; }
+	ND constexpr float GetFarZ() const noexcept { return m_farZ; }
+	ND constexpr float GetAspect() const noexcept { return m_aspect; }
+	ND constexpr float GetFovY() const noexcept { return m_fovY; }
 	ND inline float GetFovX() const noexcept
 	{
 		float halfWidth = 0.5f * GetNearWindowWidth();
@@ -45,10 +45,10 @@ public:
 	}
 
 	// Get near and far plane dimensions in view space coordinates.
-	ND inline float GetNearWindowWidth() const noexcept { return m_aspect * m_nearWindowHeight; }
-	ND inline float GetNearWindowHeight() const noexcept { return m_nearWindowHeight; }
-	ND inline float GetFarWindowWidth() const noexcept { return m_aspect * m_farWindowHeight; }
-	ND inline float GetFarWindowHeight() const noexcept { return m_farWindowHeight; }
+	ND constexpr float GetNearWindowWidth() const noexcept { return m_aspect * m_nearWindowHeight; }
+	ND constexpr float GetNearWindowHeight() const noexcept { return m_nearWindowHeight; }
+	ND constexpr float GetFarWindowWidth() const noexcept { return m_aspect * m_farWindowHeight; }
+	ND constexpr float GetFarWindowHeight() const noexcept { return m_farWindowHeight; }
 
 	// Set frustum.
 	void SetLens(float fovY, float aspect, float zn, float zf) noexcept;
@@ -61,8 +61,8 @@ public:
 	ND inline DirectX::XMMATRIX GetView() const noexcept { return XMLoadFloat4x4(&m_view); }
 	ND inline DirectX::XMMATRIX GetProj() const noexcept { return DirectX::XMLoadFloat4x4(&m_proj); }
 
-	ND inline DirectX::XMFLOAT4X4 GetView4x4f() const noexcept { return m_view; }
-	ND inline DirectX::XMFLOAT4X4 GetProj4x4f() const noexcept { return m_proj; }
+	ND constexpr DirectX::XMFLOAT4X4 GetView4x4f() const noexcept { return m_view; }
+	ND constexpr DirectX::XMFLOAT4X4 GetProj4x4f() const noexcept { return m_proj; }
 
 //	// Strafe/Walk the camera a distance d.
 //	void Strafe(float d) noexcept;
@@ -95,12 +95,12 @@ public:
 	void StartConstantDownRotation() noexcept;
 	void StartConstantClockwiseRotation() noexcept;
 	void StartConstantCounterClockwiseRotation() noexcept;
-	constexpr inline void StopConstantLeftRotation() noexcept { m_isInConstantRotationLeft = false; }
-	constexpr inline void StopConstantRightRotation() noexcept { m_isInConstantRotationRight = false; }
-	constexpr inline void StopConstantUpRotation() noexcept { m_isInConstantRotationUp = false; }
-	constexpr inline void StopConstantDownRotation() noexcept { m_isInConstantRotationDown = false; }
-	constexpr inline void StopConstantClockwiseRotation() noexcept { m_isInConstantRotationClockwise = false; }
-	constexpr inline void StopConstantCounterClockwiseRotation() noexcept { m_isInConstantRotationCounterClockwise = false; }
+	constexpr void StopConstantLeftRotation() noexcept { m_isInConstantRotationLeft = false; }
+	constexpr void StopConstantRightRotation() noexcept { m_isInConstantRotationRight = false; }
+	constexpr void StopConstantUpRotation() noexcept { m_isInConstantRotationUp = false; }
+	constexpr void StopConstantDownRotation() noexcept { m_isInConstantRotationDown = false; }
+	constexpr void StopConstantClockwiseRotation() noexcept { m_isInConstantRotationClockwise = false; }
+	constexpr void StopConstantCounterClockwiseRotation() noexcept { m_isInConstantRotationCounterClockwise = false; }
 
 	void ZoomInFixed(float fixedDistance, float duration) noexcept;
 	void ZoomOutFixed(float fixedDistance, float duration) noexcept;
@@ -118,7 +118,7 @@ public:
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix() noexcept;
 
-	ND constexpr inline bool IsInConstantRotation() const noexcept { return m_isInConstantRotationLeft || m_isInConstantRotationRight || m_isInConstantRotationUp || m_isInConstantRotationDown || m_isInConstantRotationClockwise || m_isInConstantRotationCounterClockwise; }
+	ND constexpr bool IsInConstantRotation() const noexcept { return m_isInConstantRotationLeft || m_isInConstantRotationRight || m_isInConstantRotationUp || m_isInConstantRotationDown || m_isInConstantRotationClockwise || m_isInConstantRotationCounterClockwise; }
 
 private:
 	ND DirectX::XMFLOAT3 ZoomFixedImpl(float fixedDistance) const noexcept; 

@@ -11,8 +11,8 @@ public:
 
 	struct Vertex
 	{
-		Vertex() {}
-		Vertex(
+		constexpr Vertex() {}
+		constexpr Vertex(
 			const DirectX::XMFLOAT3& p,
 			const DirectX::XMFLOAT3& n,
 			const DirectX::XMFLOAT3& t,
@@ -21,7 +21,7 @@ public:
 			Normal(n),
 			TangentU(t),
 			TexC(uv) {}
-		Vertex(
+		constexpr Vertex(
 			float px, float py, float pz,
 			float nx, float ny, float nz,
 			float tx, float ty, float tz,
@@ -42,7 +42,7 @@ public:
 		std::vector<Vertex> Vertices;
 		std::vector<uint32> Indices32;
 
-		std::vector<uint16>& GetIndices16()
+		ND constexpr std::vector<uint16>& GetIndices16()
 		{
 			if (mIndices16.empty())
 			{
@@ -62,44 +62,44 @@ public:
 	/// Creates a box centered at the origin with the given dimensions, where each
 	/// face has m rows and n columns of vertices.
 	///</summary>
-	static MeshData CreateBox(float width, float height, float depth, uint32 numSubdivisions) noexcept;
+	ND static MeshData CreateBox(float width, float height, float depth, uint32 numSubdivisions) noexcept;
 
 	///<summary>
 	/// Creates a sphere centered at the origin with the given radius.  The
 	/// slices and stacks parameters control the degree of tessellation.
 	///</summary>
-	static MeshData CreateSphere(float radius, uint32 sliceCount, uint32 stackCount) noexcept;
+	ND static MeshData CreateSphere(float radius, uint32 sliceCount, uint32 stackCount) noexcept;
 
 	///<summary>
 	/// Creates a geosphere centered at the origin with the given radius.  The
 	/// depth controls the level of tessellation.
 	///</summary>
-	static MeshData CreateGeosphere(float radius, uint32 numSubdivisions) noexcept;
+	ND static MeshData CreateGeosphere(float radius, uint32 numSubdivisions) noexcept;
 
 	///<summary>
 	/// Creates a cylinder parallel to the y-axis, and centered about the origin.  
 	/// The bottom and top radius can vary to form various cone shapes rather than true
 	// cylinders.  The slices and stacks parameters control the degree of tessellation.
 	///</summary>
-	static MeshData CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount) noexcept;
+	ND static MeshData CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount) noexcept;
 
-	static MeshData CreateArrow(float bottomCylinderRadius, float topCylinderRadius, float headRadius, float cylinderHeight, float headHeight, uint32 sliceCount, uint32 stackCount) noexcept;
+	ND static MeshData CreateArrow(float bottomCylinderRadius, float topCylinderRadius, float headRadius, float cylinderHeight, float headHeight, uint32 sliceCount, uint32 stackCount) noexcept;
 
 
 	///<summary>
 	/// Creates an mxn grid in the xz-plane with m rows and n columns, centered
 	/// at the origin with the specified width and depth.
 	///</summary>
-	static MeshData CreateGrid(float width, float depth, uint32 m, uint32 n) noexcept;
+	ND static MeshData CreateGrid(float width, float depth, uint32 m, uint32 n) noexcept;
 
 	///<summary>
 	/// Creates a quad aligned with the screen.  This is useful for postprocessing and screen effects.
 	///</summary>
-	static MeshData CreateQuad(float x, float y, float w, float h, float depth) noexcept;
+	ND static MeshData CreateQuad(float x, float y, float w, float h, float depth) noexcept;
 
 private:
 	static void Subdivide(MeshData& meshData) noexcept;
-	static Vertex MidPoint(const Vertex& v0, const Vertex& v1) noexcept;
+	ND static Vertex MidPoint(const Vertex& v0, const Vertex& v1) noexcept;
 	static void BuildCylinderTopCap(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount, MeshData& meshData) noexcept;
 	static void BuildCylinderBottomCap(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount, MeshData& meshData) noexcept;
 };

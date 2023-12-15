@@ -10,7 +10,7 @@ namespace seethe
 class RenderPassLayer
 {
 public:
-	RenderPassLayer(std::shared_ptr<DeviceResources> deviceResources, 
+	inline RenderPassLayer(std::shared_ptr<DeviceResources> deviceResources, 
 					std::shared_ptr<MeshGroupBase> meshGroup,
 					const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 					D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
@@ -26,7 +26,7 @@ public:
 		ASSERT(meshGroup != nullptr, "MeshGroup must be set in the constructor");
 		CreatePSO(desc); 
 	}
-	RenderPassLayer(RenderPassLayer&& rhs) noexcept :
+	inline RenderPassLayer(RenderPassLayer&& rhs) noexcept :
 		m_deviceResources(rhs.m_deviceResources),
 		PreWork(std::move(rhs.PreWork)),
 		PostWork(std::move(rhs.PostWork)),
@@ -38,7 +38,7 @@ public:
 		m_stencilRef(rhs.m_stencilRef),
 		m_active(rhs.m_active)
 	{}
-	RenderPassLayer& operator=(RenderPassLayer&& rhs) noexcept
+	inline RenderPassLayer& operator=(RenderPassLayer&& rhs) noexcept
 	{
 		m_deviceResources = rhs.m_deviceResources;
 		PreWork = std::move(rhs.PreWork);
@@ -62,7 +62,7 @@ public:
 		);
 	}
 
-	void Update(const Timer& timer, int frameIndex)
+	inline void Update(const Timer& timer, int frameIndex)
 	{
 		for (RenderItem& item : m_renderItems)
 		{
@@ -77,20 +77,20 @@ public:
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }
 	constexpr RenderItem& EmplaceBackRenderItem(unsigned int submeshIndex = 0, unsigned int instanceCount = 1) noexcept { return m_renderItems.emplace_back(submeshIndex, instanceCount); }
 
-	ND constexpr inline std::vector<RenderItem>& GetRenderItems() noexcept { return m_renderItems; }
-	ND constexpr inline const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
+	ND constexpr std::vector<RenderItem>& GetRenderItems() noexcept { return m_renderItems; }
+	ND constexpr const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
-	ND constexpr inline D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
+	ND constexpr D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
 	ND inline std::shared_ptr<MeshGroupBase> GetMeshGroup() const noexcept { return m_meshes; }
-	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
-	ND constexpr inline bool IsActive() const noexcept { return m_active; }
-	ND constexpr inline std::optional<unsigned int> GetStencilRef() const noexcept { return m_stencilRef; }
+	ND constexpr std::string_view GetName() const noexcept { return m_name; }
+	ND constexpr bool IsActive() const noexcept { return m_active; }
+	ND constexpr std::optional<unsigned int> GetStencilRef() const noexcept { return m_stencilRef; }
 
-	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
-	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
+	constexpr void SetName(std::string_view name) noexcept { m_name = name; }
+	constexpr void SetActive(bool active) noexcept { m_active = active; }
 	
-	constexpr inline void SetStencilRef(unsigned int value) noexcept { m_stencilRef = value; }
-	constexpr inline void SetStencilRef(std::optional<unsigned int> value) noexcept { m_stencilRef = value; }
+	constexpr void SetStencilRef(unsigned int value) noexcept { m_stencilRef = value; }
+	constexpr void SetStencilRef(std::optional<unsigned int> value) noexcept { m_stencilRef = value; }
 
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not make a Draw call for this layer)

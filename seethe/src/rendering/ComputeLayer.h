@@ -12,7 +12,7 @@ namespace seethe
 class ComputeLayer
 {
 public:
-	ComputeLayer(std::shared_ptr<DeviceResources> deviceResources, 
+	inline ComputeLayer(std::shared_ptr<DeviceResources> deviceResources, 
 				 std::shared_ptr<RootSignature> rootSig,
 				 const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc,
 				 std::string_view name = "Unnamed") :
@@ -25,7 +25,7 @@ public:
 		ASSERT(m_rootSignature != nullptr, "Root Signature should not be nullptr");
 		CreatePSO(desc);
 	}
-	ComputeLayer(std::shared_ptr<DeviceResources> deviceResources,
+	inline ComputeLayer(std::shared_ptr<DeviceResources> deviceResources,
 				 const D3D12_ROOT_SIGNATURE_DESC& rootSigDesc,
 				 const D3D12_COMPUTE_PIPELINE_STATE_DESC& computePSODesc,
 				 std::string_view name = "Unnamed") :
@@ -38,7 +38,7 @@ public:
 		m_rootSignature = std::make_shared<RootSignature>(m_deviceResources, rootSigDesc);
 		CreatePSO(computePSODesc);
 	}
-	ComputeLayer(ComputeLayer&& rhs) noexcept :
+	inline ComputeLayer(ComputeLayer&& rhs) noexcept :
 		m_deviceResources(rhs.m_deviceResources),
 		PreWork(std::move(rhs.PreWork)),
 		PostWork(std::move(rhs.PostWork)),
@@ -47,7 +47,7 @@ public:
 		m_name(std::move(rhs.m_name)),
 		m_active(rhs.m_active)
 	{}
-	ComputeLayer& operator=(ComputeLayer&& rhs) noexcept
+	inline ComputeLayer& operator=(ComputeLayer&& rhs) noexcept
 	{
 		m_deviceResources = rhs.m_deviceResources;
 		PreWork = std::move(rhs.PreWork);
@@ -65,7 +65,7 @@ public:
 		GFX_THROW_INFO(m_deviceResources->GetDevice()->CreateComputePipelineState(&desc, IID_PPV_ARGS(&m_pipelineState)));
 	}
 
-	void Update(const Timer& timer, int frameIndex)
+	inline void Update(const Timer& timer, int frameIndex)
 	{
 		for (ComputeItem& item : m_computeItems)
 		{
@@ -80,15 +80,15 @@ public:
 		return m_computeItems.emplace_back(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
 	}
 
-	ND constexpr inline std::vector<ComputeItem>& GetComputeItems() noexcept { return m_computeItems; }
-	ND constexpr inline const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }
+	ND constexpr std::vector<ComputeItem>& GetComputeItems() noexcept { return m_computeItems; }
+	ND constexpr const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
-	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
-	ND constexpr inline bool IsActive() const noexcept { return m_active; }
+	ND constexpr std::string_view GetName() const noexcept { return m_name; }
+	ND constexpr bool IsActive() const noexcept { return m_active; }
 
-	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
-	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
+	constexpr void SetName(std::string_view name) noexcept { m_name = name; }
+	constexpr void SetActive(bool active) noexcept { m_active = active; }
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not call Dispatch for this RenderLayer)
 	// Also, because a ComputeLayer can be executed during the Update phase, it can get access to the Timer. However, 

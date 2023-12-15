@@ -10,7 +10,7 @@ namespace seethe
 class RootConstantBufferView
 {
 public:
-	RootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept :
+	inline RootConstantBufferView(UINT rootParameterIndex, ConstantBufferBase* cb) noexcept :
 		m_rootParameterIndex(rootParameterIndex),
 		m_constantBuffer(cb)
 	{
@@ -22,8 +22,8 @@ public:
 	RootConstantBufferView& operator=(RootConstantBufferView&&) noexcept = default;
 	~RootConstantBufferView() noexcept = default; 
 
-	ND constexpr inline UINT GetRootParameterIndex() const noexcept { return m_rootParameterIndex; }
-	ND constexpr inline ConstantBufferBase* GetConstantBuffer() const noexcept { return m_constantBuffer; }
+	ND constexpr UINT GetRootParameterIndex() const noexcept { return m_rootParameterIndex; }
+	ND constexpr ConstantBufferBase* GetConstantBuffer() const noexcept { return m_constantBuffer; }
 
 	// No Setters yet... wait until you have a use case
 

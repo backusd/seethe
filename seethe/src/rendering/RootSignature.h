@@ -9,7 +9,7 @@ namespace seethe
 class RootSignature
 {
 public:
-	RootSignature(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc) :
+	inline RootSignature(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc) :
 		m_deviceResources(deviceResources),
 		m_rootSignature(nullptr)
 	{

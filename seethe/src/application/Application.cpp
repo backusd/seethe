@@ -840,7 +840,7 @@ void Application::RenderUI()
 				clipper.Begin(static_cast<int>(atoms.size()));
 				while (clipper.Step())
 				{
-					for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) 
+					for (size_t row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) 
 					{
 						Atom& atom = atoms[row_n];
 
