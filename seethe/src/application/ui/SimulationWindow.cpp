@@ -191,8 +191,8 @@ void SimulationWindow::InitializeRenderPasses()
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
-	psoDesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
-	psoDesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	psoDesc.SampleDesc.Count = 1;
+	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
 	RenderPassLayer& layer1 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, m_sphereMeshGroup, psoDesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #1");
@@ -307,8 +307,8 @@ void SimulationWindow::InitializeRenderPasses()
 	boxDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
 	boxDesc.NumRenderTargets = 1;
 	boxDesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
-	boxDesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
-	boxDesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	boxDesc.SampleDesc.Count = 1;
+	boxDesc.SampleDesc.Quality = 0;
 	boxDesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
 	RenderPassLayer& layer2 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, boxMeshGroup, boxDesc, D3D_PRIMITIVE_TOPOLOGY_LINELIST, "Layer #2");
@@ -470,8 +470,8 @@ void SimulationWindow::InitializeRenderPasses()
 	stencilPSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	stencilPSODesc.NumRenderTargets = 1;
 	stencilPSODesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
-	stencilPSODesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
-	stencilPSODesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	stencilPSODesc.SampleDesc.Count = 1;
+	stencilPSODesc.SampleDesc.Quality = 0;
 	stencilPSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
 	RenderPassLayer& layer5 = pass1.EmplaceBackRenderPassLayer(m_deviceResources, stencilMeshGroup, stencilPSODesc, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, "Layer #4");
@@ -551,8 +551,8 @@ void SimulationWindow::InitializeRenderPasses()
 	outlinePSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	outlinePSODesc.NumRenderTargets = 1;
 	outlinePSODesc.RTVFormats[0] = m_deviceResources->GetBackBufferFormat();
-	outlinePSODesc.SampleDesc.Count = m_deviceResources->MsaaEnabled() ? 4 : 1;
-	outlinePSODesc.SampleDesc.Quality = m_deviceResources->MsaaEnabled() ? (m_deviceResources->MsaaQuality() - 1) : 0;
+	outlinePSODesc.SampleDesc.Count = 1;
+	outlinePSODesc.SampleDesc.Quality = 0;
 	outlinePSODesc.DSVFormat = m_deviceResources->GetDepthStencilFormat();
 
 

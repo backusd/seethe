@@ -31,17 +31,6 @@ namespace seethe
 		OnResize(m_height, m_width);
 	}
 
-	void DeviceResources::Set4xMsaaState(bool value)
-	{
-		if (m_4xMsaaState != value)
-		{
-			m_4xMsaaState = value;
-
-			// Recreate the swapchain and buffers with new multisample settings.
-			CreateSwapChain();
-		}
-	}
-
 	void DeviceResources::CreateDevice()
 	{
 #if defined(DEBUG) || defined(_DEBUG) 
@@ -53,7 +42,12 @@ namespace seethe
 		}
 #endif
 
-	GFX_THROW_INFO(CreateDXGIFactory1(IID_PPV_ARGS(&m_dxgiFactory)));
+#if defined(DEBUG) || defined(_DEBUG) 
+	GFX_THROW_INFO(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&m_dxgiFactory))); 
+#else
+	GFX_THROW_INFO(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory)));
+#endif
+
 
 	// Try to create hardware device.
 	HRESULT hardwareResult = D3D12CreateDevice(
@@ -85,21 +79,21 @@ namespace seethe
 	// All Direct3D 11 capable devices support 4X MSAA for all render 
 	// target formats, so we only need to check quality support.
 
-	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels = {};
-	msQualityLevels.Format = m_backBufferFormat;
-	msQualityLevels.SampleCount = 4;
-	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-	msQualityLevels.NumQualityLevels = 0;
-	GFX_THROW_INFO(
-		m_d3dDevice->CheckFeatureSupport(
-			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
-			&msQualityLevels,
-			sizeof(msQualityLevels)
-		)
-	);
-
-	m_4xMsaaQuality = msQualityLevels.NumQualityLevels;
-	assert(m_4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
+//	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels = {};
+//	msQualityLevels.Format = m_backBufferFormat;
+//	msQualityLevels.SampleCount = 4;
+//	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+//	msQualityLevels.NumQualityLevels = 0;
+//	GFX_THROW_INFO(
+//		m_d3dDevice->CheckFeatureSupport(
+//			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+//			&msQualityLevels,
+//			sizeof(msQualityLevels)
+//		)
+//	);
+//
+//	m_4xMsaaQuality = msQualityLevels.NumQualityLevels;
+//	assert(m_4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
 
 #ifdef _DEBUG
 	LogAdapters();
@@ -178,8 +172,8 @@ namespace seethe
 			sd.BufferDesc.Format = m_backBufferFormat;
 			sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 			sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-			sd.SampleDesc.Count = m_4xMsaaState ? 4 : 1;
-			sd.SampleDesc.Quality = m_4xMsaaState ? (m_4xMsaaQuality - 1) : 0;
+			sd.SampleDesc.Count = 1;
+			sd.SampleDesc.Quality = 0;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = SwapChainBufferCount;
 			sd.OutputWindow = m_hWnd;
@@ -208,8 +202,8 @@ namespace seethe
 			sd.Width = m_width; // Match the size of the window.
 			sd.Height = m_height;
 			sd.Format = m_backBufferFormat; // This is the most common swap chain format.
-			sd.SampleDesc.Count = m_4xMsaaState ? 4 : 1;
-			sd.SampleDesc.Quality = m_4xMsaaState ? (m_4xMsaaQuality - 1) : 0;
+			sd.SampleDesc.Count = 1;
+			sd.SampleDesc.Quality = 0;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = SwapChainBufferCount;
 			sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // MUST use this swap effect when creating swapchain for composition
@@ -328,8 +322,8 @@ namespace seethe
 		// we need to create the depth buffer resource with a typeless format.  
 		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 
-		depthStencilDesc.SampleDesc.Count = m_4xMsaaState ? 4 : 1;
-		depthStencilDesc.SampleDesc.Quality = m_4xMsaaState ? (m_4xMsaaQuality - 1) : 0;
+		depthStencilDesc.SampleDesc.Count = 1;
+		depthStencilDesc.SampleDesc.Quality = 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 

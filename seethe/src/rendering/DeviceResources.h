@@ -59,7 +59,6 @@ public:
 	void FlushCommandQueue();
 
 	// Getters
-	ND inline bool Get4xMsaaState() const noexcept { return m_4xMsaaState; }
 	ND inline float AspectRatio() const noexcept { return static_cast<float>(m_width) / m_height; }
 	ND inline ID3D12GraphicsCommandList* GetCommandList() const noexcept { return m_commandList.Get(); }
 	ND inline ID3D12CommandAllocator* GetCommandAllocator() const noexcept { return m_directCmdListAlloc.Get(); }
@@ -67,8 +66,6 @@ public:
 	ND inline ID3D12Device* GetDevice() const noexcept { return m_d3dDevice.Get(); }
 	ND inline DXGI_FORMAT GetBackBufferFormat() const noexcept { return m_backBufferFormat; }
 	ND inline DXGI_FORMAT GetDepthStencilFormat() const noexcept { return m_depthStencilFormat; }
-	ND inline bool MsaaEnabled() const noexcept { return m_4xMsaaState; }
-	ND inline UINT MsaaQuality() const noexcept { return m_4xMsaaQuality; }
 	ND inline IDXGISwapChain1* GetSwapChain() const noexcept { return m_swapChain.Get(); }
 
 	ND ID3D12Resource* CurrentBackBuffer() const noexcept;
@@ -85,8 +82,8 @@ public:
 	ND inline UINT GetDSVDescriptorSize() const noexcept { return m_dsvDescriptorSize; }
 	ND inline UINT GetCBVSRVUAVDescriptorSize() const noexcept { return m_cbvSrvUavDescriptorSize; }
 
-	// Setters
-	void Set4xMsaaState(bool value);
+
+
 
 	void Present();
 
@@ -110,10 +107,6 @@ private:
 
 	int m_height;
 	int m_width;
-
-	// Set true to use 4X MSAA (§4.1.8).  The default is false.
-	bool      m_4xMsaaState = false;    // 4X MSAA enabled
-	UINT      m_4xMsaaQuality = 0;      // quality level of 4X MSAA
 
 	Microsoft::WRL::ComPtr<IDXGIFactory4>	m_dxgiFactory;
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> m_swapChain;
