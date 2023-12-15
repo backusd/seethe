@@ -13,7 +13,7 @@ namespace seethe
 		unsigned int width;
 		unsigned int height;
 
-		WindowProperties(const std::string& title = "Seethe App",
+		WindowProperties(std::string_view title = "Seethe App",
 			unsigned int width = 1280,
 			unsigned int height = 720) noexcept :
 			title(title), width(width), height(height)

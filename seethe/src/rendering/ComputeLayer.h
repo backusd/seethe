@@ -15,7 +15,7 @@ public:
 	ComputeLayer(std::shared_ptr<DeviceResources> deviceResources, 
 				 std::shared_ptr<RootSignature> rootSig,
 				 const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc,
-				 const std::string& name = "Unnamed") :
+				 std::string_view name = "Unnamed") :
 		m_deviceResources(deviceResources),
 		m_rootSignature(rootSig),
 		m_pipelineState(nullptr),
@@ -28,7 +28,7 @@ public:
 	ComputeLayer(std::shared_ptr<DeviceResources> deviceResources,
 				 const D3D12_ROOT_SIGNATURE_DESC& rootSigDesc,
 				 const D3D12_COMPUTE_PIPELINE_STATE_DESC& computePSODesc,
-				 const std::string& name = "Unnamed") :
+				 std::string_view name = "Unnamed") :
 		m_deviceResources(deviceResources),
 		m_rootSignature(nullptr),
 		m_pipelineState(nullptr),
@@ -84,11 +84,10 @@ public:
 	ND constexpr inline const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
-	ND constexpr inline std::string& GetName() noexcept { return m_name; }
-	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
+	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
 	ND constexpr inline bool IsActive() const noexcept { return m_active; }
 
-	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
+	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
 	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
 
 	// PreWork needs to return a bool: false -> signals early exit (i.e. do not call Dispatch for this RenderLayer)

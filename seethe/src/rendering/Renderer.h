@@ -49,8 +49,8 @@ public:
 	constexpr inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
 
 	constexpr void PushBackRenderPass(RenderPass&& pass) noexcept { m_renderPasses.push_back(std::move(pass)); }
-	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
-	RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, const std::string& name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
+	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
+	RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
 
 private:
 	// There is too much state to worry about copying (and expensive ?), so just delete copy operations until we find a good use case

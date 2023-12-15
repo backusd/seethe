@@ -24,22 +24,22 @@ std::string app_current_time_and_date()
 
 #if defined DEBUG
 
-void error(const std::string& msg) noexcept
+void error(std::string_view msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
 	std::cout << "[ERROR " << app_current_time_and_date() << "] " << msg << '\n';
 }
-void warn(const std::string& msg) noexcept
+void warn(std::string_view msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6);
 	std::cout << "[WARN  " << app_current_time_and_date() << "] " << msg << '\n';
 }
-void info(const std::string& msg) noexcept
+void info(std::string_view msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 	std::cout << "[INFO  " << app_current_time_and_date() << "] " << msg << '\n';
 }
-void trace(const std::string& msg) noexcept
+void trace(std::string_view msg) noexcept
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
 	std::cout << "[TRACE " << app_current_time_and_date() << "] " << msg << '\n';
@@ -48,25 +48,25 @@ void trace(const std::string& msg) noexcept
 
 #elif defined RELEASE
 
-void error(const std::string& msg) noexcept
+void error(std::string_view msg) noexcept
 {
 	std::string time = app_current_time_and_date();
 	std::wstring w = std::format(L"[ERROR {}] {}\n", std::wstring(time.begin(), time.end()), std::wstring(msg.begin(), msg.end()));
 	OutputDebugString(w.c_str());
 }
-void warn(const std::string& msg) noexcept
+void warn(std::string_view msg) noexcept
 {
 	std::string time = app_current_time_and_date();
 	std::wstring w = std::format(L"[WARN  {}] {}\n", std::wstring(time.begin(), time.end()), std::wstring(msg.begin(), msg.end()));
 	OutputDebugString(w.c_str());
 }
-void info(const std::string& msg) noexcept
+void info(std::string_view msg) noexcept
 {
 	std::string time = app_current_time_and_date();
 	std::wstring w = std::format(L"[INFO  {}] {}\n", std::wstring(time.begin(), time.end()), std::wstring(msg.begin(), msg.end()));
 	OutputDebugString(w.c_str());
 }
-void trace(const std::string& msg) noexcept
+void trace(std::string_view msg) noexcept
 {
 	std::string time = app_current_time_and_date();
 	std::wstring w = std::format(L"[TRACE {}] {}\n", std::wstring(time.begin(), time.end()), std::wstring(msg.begin(), msg.end()));

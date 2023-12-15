@@ -7,10 +7,10 @@ namespace seethe
 {
 namespace log
 {
-	void error(const std::string& msg) noexcept;
-	void warn(const std::string& msg) noexcept;
-	void info(const std::string& msg) noexcept;
-	void trace(const std::string& msg) noexcept;
+	void error(std::string_view msg) noexcept;
+	void warn(std::string_view msg) noexcept;
+	void info(std::string_view msg) noexcept;
+	void trace(std::string_view msg) noexcept;
 }
 }
 

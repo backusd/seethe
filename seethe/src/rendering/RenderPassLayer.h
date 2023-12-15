@@ -14,7 +14,7 @@ public:
 					std::shared_ptr<MeshGroupBase> meshGroup,
 					const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 					D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-					const std::string& name = "Unnamed") :
+					std::string_view name = "Unnamed") :
 		m_deviceResources(deviceResources),
 		m_pipelineState(nullptr),
 		m_topology(topology), 
@@ -82,12 +82,11 @@ public:
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND constexpr inline D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
 	ND inline std::shared_ptr<MeshGroupBase> GetMeshGroup() const noexcept { return m_meshes; }
-	ND constexpr inline std::string& GetName() noexcept { return m_name; }
-	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
+	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
 	ND constexpr inline bool IsActive() const noexcept { return m_active; }
 	ND constexpr inline std::optional<unsigned int> GetStencilRef() const noexcept { return m_stencilRef; }
 
-	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
+	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
 	constexpr inline void SetActive(bool active) noexcept { m_active = active; }
 	
 	constexpr inline void SetStencilRef(unsigned int value) noexcept { m_stencilRef = value; }

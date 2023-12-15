@@ -12,13 +12,13 @@ namespace seethe
 class RenderPass
 {
 public:
-	RenderPass(std::shared_ptr<RootSignature> rootSig, const std::string& name = "Unnamed") noexcept :
+	RenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept :
 		m_rootSignature(rootSig),
 		m_name(name)
 	{
 		ASSERT(m_rootSignature != nullptr, "Root signature should not be nullptr");
 	}
-	RenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, const std::string& name = "Unnamed") :
+	RenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") :
 		m_rootSignature(nullptr),
 		m_name(name)
 	{
@@ -63,11 +63,10 @@ public:
 	ND constexpr inline const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
 	ND constexpr inline std::vector<ComputeLayer>& GetComputeLayers() noexcept { return m_computeLayers; }
 	ND constexpr inline const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
-	ND constexpr inline std::string& GetName() noexcept { return m_name; }
-	ND constexpr inline const std::string& GetName() const noexcept { return m_name; }
+	ND constexpr inline std::string_view GetName() const noexcept { return m_name; }
 
 	inline void SetRootSignature(std::shared_ptr<RootSignature> rs) noexcept { m_rootSignature = rs; }
-	constexpr inline void SetName(const std::string& name) noexcept { m_name = name; }
+	constexpr inline void SetName(std::string_view name) noexcept { m_name = name; }
 
 	constexpr void PushBackRootConstantBufferView(RootConstantBufferView&& rcbv) noexcept { m_constantBufferViews.push_back(std::move(rcbv)); }
 	constexpr void PushBackRenderPassLayer(RenderPassLayer&& rpl) noexcept { m_renderPassLayers.push_back(std::move(rpl)); }
@@ -81,7 +80,7 @@ public:
 		std::shared_ptr<MeshGroupBase> meshGroup,
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		const std::string& name = "Unnamed")
+		std::string_view name = "Unnamed")
 	{
 		return m_renderPassLayers.emplace_back(deviceResources, meshGroup, desc, topology, name);
 	}
