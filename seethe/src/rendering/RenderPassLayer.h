@@ -77,8 +77,10 @@ public:
 	constexpr void PushBackRenderItem(RenderItem&& ri) noexcept { m_renderItems.push_back(std::move(ri)); }
 	constexpr RenderItem& EmplaceBackRenderItem(unsigned int submeshIndex = 0, unsigned int instanceCount = 1) noexcept { return m_renderItems.emplace_back(submeshIndex, instanceCount); }
 
-	ND constexpr std::vector<RenderItem>& GetRenderItems() noexcept { return m_renderItems; }
-	ND constexpr const std::vector<RenderItem>& GetRenderItems() const noexcept { return m_renderItems; }
+	// See here for article on 'deducing this' pattern: https://devblogs.microsoft.com/cppblog/cpp23-deducing-this/
+	template <class Self>
+	ND constexpr auto&& GetRenderItems(this Self&& self) noexcept { return std::forward<Self>(self).m_renderItems; }
+
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND constexpr D3D12_PRIMITIVE_TOPOLOGY GetTopology() const noexcept { return m_topology; }
 	ND inline std::shared_ptr<MeshGroupBase> GetMeshGroup() const noexcept { return m_meshes; }

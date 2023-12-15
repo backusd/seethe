@@ -80,8 +80,9 @@ public:
 		return m_computeItems.emplace_back(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
 	}
 
-	ND constexpr std::vector<ComputeItem>& GetComputeItems() noexcept { return m_computeItems; }
-	ND constexpr const std::vector<ComputeItem>& GetComputeItems() const noexcept { return m_computeItems; }
+	// See here for article on 'deducing this' pattern: https://devblogs.microsoft.com/cppblog/cpp23-deducing-this/
+	template <class Self>
+	ND constexpr auto&& GetComputeItems(this Self&& self) noexcept { return std::forward<Self>(self).m_computeItems; }
 	ND inline ID3D12PipelineState* GetPSO() const noexcept { return m_pipelineState.Get(); }
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
 	ND constexpr std::string_view GetName() const noexcept { return m_name; }

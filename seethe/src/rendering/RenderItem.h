@@ -31,11 +31,12 @@ public:
 	constexpr void PushBackRootDescriptorTable(const RootDescriptorTable& rdt) noexcept { m_descriptorTables.push_back(rdt); }
 	constexpr RootDescriptorTable& EmplaceBackRootDescriptorTable(UINT rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE descriptorHandle) noexcept { return m_descriptorTables.emplace_back(rootParameterIndex, descriptorHandle); }
 
-	ND constexpr std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
-	ND constexpr const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
-	ND constexpr std::vector<RootDescriptorTable>& GetRootDescriptorTables() noexcept { return m_descriptorTables; }
-	ND constexpr const std::vector<RootDescriptorTable>& GetRootDescriptorTables() const noexcept { return m_descriptorTables; }
-	
+	// See here for article on 'deducing this' pattern: https://devblogs.microsoft.com/cppblog/cpp23-deducing-this/
+	template <class Self>
+	ND constexpr auto&& GetRootConstantBufferViews(this Self&& self) noexcept { return std::forward<Self>(self).m_constantBufferViews; }
+	template <class Self>
+	ND constexpr auto&& GetRootDescriptorTables(this Self&& self) noexcept { return std::forward<Self>(self).m_descriptorTables; }
+
 	ND constexpr bool IsActive() const noexcept { return m_active; }
 	constexpr void SetActive(bool active) noexcept { m_active = active; }
 

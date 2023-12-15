@@ -16,14 +16,14 @@ class Renderer
 {
 public:
 	Renderer(std::shared_ptr<DeviceResources> deviceResources, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) noexcept;
-	Renderer(Renderer&& rhs) noexcept :
+	inline Renderer(Renderer&& rhs) noexcept :
 		m_deviceResources(rhs.m_deviceResources),
 		m_camera(std::move(rhs.m_camera)),
 		m_viewport(rhs.m_viewport),
 		m_scissorRect(rhs.m_scissorRect),
 		m_renderPasses(std::move(rhs.m_renderPasses))
 	{}
-	Renderer& operator=(Renderer&& rhs) noexcept
+	inline Renderer& operator=(Renderer&& rhs) noexcept
 	{
 		m_deviceResources = rhs.m_deviceResources;
 		m_camera = std::move(rhs.m_camera);
@@ -32,25 +32,25 @@ public:
 		m_renderPasses = std::move(rhs.m_renderPasses);
 		return *this;
 	}
-	~Renderer() noexcept = default;
+	inline ~Renderer() noexcept = default;
 
 	void Update(const Timer& timer, int frameIndex);
 	void Render(const Simulation& simulation, int frameIndex);
 
-	ND constexpr inline Camera& GetCamera() noexcept { return m_camera; }
-	ND constexpr inline const Camera& GetCamera() const noexcept { return m_camera; }
-	ND constexpr inline RenderPass& GetRenderPass(unsigned int index) noexcept 
+	ND constexpr Camera& GetCamera() noexcept { return m_camera; }
+	ND constexpr const Camera& GetCamera() const noexcept { return m_camera; }
+	ND constexpr RenderPass& GetRenderPass(unsigned int index) noexcept 
 	{ 
 		ASSERT(index < m_renderPasses.size(), "index too large");
 		return m_renderPasses[index]; 
 	}
 
-	constexpr inline void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
-	constexpr inline void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
+	constexpr void SetViewport(D3D12_VIEWPORT& vp) noexcept { m_viewport = vp; }
+	constexpr void SetScissorRect(D3D12_RECT& rect) noexcept { m_scissorRect = rect; }
 
 	constexpr void PushBackRenderPass(RenderPass&& pass) noexcept { m_renderPasses.push_back(std::move(pass)); }
-	RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
-	RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
+	inline RenderPass& EmplaceBackRenderPass(std::shared_ptr<RootSignature> rootSig, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(rootSig, name); }
+	inline RenderPass& EmplaceBackRenderPass(std::shared_ptr<DeviceResources> deviceResources, const D3D12_ROOT_SIGNATURE_DESC& desc, std::string_view name = "Unnamed") noexcept { return m_renderPasses.emplace_back(deviceResources, desc, name); }
 
 private:
 	// There is too much state to worry about copying (and expensive ?), so just delete copy operations until we find a good use case

@@ -57,12 +57,15 @@ public:
 
 
 	ND inline RootSignature* GetRootSignature() const noexcept { return m_rootSignature.get(); }
-	ND constexpr std::vector<RootConstantBufferView>& GetRootConstantBufferViews() noexcept { return m_constantBufferViews; }
-	ND constexpr const std::vector<RootConstantBufferView>& GetRootConstantBufferViews() const noexcept { return m_constantBufferViews; }
-	ND constexpr std::vector<RenderPassLayer>& GetRenderPassLayers() noexcept { return m_renderPassLayers; }
-	ND constexpr const std::vector<RenderPassLayer>& GetRenderPassLayers() const noexcept { return m_renderPassLayers; }
-	ND constexpr std::vector<ComputeLayer>& GetComputeLayers() noexcept { return m_computeLayers; }
-	ND constexpr const std::vector<ComputeLayer>& GetComputeLayers() const noexcept { return m_computeLayers; }
+
+	// See here for article on 'deducing this' pattern: https://devblogs.microsoft.com/cppblog/cpp23-deducing-this/
+	template <class Self>
+	ND constexpr auto&& GetRootConstantBufferViews(this Self&& self) noexcept { return std::forward<Self>(self).m_constantBufferViews; }
+	template <class Self>
+	ND constexpr auto&& GetRenderPassLayers(this Self&& self) noexcept { return std::forward<Self>(self).m_renderPassLayers; }
+	template <class Self>
+	ND constexpr auto&& GetComputeLayers(this Self&& self) noexcept { return std::forward<Self>(self).m_computeLayers; }
+
 	ND constexpr std::string_view GetName() const noexcept { return m_name; }
 
 	inline void SetRootSignature(std::shared_ptr<RootSignature> rs) noexcept { m_rootSignature = rs; }
