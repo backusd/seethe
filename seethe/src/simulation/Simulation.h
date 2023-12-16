@@ -497,6 +497,7 @@ private:
 			}
 		);
 	}
+
 	ND constexpr bool MoveSelectedAtomsXIsInBounds(float delta) const noexcept
 	{
 		for (size_t index : m_selectedAtomIndices)
@@ -504,15 +505,7 @@ private:
 			const Atom& atom = m_atoms[index];
 			float f = atom.position.x + delta;
 			if (f + atom.radius > m_boxMaxX || f - atom.radius < -m_boxMaxX)
-			{
-				LOG_TRACE("Position X: {}", atom.position.x);
-				LOG_TRACE("    Radius: {}", atom.radius);
-				LOG_TRACE("     Delta: {}", delta);
-				LOG_TRACE(" Box Max X: {}", m_boxMaxX);
-				LOG_TRACE("{} + {} + {} > {}\n", atom.position.x, delta, atom.radius, m_boxMaxX);
-
 				return false;
-			}
 		}
 		return true;
 	}

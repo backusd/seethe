@@ -146,7 +146,7 @@ void SimulationWindow::InitializeRenderPasses()
 	// Blending:		None
 	// Stenciling:		None
 
-	GeometryGenerator::MeshData sphereMesh = GeometryGenerator::CreateSphere(0.5f, 20, 20);
+	GeometryGenerator::MeshData sphereMesh = GeometryGenerator::CreateSphere(1.0f, 20, 20);
 	std::vector<Vertex> sphereVertices;
 	sphereVertices.reserve(sphereMesh.Vertices.size());
 	for (GeometryGenerator::Vertex& v : sphereMesh.Vertices)
@@ -583,13 +583,13 @@ void SimulationWindow::InitializeRenderPasses()
 				float distance = XMVectorGetX(XMVector3Length(cameraPos - XMLoadFloat3(&p)));
 
 				// Increase the radius - this creates the outline effect around the atom
-				// NOTE: 0.006 was used because this width seems appealing. It could easily be made smaller or larger
+				// NOTE: 0.003 was used because this width seems appealing. It could easily be made smaller or larger
 				// NOTE: We use simulation.GetSelectedAtomCenter() and compute an increase to the radius based on the 
 				//		 center of the selected atoms and would therefore not need to compute the distance to every
 				//		 single atom. However, this leads to undesirable results when some atoms are far from the selected
 				//		 atoms center. Atoms close to the camera get a noticably larger outline while atoms further get a
 				//		 very thin outline.
-				const float radius = atom.radius + (0.006f * distance);
+				const float radius = atom.radius + (0.003f * distance);
 
 				DirectX::XMStoreFloat4x4(&m_selectedAtomsInstanceOutlineData[iii].World,
 					DirectX::XMMatrixTranspose( 
@@ -705,34 +705,7 @@ void SimulationWindow::SelectionMovementDragPlaneChangedImpl() noexcept
 	XMMATRIX world = rotation * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslation(center.x, center.y, center.z);
 	XMStoreFloat4x4(&d.World, XMMatrixTranspose(world));
 
-	m_boxFaceConstantBuffer->CopyData(d); 
-
-//	uint32_t i = MouseIsDraggingWall() ? g_boxFaceWhenClickedMaterialIndex : g_boxFaceWhenHoveredMaterialIndex;
-//	XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
-//
-//	XMMATRIX pos = XMMatrixIdentity();
-//	XMMATRIX neg = XMMatrixIdentity();
-//
-//	if (m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
-//	{
-//		pos = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
-//		neg = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
-//	}
-//	else if (m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
-//	{
-//		pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, dims.y, 0.0f);
-//		neg = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
-//	}
-//	else if (m_mouseHoveringBoxWallPosZ || m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
-//	{
-//		pos = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
-//		neg = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
-//	}
-//
-//	XMStoreFloat4x4(&d[0].World, XMMatrixTranspose(pos));
-//	XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
-//
-//	m_boxFaceConstantBuffer->CopyData(d);
+	m_boxFaceConstantBuffer->CopyData(d);
 }
 void SimulationWindow::DragSelectedAtoms(float x, float y) noexcept
 {
