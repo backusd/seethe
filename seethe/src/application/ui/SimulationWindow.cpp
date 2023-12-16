@@ -628,10 +628,13 @@ void SimulationWindow::StartSelectionMovement(MovementDirection direction) noexc
 }
 void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 {
-	// If nothing is selected, turn off the layer that renders the axis
+	auto& pass1Layers = m_renderer->GetRenderPass(0).GetRenderPassLayers();
+
+	// If nothing is selected, turn off the layers that renders the axis and drag plane
 	if (m_simulation.GetSelectedAtomIndices().size() == 0)
 	{
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(false);
+		pass1Layers[2].SetActive(false);
+		pass1Layers[3].SetActive(false);
 		return;
 	}
 
@@ -643,7 +646,8 @@ void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 	{
 	case MovementDirection::X:
 	{
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+		pass1Layers[3].SetActive(false); // Turn off the transparent plane layer
+		pass1Layers[2].SetActive(true);
 
 		InstanceData axisData = {};
 		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
@@ -653,7 +657,8 @@ void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 	}
 	case MovementDirection::Y:
 	{
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+		pass1Layers[3].SetActive(false); // Turn off the transparent plane layer
+		pass1Layers[2].SetActive(true);
 
 		InstanceData axisData = {};
 		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
@@ -663,7 +668,8 @@ void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 	}
 	case MovementDirection::Z:
 	{
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[2].SetActive(true);
+		pass1Layers[3].SetActive(false); // Turn off the transparent plane layer
+		pass1Layers[2].SetActive(true);
 
 		InstanceData axisData = {};
 		axisData.MaterialIndex = g_solidAxisColorMaterialIndex;
@@ -671,6 +677,130 @@ void SimulationWindow::SelectionMovementDirectionChangedImpl() noexcept
 		m_axisCylinderConstantBuffer->CopyData(axisData);
 		break;
 	}
+	default:
+	{
+		pass1Layers[2].SetActive(false);	// Disable the solid cylinder layer
+		pass1Layers[3].SetActive(true);		// Activate the drag plane layer
+		pass1Layers[3].GetRenderItems()[0].SetInstanceCount(1);
+
+		SelectionMovementDragPlaneChangedImpl();
+		break;
+	}
+	}
+}
+void SimulationWindow::SelectionMovementDragPlaneChangedImpl() noexcept
+{
+	// Box Highlighted Walls -----------------------------------------------
+	InstanceData d = {}; 
+	d.MaterialIndex = g_boxFaceWhenHoveredMaterialIndex;  
+
+	XMMATRIX rotation = XMMatrixIdentity();
+	if (m_movementDirection == MovementDirection::XY) 
+		rotation = XMMatrixRotationY(XM_PIDIV2); 
+	else if (m_movementDirection == MovementDirection::XZ)
+		rotation = XMMatrixRotationZ(XM_PIDIV2);
+
+	const XMFLOAT3& center = m_simulation.GetSelectedAtomsCenter();
+	float scale = 10.0f;
+	XMMATRIX world = rotation * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslation(center.x, center.y, center.z);
+	XMStoreFloat4x4(&d.World, XMMatrixTranspose(world));
+
+	m_boxFaceConstantBuffer->CopyData(d); 
+
+//	uint32_t i = MouseIsDraggingWall() ? g_boxFaceWhenClickedMaterialIndex : g_boxFaceWhenHoveredMaterialIndex;
+//	XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+//
+//	XMMATRIX pos = XMMatrixIdentity();
+//	XMMATRIX neg = XMMatrixIdentity();
+//
+//	if (m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallNegX || m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallNegX)
+//	{
+//		pos = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(dims.x, 0.0f, 0.0f);
+//		neg = XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(-dims.x, 0.0f, 0.0f);
+//	}
+//	else if (m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallNegY || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallNegY)
+//	{
+//		pos = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, dims.y, 0.0f);
+//		neg = XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, -dims.y, 0.0f);
+//	}
+//	else if (m_mouseHoveringBoxWallPosZ || m_mouseHoveringBoxWallNegZ || m_mouseDraggingBoxWallPosZ || m_mouseDraggingBoxWallNegZ)
+//	{
+//		pos = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, dims.z);
+//		neg = XMMatrixRotationY(XM_PIDIV2) * XMMatrixScaling(dims.x, dims.y, dims.z) * XMMatrixTranslation(0.0f, 0.0f, -dims.z);
+//	}
+//
+//	XMStoreFloat4x4(&d[0].World, XMMatrixTranspose(pos));
+//	XMStoreFloat4x4(&d[1].World, XMMatrixTranspose(neg));
+//
+//	m_boxFaceConstantBuffer->CopyData(d);
+}
+void SimulationWindow::DragSelectedAtoms(float x, float y) noexcept
+{
+	// So... How this works is kind of a mystery to me lol
+	// I tested out various approaches, including making use of unprojecting 'clickpointFar' and 'prevClickPointFar'
+	// but it seems that all I need are the previous and current click point origins
+
+	Camera& camera = m_renderer->GetCamera(); 
+	XMMATRIX projection = camera.GetProj(); 
+	XMMATRIX view = camera.GetView(); 
+	XMMATRIX world = XMMatrixIdentity();
+
+	XMVECTOR clickpointNear = XMVectorSet(x, y, 0.0f, 1.0f); 
+	XMVECTOR prevClickpointNear = XMVectorSet(m_mousePrevX, m_mousePrevY, 0.0f, 1.0f);
+
+	XMVECTOR origin = XMVector3Unproject(
+		clickpointNear, 
+		m_viewport.TopLeftX, 
+		m_viewport.TopLeftY, 
+		m_viewport.Width, 
+		m_viewport.Height, 
+		m_viewport.MinDepth,
+		m_viewport.MaxDepth,
+		projection,
+		view, 
+		world);
+
+	XMVECTOR prevOrigin = XMVector3Unproject(
+		prevClickpointNear,
+		m_viewport.TopLeftX,
+		m_viewport.TopLeftY,
+		m_viewport.Width,
+		m_viewport.Height,
+		m_viewport.MinDepth,
+		m_viewport.MaxDepth,
+		projection,
+		view,
+		world);
+
+	float factor = XMVectorGetX(XMVector3Length(origin));
+	XMVECTOR delta = origin - prevOrigin;	
+
+	switch (m_movementDirection)
+	{
+	case MovementDirection::X:
+		m_simulation.MoveSelectedAtomsX(XMVectorGetX(delta) * factor); 
+		break;
+	case MovementDirection::Y:
+		m_simulation.MoveSelectedAtomsY(XMVectorGetY(delta) * factor);
+		break;
+	case MovementDirection::Z:
+		m_simulation.MoveSelectedAtomsZ(XMVectorGetZ(delta) * factor);
+		break;
+	case MovementDirection::XY:
+		m_simulation.MoveSelectedAtomsX(XMVectorGetX(delta) * factor);
+		m_simulation.MoveSelectedAtomsY(XMVectorGetY(delta) * factor);
+		SelectionMovementDragPlaneChanged();
+		break;
+	case MovementDirection::XZ:
+		m_simulation.MoveSelectedAtomsX(XMVectorGetX(delta) * factor);
+		m_simulation.MoveSelectedAtomsZ(XMVectorGetZ(delta) * factor);
+		SelectionMovementDragPlaneChanged();
+		break;
+	case MovementDirection::YZ:
+		m_simulation.MoveSelectedAtomsY(XMVectorGetY(delta) * factor);
+		m_simulation.MoveSelectedAtomsZ(XMVectorGetZ(delta) * factor);
+		SelectionMovementDragPlaneChanged();
+		break;
 	}
 }
 void SimulationWindow::EndSelectionMovement() noexcept
@@ -1071,7 +1201,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 		{
 			if (m_selectionIsBeingDragged)
 			{
-				LOG_TRACE("{}", "Dragging...");
+				DragSelectedAtoms(x, y);
 			}
 			else
 			{
@@ -1190,9 +1320,7 @@ void SimulationWindow::HandleMouseMove(float x, float y) noexcept
 				}
 				SetBoxWallResizeRenderEffectsActive(MouseIsHoveringWall());
 			}
-		}
-
-		//Pick(x, y);		
+		}		
 	}
 
 	Camera& camera = m_renderer->GetCamera();
@@ -1392,6 +1520,39 @@ void SimulationWindow::HandleKeyUp(unsigned int virtualKeyCode) noexcept
 		camera.StopConstantClockwiseRotation();
 		m_keyEIsPressed = false;
 		break;
+
+	case VK_TAB:
+		if (m_selectionBeingMovedStateIsActive)
+		{
+			switch (m_movementDirection)
+			{
+			case MovementDirection::X:
+				m_movementDirection = MovementDirection::Y;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::Y:
+				m_movementDirection = MovementDirection::Z;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::Z:
+				m_movementDirection = MovementDirection::X;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::XY:
+				m_movementDirection = MovementDirection::XZ;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::XZ:
+				m_movementDirection = MovementDirection::YZ;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::YZ:
+				m_movementDirection = MovementDirection::XZ;
+				SelectionMovementDirectionChanged();
+				break;
+			}
+		}
+		break;
 	}
 }
 void SimulationWindow::HandleChar(char c) noexcept
@@ -1440,6 +1601,99 @@ void SimulationWindow::HandleChar(char c) noexcept
 		if (!KeyboardKeyIsPressed())
 			camera.Start90DegreeRotationClockwise();
 		break;
+
+	case 'x':
+		if (m_selectionBeingMovedStateIsActive && m_movementDirection != MovementDirection::X)
+		{
+			m_movementDirection = MovementDirection::X;
+			SelectionMovementDirectionChanged();
+		}
+		break;
+	case 'y':
+		if (m_selectionBeingMovedStateIsActive && m_movementDirection != MovementDirection::Y)
+		{
+			m_movementDirection = MovementDirection::Y;
+			SelectionMovementDirectionChanged();
+		}
+		break;
+	case 'z':
+		if (m_selectionBeingMovedStateIsActive && m_movementDirection != MovementDirection::Z)
+		{
+			m_movementDirection = MovementDirection::Z;
+			SelectionMovementDirectionChanged();
+		}
+		break;
+
+	case 'X':
+	{
+		if (m_selectionBeingMovedStateIsActive)
+		{
+			switch (m_movementDirection)
+			{
+			case MovementDirection::X: break;
+			case MovementDirection::Y:
+				m_movementDirection = MovementDirection::XY;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::Z:
+				m_movementDirection = MovementDirection::XZ;
+				SelectionMovementDirectionChanged(); 
+				break;
+			default:
+				m_movementDirection = MovementDirection::X;
+				SelectionMovementDirectionChanged(); 
+				break;
+			}
+		}
+		break;
+	}
+	case 'Y':
+	{
+		if (m_selectionBeingMovedStateIsActive)
+		{
+			switch (m_movementDirection)
+			{
+			case MovementDirection::Y: break;
+			case MovementDirection::X:
+				m_movementDirection = MovementDirection::XY;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::Z:
+				m_movementDirection = MovementDirection::YZ;
+				SelectionMovementDirectionChanged();
+				break;
+			default:
+				m_movementDirection = MovementDirection::Y;
+				SelectionMovementDirectionChanged();
+				break;
+			}
+		}
+		break;
+	}
+	case 'Z':
+	{
+		if (m_selectionBeingMovedStateIsActive)
+		{
+			switch (m_movementDirection)
+			{
+			case MovementDirection::Z: break;
+			case MovementDirection::X:
+				m_movementDirection = MovementDirection::XZ;
+				SelectionMovementDirectionChanged();
+				break;
+			case MovementDirection::Y:
+				m_movementDirection = MovementDirection::YZ;
+				SelectionMovementDirectionChanged();
+				break;
+			default:
+				m_movementDirection = MovementDirection::Z;
+				SelectionMovementDirectionChanged();
+				break;
+			}
+		}
+		break;
+	}
+
 	}
 }
 

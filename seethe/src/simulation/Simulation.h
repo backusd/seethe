@@ -401,6 +401,55 @@ public:
 		}
 	}
 
+	constexpr void MoveSelectedAtomsX(float delta) noexcept
+	{
+		if (MoveSelectedAtomsXIsInBounds(delta))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, delta](const size_t& index) { m_atoms[index].position.x += delta; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+	constexpr void MoveSelectedAtomsY(float delta) noexcept
+	{
+		if (MoveSelectedAtomsYIsInBounds(delta))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, delta](const size_t& index) { m_atoms[index].position.y += delta; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+	constexpr void MoveSelectedAtomsZ(float delta) noexcept
+	{
+		if (MoveSelectedAtomsZIsInBounds(delta))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, delta](const size_t& index) { m_atoms[index].position.z += delta; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+	constexpr void MoveSelectedAtomsXY(float deltaX, float deltaY) noexcept
+	{
+		if (MoveSelectedAtomsXIsInBounds(deltaX) && MoveSelectedAtomsYIsInBounds(deltaY))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, deltaX, deltaY](const size_t& index) { m_atoms[index].position.x += deltaX; m_atoms[index].position.y += deltaY; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+	constexpr void MoveSelectedAtomsXZ(float deltaX, float deltaZ) noexcept
+	{
+		if (MoveSelectedAtomsXIsInBounds(deltaX) && MoveSelectedAtomsZIsInBounds(deltaZ))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, deltaX, deltaZ](const size_t& index) { m_atoms[index].position.x += deltaX; m_atoms[index].position.z += deltaZ; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+	constexpr void MoveSelectedAtomsYZ(float deltaY, float deltaZ) noexcept
+	{
+		if (MoveSelectedAtomsYIsInBounds(deltaY) && MoveSelectedAtomsZIsInBounds(deltaZ))
+		{
+			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, deltaY, deltaZ](const size_t& index) { m_atoms[index].position.y += deltaY; m_atoms[index].position.z += deltaZ; });
+			UpdateSelectedAtomsCenter();
+		}
+	}
+
 	// Handlers
 	constexpr void RegisterBoxSizeChangedHandler(const EventHandler& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
 	constexpr void RegisterBoxSizeChangedHandler(EventHandler&& handler) noexcept { m_boxSizeChangedHandlers.push_back(handler); }
@@ -448,7 +497,47 @@ private:
 			}
 		);
 	}
+	ND constexpr bool MoveSelectedAtomsXIsInBounds(float delta) const noexcept
+	{
+		for (size_t index : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[index];
+			float f = atom.position.x + delta;
+			if (f + atom.radius > m_boxMaxX || f - atom.radius < -m_boxMaxX)
+			{
+				LOG_TRACE("Position X: {}", atom.position.x);
+				LOG_TRACE("    Radius: {}", atom.radius);
+				LOG_TRACE("     Delta: {}", delta);
+				LOG_TRACE(" Box Max X: {}", m_boxMaxX);
+				LOG_TRACE("{} + {} + {} > {}\n", atom.position.x, delta, atom.radius, m_boxMaxX);
 
+				return false;
+			}
+		}
+		return true;
+	}
+	ND constexpr bool MoveSelectedAtomsYIsInBounds(float delta) const noexcept
+	{
+		for (size_t index : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[index];
+			float f = atom.position.y + delta;
+			if (f + atom.radius > m_boxMaxY || f - atom.radius < -m_boxMaxY)
+				return false;
+		}
+		return true;
+	}
+	ND constexpr bool MoveSelectedAtomsZIsInBounds(float delta) const noexcept
+	{
+		for (size_t index : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[index];
+			float f = atom.position.z + delta;
+			if (f + atom.radius > m_boxMaxZ || f - atom.radius < -m_boxMaxZ)
+				return false;
+		}
+		return true;
+	}
 
 	std::vector<Atom> m_atoms = {};
 	std::vector<size_t> m_selectedAtomIndices;

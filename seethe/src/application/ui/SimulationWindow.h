@@ -229,15 +229,21 @@ private:
 	}
 	inline void SetBoxWallResizeRenderEffectsActive(bool active) noexcept
 	{
+		auto& pass1Layers = m_renderer->GetRenderPass(0).GetRenderPassLayers();
+
 		// Box Wall transparency layer
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[3].SetActive(active);
+		pass1Layers[3].SetActive(active);
+		pass1Layers[3].GetRenderItems()[0].SetInstanceCount(2); // 2 instances because 2 walls
 
 		// Arrow Render Item
-		m_renderer->GetRenderPass(0).GetRenderPassLayers()[0].GetRenderItems()[1].SetActive(active); 
+		pass1Layers[0].GetRenderItems()[1].SetActive(active);
 	}
 
 	inline void SelectionMovementDirectionChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDirectionChangedImpl(); }); }
 	void SelectionMovementDirectionChangedImpl() noexcept;
+	inline void SelectionMovementDragPlaneChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDragPlaneChangedImpl(); }); }
+	void SelectionMovementDragPlaneChangedImpl() noexcept;
+	void DragSelectedAtoms(float x, float y) noexcept;
 
 	std::vector<std::function<void()>> m_oneTimeUpdateFns;
 
