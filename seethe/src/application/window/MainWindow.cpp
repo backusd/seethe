@@ -88,7 +88,7 @@ namespace seethe
 		return {};
 	}
 
-	LRESULT MainWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	LRESULT MainWindow::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		//static seethe::WindowMessageMap mm;
 		//LOG_TRACE("{}", mm(msg, wParam, lParam));

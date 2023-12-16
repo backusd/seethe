@@ -272,6 +272,11 @@ namespace seethe
 		ASSERT(m_swapChain != nullptr, "swapchain is null");
 		ASSERT(m_directCmdListAlloc != nullptr, "command list allocator is null");
 
+		// When the window is minimized, the height and width will both be 0. However, we cannot create a 0 sized
+		// depth stencil buffer, so just return
+		if (height == 0 && width == 0)
+			return;
+
 		m_height = height;
 		m_width = width;
 

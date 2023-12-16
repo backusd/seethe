@@ -36,7 +36,7 @@ public:
 	virtual ~MainWindow() override;
 
 	ND std::optional<int> ProcessMessages() const noexcept;
-	ND LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept override;
+	ND LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
 
 private:
 	Application* m_app;

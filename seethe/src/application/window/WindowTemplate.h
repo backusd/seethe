@@ -31,7 +31,7 @@ namespace seethe
 		WindowTemplate& operator=(WindowTemplate&&) = delete;
 		virtual ~WindowTemplate();
 
-		ND virtual LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+		ND virtual LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			return DefWindowProc(hWnd, msg, wParam, lParam);
 		}
@@ -47,7 +47,7 @@ namespace seethe
 
 	protected:
 		ND static LRESULT CALLBACK HandleMsgSetupBase(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-		ND static LRESULT CALLBACK HandleMsgBase(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+		ND static LRESULT CALLBACK HandleMsgBase(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 		// Window Class Data
 		static constexpr const wchar_t* wndBaseClassName = L"Seethe Window";
@@ -164,7 +164,7 @@ namespace seethe
 	}
 
 	template<typename T>
-	LRESULT CALLBACK WindowTemplate<T>::HandleMsgBase(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	LRESULT CALLBACK WindowTemplate<T>::HandleMsgBase(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		// retrieve ptr to window class
 		WindowTemplate<T>* const pWnd = reinterpret_cast<WindowTemplate<T>*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
