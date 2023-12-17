@@ -19,6 +19,7 @@ int APIENTRY WinMain(
 	try
 	{
 		std::unique_ptr<Application> app = std::make_unique<Application>();
+		app->Initialize();
 		return app->Run();
 	}
 	catch (std::runtime_error& e)

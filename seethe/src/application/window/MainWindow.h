@@ -36,38 +36,15 @@ public:
 	virtual ~MainWindow() override;
 
 	ND std::optional<int> ProcessMessages() const noexcept;
-	ND LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
+	ND LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	ND inline std::shared_ptr<DeviceResources> GetDeviceResources() noexcept { return m_deviceResources; }
 
 private:
 	Application* m_app;
 
 	virtual void Init(const WindowProperties& props) noexcept;
 	void Shutdown();
-
-//	ND KEY_CODE WParamToKeyCode(WPARAM wParam) const noexcept;
-
-	ND LRESULT OnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnClose(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnLButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnLButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnLButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnRButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnMButtonDoubleClick(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnMButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnMButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnRButtonDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnRButtonUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	ND LRESULT OnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam); // cannot be const because it modifies m_mouseIsInWindow
-	ND LRESULT OnMouseLeave(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnMouseWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnMouseHWheel(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnChar(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnSysKeyUp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnSysKeyDown(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
-	ND LRESULT OnKillFocus(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 
 public:
 	void CheckCursors() noexcept;

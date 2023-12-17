@@ -23,9 +23,21 @@ namespace seethe
 Application::Application() :
 	m_timer()
 {
+}
+Application::~Application()
+{
+	ImGui_ImplDX12_Shutdown(); 
+	ImGui_ImplWin32_Shutdown(); 
+	ImGui::DestroyContext(); 
+}
+
+void Application::Initialize()
+{
 	std::fill(std::begin(m_fences), std::end(m_fences), 0);
+
 	m_mainWindow = std::make_unique<MainWindow>(this);
-	m_deviceResources = std::make_shared<DeviceResources>(m_mainWindow->GetHWND(), m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+	m_deviceResources = m_mainWindow->GetDeviceResources();
+
 	m_timer.Reset();
 
 	InitializeMaterials();
@@ -50,21 +62,21 @@ Application::Application() :
 	m_descriptorVector->IncrementCount(); // ImGUI will use the first slot in the descriptor vector for its font's SRV, therefore, we need to manually increment the count within the descriptor vector
 
 	// Initialize allocators
-	auto device = m_deviceResources->GetDevice(); 
-	for (unsigned int iii = 0; iii < g_numFrameResources; ++iii) 
+	auto device = m_deviceResources->GetDevice();
+	for (unsigned int iii = 0; iii < g_numFrameResources; ++iii)
 	{
-		GFX_THROW_INFO( 
+		GFX_THROW_INFO(
 			device->CreateCommandAllocator(
-				D3D12_COMMAND_LIST_TYPE_DIRECT, 
-				IID_PPV_ARGS(m_allocators[iii].GetAddressOf()) 
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				IID_PPV_ARGS(m_allocators[iii].GetAddressOf())
 			)
 		);
 	}
 
 	// Reset the command list so we can execute commands when initializing the renderer
 	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
-	
-	
+
+
 
 	// Must intialize the simulation windows AFTER the command list has been reset
 	m_mainSimulationWindow = std::make_unique<SimulationWindow>(*this, m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
@@ -72,8 +84,8 @@ Application::Application() :
 
 
 	// Execute the initialization commands.
-	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Close()); 
-	ID3D12CommandList* cmdsLists[] = { m_deviceResources->GetCommandList() }; 
+	GFX_THROW_INFO(m_deviceResources->GetCommandList()->Close());
+	ID3D12CommandList* cmdsLists[] = { m_deviceResources->GetCommandList() };
 	GFX_THROW_INFO_ONLY(m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(cmdsLists), cmdsLists));
 
 	// Wait until initialization is complete.
@@ -113,20 +125,14 @@ Application::Application() :
 	ASSERT(font != nullptr, "Could not find font");
 
 	ImFontConfig icons_config;
-	icons_config.MergeMode = true; 
-	icons_config.PixelSnapH = true; 
-	icons_config.GlyphMinAdvanceX = iconFontSize; 
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.GlyphMinAdvanceX = iconFontSize;
 	icons_config.GlyphOffset = ImVec2(0, 3); // The glyphs tend to be too high, so bring them down 3 pixels
 
 	static const ImWchar icon_ranges[] = { 0xE700, 0xF8B3, 0 };
 	font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segmdl2.ttf", 18.0f, &icons_config, icon_ranges);
 	ASSERT(font != nullptr, "Could not find font");
-}
-Application::~Application()
-{
-	ImGui_ImplDX12_Shutdown(); 
-	ImGui_ImplWin32_Shutdown(); 
-	ImGui::DestroyContext(); 
 }
 
 void Application::InitializeMaterials() noexcept
@@ -1472,16 +1478,6 @@ std::vector<Atom*> Application::AddAtoms(const std::vector<AtomTPV>& atomData, b
 }
 
 
-LRESULT Application::MainWindowOnCreate(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	// CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
-
-	// According to: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-create
-	// --> "An application should return zero if it processes this message."
-	// return 0;
-
-	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
 LRESULT Application::MainWindowOnClose(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	PostQuitMessage(0);
@@ -1696,17 +1692,6 @@ LRESULT Application::MainWindowOnX2ButtonDoubleClick(HWND hWnd, UINT msg, WPARAM
 	// According to: https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-xbuttondblclk
 	// --> "If an application processes this message, it should return TRUE."
 	return true;
-}
-LRESULT Application::MainWindowOnResize(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	// NOTE: Do not update the viewport here. The viewport gets updated every frame in RenderUI() 
-	int height = m_mainWindow->GetHeight();
-	int width = m_mainWindow->GetWidth();
-	m_deviceResources->OnResize(height, width);
-
-	// According to: https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-size
-	// --> "An application should return zero if it processes this message."
-	return 0;
 }
 LRESULT Application::MainWindowOnMouseMove(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
