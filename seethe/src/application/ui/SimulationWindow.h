@@ -4,6 +4,7 @@
 #include "application/rendering/Material.h"
 #include "simulation/Simulation.h"
 #include "utils/Timer.h"
+#include "Enums.h"
 
 
 struct ObjectConstants
@@ -77,16 +78,6 @@ struct PassConstants
 
 namespace seethe
 {
-enum class MovementDirection
-{
-	X,
-	Y,
-	Z,
-	XY,
-	XZ,
-	YZ
-};
-
 class Application;
 
 class SimulationWindow
@@ -347,5 +338,6 @@ private:
 	bool m_selectionIsBeingDragged = false;
 	MovementDirection m_movementDirection = MovementDirection::X;
 	std::optional<size_t> m_atomHoveredOverIndex = std::nullopt;
+	DirectX::XMFLOAT3 selectionCenterAtStartOfDrag = { 0.0f, 0.0f, 0.0f };
 };
 }

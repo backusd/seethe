@@ -4,7 +4,7 @@
 #include "application/ui/fonts/Fonts.h"
 #include "application/change-requests/AddAtomsCR.h"
 #include "application/change-requests/AtomMaterialCR.h"
-#include "application/change-requests/AtomPositionCR.h"
+#include "application/change-requests/AtomsMovedCR.h"
 #include "application/change-requests/AtomVelocityCR.h"
 #include "application/change-requests/BoxResizeCR.h"
 #include "application/change-requests/RemoveAtomsCR.h"
@@ -928,7 +928,7 @@ void Application::RenderUI()
 							if (!sliderActive) 
 							{
 								sliderActive = true; 
-								AddUndoCR<AtomPositionCR>(initialPosition, atom.position, m_simulation.IndexOf(atom));
+								AddUndoCR<AtomsMovedCR>(m_simulation.IndexOf(atom), initialPosition, atom.position);
 								m_mainSimulationWindow->StartSelectionMovement(direction);
 							}
 
@@ -938,7 +938,7 @@ void Application::RenderUI()
 						else if (sliderActive) 
 						{
 							sliderActive = false; 
-							AtomPositionCR* cr = static_cast<AtomPositionCR*>(m_undoStack.top().get()); 
+							AtomsMovedCR* cr = static_cast<AtomsMovedCR*>(m_undoStack.top().get());
 							cr->m_positionFinal = atom.position;  
 
 							if (!(m_simulationSettings.mouseState == SimulationSettings::MouseState::MOVING_ATOMS))
@@ -1004,14 +1004,109 @@ void Application::RenderUI()
 			}
 			else if (selectedAtomIndices.size() > 1)
 			{
-				ImGui::Text("Too many atoms selected");
+				static bool positionXSliderIsActive = false;
+				static bool positionYSliderIsActive = false;
+				static bool positionZSliderIsActive = false;
 
-				Atom& atom = atoms[selectedAtomIndices.back()];
+				XMFLOAT3 dims = m_simulation.GetDimensionMaxs();
+				XMFLOAT3 centerInitial = m_simulation.GetSelectedAtomsCenter();
+				XMFLOAT3 center = centerInitial;
+				XMFLOAT3 max = m_simulation.GetSelectedAtomsMaxBounds(); 
+				XMFLOAT3 min = m_simulation.GetSelectedAtomsMinBounds(); 
+				const float maxX = dims.z - (max.x - centerInitial.x);
+				const float minX = -dims.z - (min.x - centerInitial.x);
+				const float maxY = max.y - centerInitial.y;
+				const float minY = min.y + centerInitial.y;
+				const float maxZ = max.z - centerInitial.z;
+				const float minZ = min.z + centerInitial.z;
+
+				static auto CheckPositionSlider = [this](float delta, bool& sliderActive, MovementDirection direction)
+					{
+						if (ImGui::IsItemActive())
+						{
+							LOG_TRACE("Delta: {}", delta);
+
+							if (!sliderActive)
+							{
+								sliderActive = true;
+
+								DirectX::XMFLOAT3 center = m_simulation.GetSelectedAtomsCenter();
+								DirectX::XMFLOAT3 centerInitial = center;
+								switch (direction)
+								{
+								case MovementDirection::X: centerInitial.x -= delta; break;
+								case MovementDirection::Y: centerInitial.y -= delta; break;
+								case MovementDirection::Z: centerInitial.z -= delta; break;
+								}
+								AddUndoCR<AtomsMovedCR>(m_simulation.GetSelectedAtomIndices(), centerInitial, center);
+
+								m_mainSimulationWindow->StartSelectionMovement(direction);
+							}
+
+							if (delta != 0.0f)
+							{
+								switch (direction)
+								{
+								case MovementDirection::X: m_simulation.MoveSelectedAtomsX(delta); break;
+								case MovementDirection::Y: m_simulation.MoveSelectedAtomsY(delta); break;
+								case MovementDirection::Z: m_simulation.MoveSelectedAtomsZ(delta); break;
+								}
+							}
+						}
+						else if (sliderActive)
+						{
+							sliderActive = false;
+
+							AtomsMovedCR* cr = static_cast<AtomsMovedCR*>(m_undoStack.top().get()); 
+							cr->m_positionFinal = m_simulation.GetSelectedAtomsCenter();
+
+							if (!(m_simulationSettings.mouseState == SimulationSettings::MouseState::MOVING_ATOMS))
+								m_mainSimulationWindow->EndSelectionMovement();
+						}
+					};
+
+				ImGui::Spacing();
+				ImGui::Text("Number of Atoms Selected: %d", selectedAtomIndices.size());
+
+				ImGui::Spacing();
+				ImGui::Indent();
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Position  X");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##selectedAtomsPositionX", &center.x, 0.2f, minX, maxX);
+				CheckPositionSlider(center.x - centerInitial.x, positionXSliderIsActive, MovementDirection::X);
+				ImGui::Unindent();
+
+				ImGui::Indent(77.0f);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Y");
+				ImGui::SameLine(100.0f);
+				ImGui::DragFloat("##selectedAtomsPositionY", &center.y, 0.2f, minY, maxY);
+				CheckPositionSlider(center.y - centerInitial.y, positionYSliderIsActive, MovementDirection::Y);
+				ImGui::Unindent(77.0f);
+
+				ImGui::Indent(76.0f);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Z");
+				ImGui::SameLine();
+				ImGui::DragFloat("##selectedAtomsPositionZ", &center.z, 0.2f, minZ, maxZ);
+				CheckPositionSlider(center.z - centerInitial.z, positionZSliderIsActive, MovementDirection::Z);
+				ImGui::Unindent(76.0f);
+
+				
+
+
+
+
+
+
+
+
 
 			}
 			else
 			{
-				ImGui::Text("Nothing selected");
+				ImGui::Text("No atoms selected");
 			}
 
 

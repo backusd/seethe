@@ -250,6 +250,30 @@ public:
 			UpdateSelectedAtomsCenter(); 
 		return m_selectedAtomsCenter; 
 	}
+	ND constexpr DirectX::XMFLOAT3 GetSelectedAtomsMaxBounds() const noexcept
+	{
+		DirectX::XMFLOAT3 bounds = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+		for (size_t index : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[index];
+			bounds.x = std::max(atom.position.x + atom.radius, bounds.x);
+			bounds.y = std::max(atom.position.y + atom.radius, bounds.y);
+			bounds.z = std::max(atom.position.z + atom.radius, bounds.z);
+		}
+		return bounds;
+	}
+	ND constexpr DirectX::XMFLOAT3 GetSelectedAtomsMinBounds() const noexcept
+	{
+		DirectX::XMFLOAT3 bounds = { FLT_MAX, FLT_MAX, FLT_MAX };
+		for (size_t index : m_selectedAtomIndices)
+		{
+			const Atom& atom = m_atoms[index];
+			bounds.x = std::min(atom.position.x - atom.radius, bounds.x);
+			bounds.y = std::min(atom.position.y - atom.radius, bounds.y);
+			bounds.z = std::min(atom.position.z - atom.radius, bounds.z);
+		}
+		return bounds;
+	}
 
 	constexpr void SetAtoms(const std::vector<Atom>& atoms) noexcept
 	{
@@ -448,6 +472,13 @@ public:
 			std::for_each(m_selectedAtomIndices.begin(), m_selectedAtomIndices.end(), [this, deltaY, deltaZ](const size_t& index) { m_atoms[index].position.y += deltaY; m_atoms[index].position.z += deltaZ; });
 			UpdateSelectedAtomsCenter();
 		}
+	}
+	constexpr void MoveAtom(size_t index, DirectX::XMFLOAT3 delta) noexcept
+	{
+		Atom& atom = m_atoms[index];
+		atom.position.x += delta.x;
+		atom.position.y += delta.y;
+		atom.position.z += delta.z;
 	}
 
 	// Handlers

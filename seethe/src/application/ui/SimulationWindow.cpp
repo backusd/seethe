@@ -1,5 +1,6 @@
 #include "SimulationWindow.h"
 #include "application/Application.h"
+#include "application/change-requests/AtomsMovedCR.h"
 #include "application/change-requests/BoxResizeCR.h"
 #include "rendering/GeometryGenerator.h"
 #include "utils/Constants.h"
@@ -1085,6 +1086,9 @@ void SimulationWindow::HandleLButtonDown() noexcept
 	else if (m_selectionBeingMovedStateIsActive)
 	{
 		m_selectionIsBeingDragged = m_atomHoveredOverIndex.has_value() && m_simulation.AtomIsSelected(m_atomHoveredOverIndex.value());
+
+		if (m_selectionIsBeingDragged)
+			selectionCenterAtStartOfDrag = m_simulation.GetSelectedAtomsCenter();
 	}
 }
 void SimulationWindow::HandleLButtonUp() noexcept
@@ -1105,7 +1109,10 @@ void SimulationWindow::HandleLButtonUp() noexcept
 	else if (m_selectionBeingMovedStateIsActive)
 	{
 		if (m_selectionIsBeingDragged)
+		{
 			m_selectionIsBeingDragged = false;
+			m_application.AddUndoCR<AtomsMovedCR>(m_simulation.GetSelectedAtomIndices(), selectionCenterAtStartOfDrag, m_simulation.GetSelectedAtomsCenter());
+		}
 		else if (m_atomHoveredOverIndex.has_value())
 		{
 			m_simulation.SelectAtom(m_atomHoveredOverIndex.value());

@@ -108,9 +108,6 @@
     <ClCompile Include="src\application\change-requests\AtomVelocityCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\application\change-requests\AtomPositionCR.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\utils\Constants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,6 +118,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\application\change-requests\RemoveAtomsCR.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\application\change-requests\AtomsMovedCR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,9 +269,6 @@
     <ClInclude Include="src\application\change-requests\AtomVelocityCR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\application\change-requests\AtomPositionCR.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\application\change-requests\AtomMaterialCR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -282,6 +279,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\application\change-requests\AtomsMovedCR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\application\ui\Enums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
