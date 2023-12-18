@@ -11,10 +11,14 @@ cbuffer cbPerObject : register(b0)
 cbuffer cbPass : register(b1)
 {
     PerPassData gPerPassData;
+};
+
+cbuffer cbLighting : register(b2)
+{
     SceneLighting gLighting;
 };
 
-cbuffer cbMaterial : register(b2)
+cbuffer cbMaterial : register(b3)
 {
     Material gMaterial[NUM_MATERIALS];
 };

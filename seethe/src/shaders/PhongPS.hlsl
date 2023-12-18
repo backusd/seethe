@@ -31,10 +31,14 @@ cbuffer cbPerObject : register(b0)
 cbuffer cbPass : register(b1)
 {
     PerPassData gPerPassData;
+};
+
+cbuffer cbLighting : register(b2)
+{
     SceneLighting gLighting;
 };
 
-cbuffer cbMaterial : register(b2)
+cbuffer cbMaterial : register(b3)
 {
     float4 gDiffuseAlbedo;
     float3 gFresnelR0;

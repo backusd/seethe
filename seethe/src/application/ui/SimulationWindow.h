@@ -58,7 +58,7 @@ struct PassConstants
 	float TotalTime = 0.0f;
 	float DeltaTime = 0.0f;
 
-	seethe::SceneLighting Lighting = {};
+//	seethe::SceneLighting Lighting = {};
 
 //	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
 //
@@ -268,11 +268,12 @@ private:
 	std::unique_ptr<ConstantBufferMapped<PassConstants>>	m_passConstantsBuffer;
 
 	// Constant Buffers - Static
-	std::unique_ptr<ConstantBufferStatic<Material>>		m_materialsConstantBuffer;
-	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxConstantBuffer;
-	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_boxFaceConstantBuffer;
-	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_arrowConstantBuffer;
-	std::unique_ptr<ConstantBufferStatic<InstanceData>>	m_axisCylinderConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<SceneLighting>>	m_lightingConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<Material>>			m_materialsConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>		m_boxConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>		m_boxFaceConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>		m_arrowConstantBuffer;
+	std::unique_ptr<ConstantBufferStatic<InstanceData>>		m_axisCylinderConstantBuffer;
 
 
 

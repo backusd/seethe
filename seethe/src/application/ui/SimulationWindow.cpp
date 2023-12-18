@@ -71,16 +71,18 @@ void SimulationWindow::InitializeRenderPasses()
 {
 	constexpr unsigned int objectCBRegister = 0;
 	constexpr unsigned int perPassCBRegister = 1;
-	constexpr unsigned int materialsCBRegister = 2;
+	constexpr unsigned int lightingCBRegister = 2;
+	constexpr unsigned int materialsCBRegister = 3;
 
 	// Root parameter can be a table, root descriptor or root constants.
 	// *** Perfomance TIP: Order from most frequent to least frequent.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[3];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[4];
 	slotRootParameter[0].InitAsConstantBufferView(objectCBRegister);	// Object/Instance Constant Buffer 
 	slotRootParameter[1].InitAsConstantBufferView(perPassCBRegister);	// Per Pass Constants   
-	slotRootParameter[2].InitAsConstantBufferView(materialsCBRegister);	// Material Constant Buffer
+	slotRootParameter[2].InitAsConstantBufferView(lightingCBRegister);	// Lighting Data   
+	slotRootParameter[3].InitAsConstantBufferView(materialsCBRegister);	// Material Constant Buffer
 
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	std::shared_ptr<RootSignature> rootSig1 = std::make_shared<RootSignature>(m_deviceResources, rootSigDesc);
 	RenderPass& pass1 = m_renderer->EmplaceBackRenderPass(rootSig1, "Render Pass #1");
@@ -126,10 +128,15 @@ void SimulationWindow::InitializeRenderPasses()
 			passConstants.TotalTime = timer.TotalTime();
 			passConstants.DeltaTime = timer.DeltaTime();
 
-			passConstants.Lighting = m_lighting;
-
 			m_passConstantsBuffer->CopyData(frameIndex, passConstants);
 		};
+
+	// For the lighting, we use a static constant buffer. This means we don't use a mapped upload heap and transfer lighting
+	// data to the GPU every frame. Instead, we only upload lighting data to the GPU when the data changes.
+	// NOTE: This also means we don't need to supply the CBV Update lambda because we don't need to update this every frame
+	m_lightingConstantBuffer = std::make_unique<ConstantBufferStatic<SceneLighting>>(m_deviceResources, 1);
+	m_lightingConstantBuffer->CopyData(m_lighting);
+	RootConstantBufferView& lightingCBV = pass1.EmplaceBackRootConstantBufferView(lightingCBRegister, m_lightingConstantBuffer.get());
 
 	// For the materials, we use a static constant buffer. This means we don't use a mapped upload heap and transfer material
 	// data to the GPU every frame. Instead, we only upload material data to the GPU when the material data changes.
