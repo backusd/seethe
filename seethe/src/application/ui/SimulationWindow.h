@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "rendering/Renderer.h"
+#include "application/rendering/Light.h"
 #include "application/rendering/Material.h"
 #include "simulation/Simulation.h"
 #include "utils/Timer.h"
@@ -38,17 +39,7 @@ struct SolidColorVertex
 };
 
 
-static constexpr int MaxLights = 16;
 
-struct Light
-{
-	DirectX::XMFLOAT3   Strength = { 0.5f, 0.5f, 0.5f };
-	float               FalloffStart = 1.0f;                // point/spot light only
-	DirectX::XMFLOAT3   Direction = { 0.0f, -1.0f, 0.0f };  // directional/spot light only
-	float               FalloffEnd = 10.0f;                 // point/spot light only
-	DirectX::XMFLOAT3   Position = { 0.0f, 0.0f, 0.0f };    // point/spot light only
-	float               SpotPower = 64.0f;                  // spot light only
-};
 
 struct PassConstants
 {
@@ -67,13 +58,15 @@ struct PassConstants
 	float TotalTime = 0.0f;
 	float DeltaTime = 0.0f;
 
-	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
+	seethe::SceneLighting Lighting = {};
 
-	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
-	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-	// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-	// are spot lights for a maximum of MaxLights per object.
-	Light Lights[MaxLights];
+//	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
+//
+//	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
+//	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
+//	// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
+//	// are spot lights for a maximum of MaxLights per object.
+//	seethe::Light Lights[MaxLights];
 };
 
 namespace seethe
@@ -85,7 +78,9 @@ class SimulationWindow
 public:
 	SimulationWindow(Application& application,
 		std::shared_ptr<DeviceResources> deviceResources, 
-		Simulation& simulation, std::vector<Material>& materials,
+		Simulation& simulation, 
+		std::vector<Material>& materials,
+		SceneLighting& lighting,
 		float top, float left, float height, float width);
 
 	void Update(const Timer& timer, int frameIndex);
@@ -244,6 +239,7 @@ private:
 	D3D12_RECT m_scissorRect;
 	Simulation& m_simulation;
 	Application& m_application;
+	SceneLighting& m_lighting;
 
 	std::vector<Material>& m_atomMaterials;
 

@@ -42,6 +42,14 @@ void Application::Initialize()
 
 	InitializeMaterials();
 
+	m_mainLighting.AmbientLight = { 0.25f, 0.25f, 0.25f, 1.0f };
+	m_mainLighting.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+	m_mainLighting.Lights[0].Strength = { 0.9f, 0.9f, 0.9f };
+	m_mainLighting.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+	m_mainLighting.Lights[1].Strength = { 0.5f, 0.5f, 0.5f };
+	m_mainLighting.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+	m_mainLighting.Lights[2].Strength = { 0.2f, 0.2f, 0.2f };
+
 	m_simulation.AddAtom(AtomType::HYDROGEN, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f));
 	m_simulation.AddAtom(AtomType::HELIUM, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f));
 	m_simulation.AddAtom(AtomType::LITHIUM, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
@@ -79,7 +87,7 @@ void Application::Initialize()
 
 
 	// Must intialize the simulation windows AFTER the command list has been reset
-	m_mainSimulationWindow = std::make_unique<SimulationWindow>(*this, m_deviceResources, m_simulation, m_materials, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
+	m_mainSimulationWindow = std::make_unique<SimulationWindow>(*this, m_deviceResources, m_simulation, m_materials, m_mainLighting, 0.0f, 0.0f, m_mainWindow->GetHeight(), m_mainWindow->GetWidth());
 
 
 
@@ -1092,17 +1100,6 @@ void Application::RenderUI()
 				ImGui::DragFloat("##selectedAtomsPositionZ", &center.z, 0.2f, minZ, maxZ);
 				CheckPositionSlider(center.z - centerInitial.z, positionZSliderIsActive, MovementDirection::Z);
 				ImGui::Unindent(76.0f);
-
-				
-
-
-
-
-
-
-
-
-
 			}
 			else
 			{

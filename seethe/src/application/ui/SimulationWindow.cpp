@@ -11,7 +11,9 @@ namespace seethe
 {
 SimulationWindow::SimulationWindow(Application& application,
 								   std::shared_ptr<DeviceResources> deviceResources, 
-								   Simulation& simulation, std::vector<Material>& materials,
+								   Simulation& simulation, 
+								   std::vector<Material>& materials,
+								   SceneLighting& lighting,
 								   float top, float left, float height, float width) :
 	m_application(application),
 	m_deviceResources(deviceResources),
@@ -19,7 +21,8 @@ SimulationWindow::SimulationWindow(Application& application,
 	m_scissorRect{ static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) },
 	m_renderer(nullptr),
 	m_simulation(simulation),
-	m_atomMaterials(materials)
+	m_atomMaterials(materials),
+	m_lighting(lighting)
 {
 	m_renderer = std::make_unique<Renderer>(m_deviceResources, m_viewport, m_scissorRect);
 
@@ -118,14 +121,8 @@ void SimulationWindow::InitializeRenderPasses()
 			passConstants.FarZ = 1000.0f;
 			passConstants.TotalTime = timer.TotalTime();
 			passConstants.DeltaTime = timer.DeltaTime();
-			passConstants.AmbientLight = { 0.25f, 0.25f, 0.25f, 1.0f };
 
-			passConstants.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-			passConstants.Lights[0].Strength = { 0.9f, 0.9f, 0.9f };
-			passConstants.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-			passConstants.Lights[1].Strength = { 0.5f, 0.5f, 0.5f };
-			passConstants.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-			passConstants.Lights[2].Strength = { 0.2f, 0.2f, 0.2f };
+			passConstants.Lighting = m_lighting;
 
 			m_passConstantsBuffer->CopyData(frameIndex, passConstants);
 		};

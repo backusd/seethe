@@ -287,11 +287,16 @@
     <ClInclude Include="src\application\ui\Enums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\application\rendering\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vendor\imgui\misc\debuggers\imgui.natstepfilter" />
-    <None Include="src\shaders\LightingUtil.hlsli" />
+    <None Include="src\shaders\Lighting.hlsli" />
     <None Include="src\application\config\materials.json" />
+    <None Include="src\shaders\InstanceData.hlsli" />
+    <None Include="src\shaders\PerPassData.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="vendor\imgui\misc\debuggers\imgui.natvis" />

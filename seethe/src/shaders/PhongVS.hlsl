@@ -18,7 +18,8 @@
 #endif
 
 // Include structures and functions for lighting.
-#include "LightingUtil.hlsli"
+#include "Lighting.hlsli"
+#include "PerPassData.hlsli"
 
 // Constant data that varies per frame.
 
@@ -38,27 +39,8 @@ cbuffer cbMaterial : register(b1)
 // Constant data that varies per material.
 cbuffer cbPass : register(b2)
 {
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3 gEyePosW;
-    float cbPerObjectPad1;
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
-    float4 gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MAX_LIGHTS per object.
-    Light gLights[MAX_LIGHTS];
+    PerPassData gPerPassData;
+    SceneLighting gLighting;
 };
 
 struct VertexIn
@@ -87,7 +69,7 @@ VertexOut main(VertexIn vin)
     vout.NormalW = mul(vin.NormalL, (float3x3) gWorld);
 
     // Transform to homogeneous clip space.
-    vout.PosH = mul(posW, gViewProj);
+    vout.PosH = mul(posW, gPerPassData.ViewProj);
 
     return vout;
 }

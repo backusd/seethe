@@ -18,28 +18,9 @@
 #endif
 
 // Include structures and functions for lighting.
-#include "LightingUtil.hlsli"
-
-// Constant data that varies per frame.
-
-#define MAX_INSTANCES 100
-#define NUM_MATERIALS 10
-
-struct MaterialIn
-{
-    float4 DiffuseAlbedo;
-    float3 FresnelR0;
-    float Roughness;
-};
-
-struct InstanceData
-{
-    float4x4 World;
-    uint MaterialIndex;
-    uint Pad0;
-    uint Pad1;
-    uint Pad2;
-};
+#include "InstanceData.hlsli"
+#include "Lighting.hlsli"
+#include "PerPassData.hlsli"
 
 cbuffer cbInstanceData : register(b0)
 {
@@ -48,33 +29,14 @@ cbuffer cbInstanceData : register(b0)
 
 cbuffer cbMaterial : register(b1)
 {
-    MaterialIn gMaterial[NUM_MATERIALS];
+    Material gMaterial[NUM_MATERIALS];
 };
 
 // Constant data that varies per material.
 cbuffer cbPass : register(b2)
 {
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-    float3 gEyePosW;
-    float cbPerObjectPad1;
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
-    float4 gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MAX_LIGHTS per object.
-    Light gLights[MAX_LIGHTS];
+    PerPassData gPerPassData;
+    SceneLighting gLighting;
 };
 
 struct VertexOut
@@ -91,17 +53,18 @@ float4 main(VertexOut pin) : SV_Target
     pin.NormalW = normalize(pin.NormalW);
 
     // Vector from point being lit to eye. 
-    float3 toEyeW = normalize(gEyePosW - pin.PosW);
+    float3 toEyeW = normalize(gPerPassData.EyePosW - pin.PosW);
     
-    MaterialIn material = gMaterial[pin.MaterialIndex];
+    // One the CPU side, we define Material with a roughness value which initially gets assigned to the
+    // Shininess value on the GPU side. Therefore, we take 1 minus that value to compute the shininess
+    Material material = gMaterial[pin.MaterialIndex];
+    material.Shininess = 1.0f - material.Shininess;
 
 	// Indirect lighting.
-    float4 ambient = gAmbientLight * material.DiffuseAlbedo;
-
-    const float shininess = 1.0f - material.Roughness;
-    Material mat = { material.DiffuseAlbedo, material.FresnelR0, shininess };
+    float4 ambient = gLighting.AmbientLight * material.DiffuseAlbedo;
+    
     float3 shadowFactor = 1.0f;
-    float4 directLight = ComputeLighting(gLights, mat, pin.PosW, pin.NormalW, toEyeW, shadowFactor);
+    float4 directLight = ComputeLighting(gLighting.Lights, material, pin.PosW, pin.NormalW, toEyeW, shadowFactor);
 
     float4 litColor = ambient + directLight;
 

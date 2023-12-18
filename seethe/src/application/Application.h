@@ -8,6 +8,7 @@
 #include "utils/Timer.h"
 #include "utils/Constants.h"
 #include "ui/SimulationWindow.h"
+#include "application/rendering/Light.h"
 #include "application/rendering/Material.h"
 #include "application/change-requests/ChangeRequest.h"
 
@@ -146,6 +147,7 @@ private:
 	std::array<UINT64, g_numFrameResources> m_fences = {};	
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
 
+	SceneLighting m_mainLighting = {};
 	std::vector<Material> m_materials = {};
 
 	SimulationSettings m_simulationSettings;
