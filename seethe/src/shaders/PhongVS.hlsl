@@ -28,19 +28,18 @@ cbuffer cbPerObject : register(b0)
     float4x4 gWorld;
 };
 
-cbuffer cbMaterial : register(b1)
+cbuffer cbPass : register(b1)
+{
+    PerPassData gPerPassData;
+    SceneLighting gLighting;
+};
+
+cbuffer cbMaterial : register(b2)
 {
     float4 gDiffuseAlbedo;
     float3 gFresnelR0;
     float gRoughness;
     float4x4 gMatTransform;
-};
-
-// Constant data that varies per material.
-cbuffer cbPass : register(b2)
-{
-    PerPassData gPerPassData;
-    SceneLighting gLighting;
 };
 
 struct VertexIn

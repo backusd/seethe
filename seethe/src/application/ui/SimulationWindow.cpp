@@ -69,12 +69,16 @@ void SimulationWindow::RegisterEventHandlers() noexcept
 
 void SimulationWindow::InitializeRenderPasses()
 {
+	constexpr unsigned int objectCBRegister = 0;
+	constexpr unsigned int perPassCBRegister = 1;
+	constexpr unsigned int materialsCBRegister = 2;
+
 	// Root parameter can be a table, root descriptor or root constants.
 	// *** Perfomance TIP: Order from most frequent to least frequent.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[3];
-	slotRootParameter[0].InitAsConstantBufferView(0); // ObjectCB  
-	slotRootParameter[1].InitAsConstantBufferView(1); // MaterialCB   
-	slotRootParameter[2].InitAsConstantBufferView(2); // PassConstants 
+	slotRootParameter[0].InitAsConstantBufferView(objectCBRegister);	// Object/Instance Constant Buffer 
+	slotRootParameter[1].InitAsConstantBufferView(perPassCBRegister);	// Per Pass Constants   
+	slotRootParameter[2].InitAsConstantBufferView(materialsCBRegister);	// Material Constant Buffer
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -82,7 +86,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderPass& pass1 = m_renderer->EmplaceBackRenderPass(rootSig1, "Render Pass #1");
 
 	m_passConstantsBuffer = std::make_unique<ConstantBufferMapped<PassConstants>>(m_deviceResources);
-	RootConstantBufferView& perPassConstantsCBV = pass1.EmplaceBackRootConstantBufferView(2, m_passConstantsBuffer.get());
+	RootConstantBufferView& perPassConstantsCBV = pass1.EmplaceBackRootConstantBufferView(perPassCBRegister, m_passConstantsBuffer.get());
 	perPassConstantsCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			Camera& camera = m_renderer->GetCamera();
@@ -132,7 +136,7 @@ void SimulationWindow::InitializeRenderPasses()
 	// NOTE: This also means we don't need to supply the CBV Update lambda because we don't need to update this every frame
 	m_materialsConstantBuffer = std::make_unique<ConstantBufferStatic<Material>>(m_deviceResources, static_cast<unsigned int>(m_atomMaterials.size()));
 	m_materialsConstantBuffer->CopyData(m_atomMaterials);
-	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(1, m_materialsConstantBuffer.get());
+	RootConstantBufferView& materialsCBV = pass1.EmplaceBackRootConstantBufferView(materialsCBRegister, m_materialsConstantBuffer.get());
 
 
 	// Beginning of Layer #1 -----------------------------------------------------------------------
@@ -202,7 +206,7 @@ void SimulationWindow::InitializeRenderPasses()
 
 	m_instanceData = std::vector<InstanceData>(10);
 
-	RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(0, m_instanceConstantBuffer.get());
+	RootConstantBufferView& sphereInstanceCBV = sphereRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_instanceConstantBuffer.get());
 	sphereInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			int iii = 0;
@@ -234,7 +238,7 @@ void SimulationWindow::InitializeRenderPasses()
 	arrowRI.SetActive(false);
 
 	m_arrowConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1);	
-	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(0, m_arrowConstantBuffer.get());
+	RootConstantBufferView& arrowInstanceCBV = arrowRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_arrowConstantBuffer.get());
 
 
 
@@ -316,7 +320,7 @@ void SimulationWindow::InitializeRenderPasses()
 	OnBoxSizeChanged();
 
 	RenderItem& boxRI = layer2.EmplaceBackRenderItem();
-	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(0, m_boxConstantBuffer.get());
+	RootConstantBufferView& boxCBV = boxRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_boxConstantBuffer.get());
 
 
 
@@ -353,7 +357,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderItem& axisRI = layer3.EmplaceBackRenderItem(0);
 
 	m_axisCylinderConstantBuffer = std::make_unique<ConstantBufferStatic<InstanceData>>(m_deviceResources, 1); 
-	RootConstantBufferView& axisCylinderInstanceCBV = axisRI.EmplaceBackRootConstantBufferView(0, m_axisCylinderConstantBuffer.get()); 
+	RootConstantBufferView& axisCylinderInstanceCBV = axisRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_axisCylinderConstantBuffer.get());
 
 
 	// Beginning of Layer #4 (Transparency Layer - Expanding Box Walls) -----------------------------------------------------------------------
@@ -406,7 +410,7 @@ void SimulationWindow::InitializeRenderPasses()
 
 	RenderItem& boxFaceRI = layer4.EmplaceBackRenderItem();
 	boxFaceRI.SetInstanceCount(2);
-	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(0, m_boxFaceConstantBuffer.get());
+	RootConstantBufferView& boxFaceCBV = boxFaceRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_boxFaceConstantBuffer.get());
 
 
 	// Beginning of Layer #5 (Stencil Layer for selected atoms) -----------------------------------------------------------------------
@@ -481,7 +485,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderItem& sphereStencilRI = layer5.EmplaceBackRenderItem();
 	sphereStencilRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size()));
 
-	RootConstantBufferView& sphereStencilInstanceCBV = sphereStencilRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceConstantBuffer.get());
+	RootConstantBufferView& sphereStencilInstanceCBV = sphereStencilRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_selectedAtomInstanceConstantBuffer.get());
 	sphereStencilInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			const std::vector<Atom>& atoms = m_simulation.GetAtoms();
@@ -563,7 +567,7 @@ void SimulationWindow::InitializeRenderPasses()
 	RenderItem& sphereOutlineRI = layer6.EmplaceBackRenderItem();
 	sphereOutlineRI.SetInstanceCount(static_cast<unsigned int>(m_simulation.GetSelectedAtomIndices().size())); 
 
-	RootConstantBufferView& outlineStencilInstanceCBV = sphereOutlineRI.EmplaceBackRootConstantBufferView(0, m_selectedAtomInstanceOutlineConstantBuffer.get());
+	RootConstantBufferView& outlineStencilInstanceCBV = sphereOutlineRI.EmplaceBackRootConstantBufferView(objectCBRegister, m_selectedAtomInstanceOutlineConstantBuffer.get());
 	outlineStencilInstanceCBV.Update = [this](const Timer& timer, int frameIndex)
 		{
 			const std::vector<Atom>& atoms = m_simulation.GetAtoms();

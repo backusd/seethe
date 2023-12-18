@@ -8,18 +8,16 @@ cbuffer cbPerObject : register(b0)
     float4x4 gWorld;
 };
 
-cbuffer cbMaterial : register(b1)
-{
-    Material gMaterial[NUM_MATERIALS];
-};
-
-cbuffer cbPass : register(b2)
+cbuffer cbPass : register(b1)
 {
     PerPassData gPerPassData;
     SceneLighting gLighting;
 };
 
-
+cbuffer cbMaterial : register(b2)
+{
+    Material gMaterial[NUM_MATERIALS];
+};
 
 
 struct VertexOut
