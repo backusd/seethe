@@ -147,7 +147,7 @@ private:
 	std::array<UINT64, g_numFrameResources> m_fences = {};	
 	std::unique_ptr<DescriptorVector> m_descriptorVector = nullptr;
 
-	SceneLighting m_mainLighting = {};
+	std::unique_ptr<SceneLighting> m_mainLighting = nullptr;
 	std::vector<Material> m_materials = {};
 
 	SimulationSettings m_simulationSettings;
