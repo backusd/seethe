@@ -43,6 +43,7 @@ void Application::Initialize()
 	InitializeMaterials();
 
 	m_mainLighting.AmbientLight = { 0.25f, 0.25f, 0.25f, 1.0f };
+	m_mainLighting.NumDirectionalLights = 3;
 	m_mainLighting.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
 	m_mainLighting.Lights[0].Strength = { 0.9f, 0.9f, 0.9f };
 	m_mainLighting.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };

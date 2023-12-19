@@ -126,7 +126,10 @@
     <ClInclude Include="src\application\change-requests\RemoveAtomsCR.h" />
     <ClInclude Include="src\application\change-requests\AtomsMovedCR.h" />
     <ClInclude Include="src\application\change-requests\SimulationPlayCR.h" />
+    <ClInclude Include="src\application\rendering\InstanceData.h" />
     <ClInclude Include="src\application\rendering\Light.h" />
+    <ClInclude Include="src\application\rendering\PassConstants.h" />
+    <ClInclude Include="src\application\rendering\VertexTypes.h" />
     <ClInclude Include="src\application\ui\Enums.h" />
     <ClInclude Include="src\rendering\GeometryGenerator.h" />
     <ClInclude Include="src\application\ui\fonts\Fonts.h" />

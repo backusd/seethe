@@ -1,7 +1,11 @@
 #pragma once
 #include "pch.h"
 
-static constexpr int MaxLights = 16;
+// Max constant buffer size is 4096 float4's
+// Our current SceneLighting class uses 2 float4's for non-Light data
+// And the Light struct is 3 float4's
+// (4096 - 2) / 3 = 1364.67
+static constexpr int MaxLights = 1364;
 
 namespace seethe
 {
@@ -18,6 +22,11 @@ struct Light
 struct SceneLighting
 {
 	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	std::uint32_t NumDirectionalLights = 0;
+	std::uint32_t NumPointLights = 0;
+	std::uint32_t NumSpotLights = 0;
+	std::uint32_t Pad0 = 0;
 
 	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
 	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;

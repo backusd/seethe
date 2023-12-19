@@ -65,12 +65,33 @@ float4 main(VertexOut pin) : SV_Target
     float4 ambient = gLighting.AmbientLight * gDiffuseAlbedo;
 
     const float shininess = 1.0f - gRoughness;
-    Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
+    Material material = { gDiffuseAlbedo, gFresnelR0, shininess };
     float3 shadowFactor = 1.0f;
-    float4 directLight = ComputeLighting(gLighting.Lights, mat, pin.PosW,
-        pin.NormalW, toEyeW, shadowFactor);
 
-    float4 litColor = ambient + directLight;
+    
+    float3 directLight = 0.0f;
+    uint i = 0;
+
+    uint end = gLighting.NumDirectionalLights;
+    for (i = 0; i < end; ++i)
+    {
+        directLight += shadowFactor[i] * ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
+    }
+    
+    end = end + gLighting.NumPointLights;
+    for (i = gLighting.NumDirectionalLights; i < end; ++i)
+    {
+        directLight += ComputePointLight(gLighting.Lights[i], material, pin.PosW, pin.NormalW, toEyeW);
+    }
+
+    end = end + gLighting.NumSpotLights;
+    for (i = gLighting.NumDirectionalLights + gLighting.NumPointLights; i < end; ++i)
+    {
+        directLight += ComputeSpotLight(gLighting.Lights[i], material, pin.PosW, pin.NormalW, toEyeW);
+    }
+
+    
+    float4 litColor = ambient + float4(directLight, 0.0f);
 
     // Common convention to take alpha from diffuse material.
     litColor.a = gDiffuseAlbedo.a;

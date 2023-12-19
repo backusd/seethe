@@ -1,10 +1,9 @@
-//***************************************************************************************
-// LightingUtil.hlsl by Frank Luna (C) 2015 All Rights Reserved.
-//
-// Contains API for shader lighting.
-//***************************************************************************************
 
-#define MAX_LIGHTS 16
+// Max constant buffer size is 4096 float4's
+// Our current SceneLighting class uses 2 float4's for non-Light data
+// And the Light struct is 3 float4's
+// (4096 - 2) / 3 = 1364.67
+#define MAX_LIGHTS 1364
 
 struct Light
 {
@@ -19,6 +18,10 @@ struct Light
 struct SceneLighting
 {
     float4 AmbientLight;
+    uint NumDirectionalLights;
+    uint NumPointLights;
+    uint NumSpotLights;
+    uint Pad0;
     
     // Indices [0, NUM_DIR_LIGHTS) are directional lights;
     // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
@@ -96,23 +99,27 @@ float3 ComputePointLight(Light L, Material mat, float3 pos, float3 normal, float
 
     // The distance from surface to light.
     float d = length(lightVec);
+    
+    float3 result = float3(0.0f, 0.0f, 0.0f);
 
     // Range test.
-    if (d > L.FalloffEnd)
-        return 0.0f;
+    if (d < L.FalloffEnd)
+    {
+        // Normalize the light vector.
+        lightVec /= d;
 
-    // Normalize the light vector.
-    lightVec /= d;
+        // Scale light down by Lambert's cosine law.
+        float ndotl = max(dot(lightVec, normal), 0.0f);
+        float3 lightStrength = L.Strength * ndotl;
 
-    // Scale light down by Lambert's cosine law.
-    float ndotl = max(dot(lightVec, normal), 0.0f);
-    float3 lightStrength = L.Strength * ndotl;
+        // Attenuate light by distance.
+        float att = CalcAttenuation(d, L.FalloffStart, L.FalloffEnd);
+        lightStrength *= att;
 
-    // Attenuate light by distance.
-    float att = CalcAttenuation(d, L.FalloffStart, L.FalloffEnd);
-    lightStrength *= att;
-
-    return BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
+        result = BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
+    }
+    
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
@@ -125,59 +132,31 @@ float3 ComputeSpotLight(Light L, Material mat, float3 pos, float3 normal, float3
 
     // The distance from surface to light.
     float d = length(lightVec);
+    
+    float3 result = float3(0.0f, 0.0f, 0.0f);
 
     // Range test.
-    if (d > L.FalloffEnd)
-        return 0.0f;
-
-    // Normalize the light vector.
-    lightVec /= d;
-
-    // Scale light down by Lambert's cosine law.
-    float ndotl = max(dot(lightVec, normal), 0.0f);
-    float3 lightStrength = L.Strength * ndotl;
-
-    // Attenuate light by distance.
-    float att = CalcAttenuation(d, L.FalloffStart, L.FalloffEnd);
-    lightStrength *= att;
-
-    // Scale by spotlight
-    float spotFactor = pow(max(dot(-lightVec, L.Direction), 0.0f), L.SpotPower);
-    lightStrength *= spotFactor;
-
-    return BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
-}
-
-float4 ComputeLighting(Light gLights[MAX_LIGHTS], Material mat,
-                       float3 pos, float3 normal, float3 toEye,
-                       float3 shadowFactor)
-{
-    float3 result = 0.0f;
-
-    int i = 0;
-
-#if (NUM_DIR_LIGHTS > 0)
-    for(i = 0; i < NUM_DIR_LIGHTS; ++i)
+    if (d < L.FalloffEnd)
     {
-        result += shadowFactor[i] * ComputeDirectionalLight(gLights[i], mat, normal, toEye);
-    }
-#endif
+        // Normalize the light vector.
+        lightVec /= d;
 
-#if (NUM_POINT_LIGHTS > 0)
-    for(i = NUM_DIR_LIGHTS; i < NUM_DIR_LIGHTS+NUM_POINT_LIGHTS; ++i)
-    {
-        result += ComputePointLight(gLights[i], mat, pos, normal, toEye);
-    }
-#endif
+        // Scale light down by Lambert's cosine law.
+        float ndotl = max(dot(lightVec, normal), 0.0f);
+        float3 lightStrength = L.Strength * ndotl;
 
-#if (NUM_SPOT_LIGHTS > 0)
-    for(i = NUM_DIR_LIGHTS + NUM_POINT_LIGHTS; i < NUM_DIR_LIGHTS + NUM_POINT_LIGHTS + NUM_SPOT_LIGHTS; ++i)
-    {
-        result += ComputeSpotLight(gLights[i], mat, pos, normal, toEye);
-    }
-#endif 
+        // Attenuate light by distance.
+        float att = CalcAttenuation(d, L.FalloffStart, L.FalloffEnd);
+        lightStrength *= att;
 
-    return float4(result, 0.0f);
+        // Scale by spotlight
+        float spotFactor = pow(max(dot(-lightVec, L.Direction), 0.0f), L.SpotPower);
+        lightStrength *= spotFactor;
+
+        result = BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
+    }
+    
+    return result;
 }
 
 

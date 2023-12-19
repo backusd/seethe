@@ -799,7 +799,10 @@ void SimulationWindow::EndSelectionMovement() noexcept
 }
 
 
-
+void SimulationWindow::OnLightingChangedImpl() noexcept
+{
+	m_lightingConstantBuffer->CopyData(m_lighting); 
+}
 void SimulationWindow::OnBoxSizeChanged() noexcept
 {
 	m_oneTimeUpdateFns.push_back(

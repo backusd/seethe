@@ -1,73 +1,15 @@
 #pragma once
 #include "pch.h"
 #include "rendering/Renderer.h"
+#include "application/rendering/InstanceData.h"
 #include "application/rendering/Light.h"
 #include "application/rendering/Material.h"
+#include "application/rendering/PassConstants.h"
+#include "application/rendering/VertexTypes.h"
 #include "simulation/Simulation.h"
 #include "utils/Timer.h"
 #include "Enums.h"
 
-
-struct ObjectConstants
-{
-	DirectX::XMFLOAT4X4 World = seethe::MathHelper::Identity4x4();
-};
-
-struct InstanceData
-{
-	DirectX::XMFLOAT4X4 World;
-	std::uint32_t MaterialIndex;
-	std::uint32_t Pad0;
-	std::uint32_t Pad1;
-	std::uint32_t Pad2;
-};
-
-struct Vertex
-{
-	DirectX::XMFLOAT3 Pos;
-	DirectX::XMFLOAT3 Normal;
-
-	// This method is required because we impose the HAS_POSITION concept on MeshGroupT so that we can compute the bounding box
-	ND inline DirectX::XMFLOAT3 Position() const noexcept { return Pos; }
-};
-struct SolidColorVertex
-{
-	DirectX::XMFLOAT4 Pos;
-
-	// This method is required because we impose the HAS_POSITION concept on MeshGroupT so that we can compute the bounding box
-	ND inline DirectX::XMFLOAT3 Position() const noexcept { return { Pos.x, Pos.y, Pos.z }; }
-};
-
-
-
-
-struct PassConstants
-{
-	DirectX::XMFLOAT4X4 View = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvView = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 Proj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 ViewProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 InvViewProj = seethe::MathHelper::Identity4x4();
-	DirectX::XMFLOAT3 EyePosW = { 0.0f, 0.0f, 0.0f };
-	float cbPerObjectPad1 = 0.0f;
-	DirectX::XMFLOAT2 RenderTargetSize = { 0.0f, 0.0f };
-	DirectX::XMFLOAT2 InvRenderTargetSize = { 0.0f, 0.0f };
-	float NearZ = 0.0f;
-	float FarZ = 0.0f;
-	float TotalTime = 0.0f;
-	float DeltaTime = 0.0f;
-
-//	seethe::SceneLighting Lighting = {};
-
-//	DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
-//
-//	// Indices [0, NUM_DIR_LIGHTS) are directional lights;
-//	// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-//	// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-//	// are spot lights for a maximum of MaxLights per object.
-//	seethe::Light Lights[MaxLights];
-};
 
 namespace seethe
 {
@@ -85,7 +27,7 @@ public:
 
 	void Update(const Timer& timer, int frameIndex);
 	inline void Render(int frameIndex) { m_renderer->Render(m_simulation, frameIndex); }
-	inline void SetWindow(float top, float left, float height, float width) noexcept
+	constexpr void SetWindow(float top, float left, float height, float width) noexcept
 	{
 		m_viewport = { left, top, width, height, 0.0f, 1.0f };
 		m_scissorRect = { static_cast<long>(left), static_cast<long>(top), static_cast<long>(left + width), static_cast<long>(top + height) };
@@ -115,10 +57,10 @@ public:
 	ND bool OnChar(char c) noexcept;
 
 
-	ND constexpr inline bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
-	ND constexpr inline bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
+	ND constexpr bool ContainsPoint(float x, float y) const noexcept { return m_viewport.TopLeftX <= x && m_viewport.TopLeftY <= y && m_viewport.TopLeftX + m_viewport.Width >= x && m_viewport.TopLeftY + m_viewport.Height >= y; }
+	ND constexpr bool Dragging() const noexcept { return m_mouseLButtonDown || m_mouseMButtonDown || m_mouseRButtonDown || m_mouseX1ButtonDown || m_mouseX2ButtonDown; }
 
-	constexpr inline void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept
+	constexpr void SetAllowMouseToResizeBoxDimensions(bool allow) noexcept
 	{ 
 		m_allowMouseToResizeBoxDimensions = allow; 
 		ClearMouseHoverWallState();
@@ -131,8 +73,12 @@ public:
 	void StartSelectionMovement(MovementDirection direction = MovementDirection::X) noexcept;
 	void EndSelectionMovement() noexcept;
 
+	void NotifyLightingChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { OnLightingChangedImpl(); }); }
+
 private:
 	void RegisterEventHandlers() noexcept;
+
+	void OnLightingChangedImpl() noexcept;
 
 	void OnBoxSizeChanged() noexcept;
 	void OnBoxFaceHighlightChanged() noexcept;
@@ -168,12 +114,12 @@ private:
 	void HandleKeyUp(unsigned int virtualKeyCode) noexcept;
 	void HandleChar(char c) noexcept;
 
-	ND constexpr inline bool KeyboardKeyIsPressed() const noexcept 
+	ND constexpr bool KeyboardKeyIsPressed() const noexcept 
 	{ 
 		return m_arrowLeftIsPressed || m_arrowRightIsPressed || m_arrowUpIsPressed || m_arrowDownIsPressed ||
 			   m_keyAIsPressed || m_keyDIsPressed || m_keyEIsPressed || m_keyQIsPressed || m_keySIsPressed || m_keyWIsPressed;
 	}
-	ND constexpr inline bool MouseIsInViewport(float x, float y) const noexcept
+	ND constexpr bool MouseIsInViewport(float x, float y) const noexcept
 	{
 		return m_viewport.TopLeftX <= x && m_viewport.TopLeftX + m_viewport.Width >= x &&
 			m_viewport.TopLeftY <= y && m_viewport.TopLeftY + m_viewport.Height >= y;
@@ -184,7 +130,7 @@ private:
 	std::optional<size_t> PickAtom(float x, float y);
 	void PickBoxWalls(float x, float y);
 
-	constexpr inline void ClearMouseHoverWallState() noexcept
+	constexpr void ClearMouseHoverWallState() noexcept
 	{
 		m_mouseHoveringBoxWallPosX = false;
 		m_mouseHoveringBoxWallPosY = false;
@@ -194,7 +140,7 @@ private:
 		m_mouseHoveringBoxWallNegZ = false;
 		m_mouseDraggingBoxJustStarted = false;
 	}
-	constexpr inline void ClearMouseDraggingWallState() noexcept
+	constexpr void ClearMouseDraggingWallState() noexcept
 	{
 		m_mouseDraggingBoxWallPosX = false;
 		m_mouseDraggingBoxWallPosY = false;
@@ -203,17 +149,17 @@ private:
 		m_mouseDraggingBoxWallNegY = false;
 		m_mouseDraggingBoxWallNegZ = false;
 	}
-	ND inline bool MouseIsDraggingWall() const noexcept
+	ND constexpr bool MouseIsDraggingWall() const noexcept
 	{
 		return m_mouseDraggingBoxWallPosX || m_mouseDraggingBoxWallPosY || m_mouseDraggingBoxWallPosZ ||
 			m_mouseDraggingBoxWallNegX || m_mouseDraggingBoxWallNegY || m_mouseDraggingBoxWallNegZ;
 	}
-	ND inline bool MouseIsHoveringWall() const noexcept
+	ND constexpr bool MouseIsHoveringWall() const noexcept
 	{
 		return m_mouseHoveringBoxWallPosX || m_mouseHoveringBoxWallPosY || m_mouseHoveringBoxWallPosZ ||
 			m_mouseHoveringBoxWallNegX || m_mouseHoveringBoxWallNegY || m_mouseHoveringBoxWallNegZ;
 	}
-	inline void SetBoxWallResizeRenderEffectsActive(bool active) noexcept
+	constexpr void SetBoxWallResizeRenderEffectsActive(bool active) noexcept
 	{
 		auto& pass1Layers = m_renderer->GetRenderPass(0).GetRenderPassLayers();
 
@@ -225,9 +171,9 @@ private:
 		pass1Layers[0].GetRenderItems()[1].SetActive(active);
 	}
 
-	inline void SelectionMovementDirectionChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDirectionChangedImpl(); }); }
+	constexpr void SelectionMovementDirectionChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDirectionChangedImpl(); }); }
 	void SelectionMovementDirectionChangedImpl() noexcept;
-	inline void SelectionMovementDragPlaneChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDragPlaneChangedImpl(); }); }
+	constexpr void SelectionMovementDragPlaneChanged() noexcept { m_oneTimeUpdateFns.push_back([this]() { SelectionMovementDragPlaneChangedImpl(); }); }
 	void SelectionMovementDragPlaneChangedImpl() noexcept;
 	void DragSelectedAtoms(float x, float y) noexcept;
 
@@ -279,12 +225,12 @@ private:
 
 
 
-	const DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
-	const DirectX::BoundingBox m_boundingBoxNegX = { {-1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
-	const DirectX::BoundingBox m_boundingBoxPosY = { { 0.0f,  1.0f,  0.0f}, { 1.0f, 0.05f, 1.0f } };
-	const DirectX::BoundingBox m_boundingBoxNegY = { { 0.0f, -1.0f,  0.0f}, { 1.0f, 0.05f, 1.0f } };
-	const DirectX::BoundingBox m_boundingBoxPosZ = { { 0.0f,  0.0f,  1.0f}, { 1.0f, 1.0f, 0.05f } };
-	const DirectX::BoundingBox m_boundingBoxNegZ = { { 0.0f,  0.0f, -1.0f}, { 1.0f, 1.0f, 0.05f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxPosX = { { 1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxNegX = { {-1.0f,  0.0f,  0.0f}, { 0.0f, 1.0f, 1.0f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxPosY = { { 0.0f,  1.0f,  0.0f}, { 1.0f, 0.0f, 1.0f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxNegY = { { 0.0f, -1.0f,  0.0f}, { 1.0f, 0.0f, 1.0f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxPosZ = { { 0.0f,  0.0f,  1.0f}, { 1.0f, 1.0f, 0.0f } };
+	static constexpr DirectX::BoundingBox m_boundingBoxNegZ = { { 0.0f,  0.0f, -1.0f}, { 1.0f, 1.0f, 0.0f } };
 
 
 	// Mouse Tracking

@@ -5,17 +5,17 @@
 //***************************************************************************************
 
 // Defaults for number of lights.
-#ifndef NUM_DIR_LIGHTS
-#define NUM_DIR_LIGHTS 3
-#endif
-
-#ifndef NUM_POINT_LIGHTS
-#define NUM_POINT_LIGHTS 0
-#endif
-
-#ifndef NUM_SPOT_LIGHTS
-#define NUM_SPOT_LIGHTS 0
-#endif
+//#ifndef NUM_DIR_LIGHTS
+//#define NUM_DIR_LIGHTS 3
+//#endif
+//
+//#ifndef NUM_POINT_LIGHTS
+//#define NUM_POINT_LIGHTS 0
+//#endif
+//
+//#ifndef NUM_SPOT_LIGHTS
+//#define NUM_SPOT_LIGHTS 0
+//#endif
 
 // Include structures and functions for lighting.
 #include "InstanceData.hlsli"
@@ -67,9 +67,31 @@ float4 main(VertexOut pin) : SV_Target
     float4 ambient = gLighting.AmbientLight * material.DiffuseAlbedo;
     
     float3 shadowFactor = 1.0f;
-    float4 directLight = ComputeLighting(gLighting.Lights, material, pin.PosW, pin.NormalW, toEyeW, shadowFactor);
+    
+    
+    float3 directLight = 0.0f;
+    uint i = 0;
 
-    float4 litColor = ambient + directLight;
+    uint end = gLighting.NumDirectionalLights;
+    for (i = 0; i < end; ++i)
+    {
+        directLight += shadowFactor[i] * ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
+    }
+    
+    end = end + gLighting.NumPointLights;
+    for (i = gLighting.NumDirectionalLights; i < end; ++i)
+    {
+        directLight += ComputePointLight(gLighting.Lights[i], material, pin.PosW, pin.NormalW, toEyeW);
+    }
+
+    end = end + gLighting.NumSpotLights;
+    for (i = gLighting.NumDirectionalLights + gLighting.NumPointLights; i < end; ++i)
+    {
+        directLight += ComputeSpotLight(gLighting.Lights[i], material, pin.PosW, pin.NormalW, toEyeW);
+    }
+    
+
+    float4 litColor = ambient + float4(directLight, 0.0f);
 
     // Common convention to take alpha from diffuse material.
     litColor.a = material.DiffuseAlbedo.a;
