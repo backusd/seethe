@@ -22,12 +22,28 @@ struct Light
 struct SceneLighting
 {
 public:
-	ND constexpr const DirectX::XMFLOAT4& AmbientLight() const noexcept { return m_ambientLight; }
+	ND constexpr DirectX::XMFLOAT4& AmbientLight() noexcept { return m_ambientLight; }
 	constexpr void AmbientLight(const DirectX::XMFLOAT4& light) noexcept { m_ambientLight = light; }
 
 	ND constexpr std::uint32_t NumDirectionalLights() const noexcept { return m_numDirectionalLights; }
 	ND constexpr std::uint32_t NumPointLights() const noexcept { return m_numPointLights; }
 	ND constexpr std::uint32_t NumSpotLights() const noexcept { return m_numSpotLights; }
+
+	ND constexpr Light& GetDirectionalLight(size_t index) noexcept
+	{
+		ASSERT(index >= 0 && index < m_numDirectionalLights, "Invalid index");
+		return m_lights[index];
+	}
+	ND constexpr Light& GetPointLight(size_t index) noexcept
+	{
+		ASSERT(index >= 0 && index < m_numPointLights, "Invalid index");
+		return m_lights[m_numDirectionalLights + index];
+	}
+	ND constexpr Light& GetSpotLight(size_t index) noexcept
+	{
+		ASSERT(index >= 0 && index < m_numSpotLights, "Invalid index");
+		return m_lights[index + m_numDirectionalLights + m_numPointLights];
+	}
 
 	constexpr void AddDirectionalLight(const DirectX::XMFLOAT3& strength, const DirectX::XMFLOAT3& direction) noexcept
 	{

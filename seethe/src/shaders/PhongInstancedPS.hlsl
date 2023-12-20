@@ -66,8 +66,6 @@ float4 main(VertexOut pin) : SV_Target
 	// Indirect lighting.
     float4 ambient = gLighting.AmbientLight * material.DiffuseAlbedo;
     
-    float3 shadowFactor = 1.0f;
-    
     
     float3 directLight = 0.0f;
     uint i = 0;
@@ -75,7 +73,7 @@ float4 main(VertexOut pin) : SV_Target
     uint end = gLighting.NumDirectionalLights;
     for (i = 0; i < end; ++i)
     {
-        directLight += shadowFactor[i] * ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
+        directLight += ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
     }
     
     end = end + gLighting.NumPointLights;

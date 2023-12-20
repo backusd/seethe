@@ -66,7 +66,6 @@ float4 main(VertexOut pin) : SV_Target
 
     const float shininess = 1.0f - gRoughness;
     Material material = { gDiffuseAlbedo, gFresnelR0, shininess };
-    float3 shadowFactor = 1.0f;
 
     
     float3 directLight = 0.0f;
@@ -75,7 +74,7 @@ float4 main(VertexOut pin) : SV_Target
     uint end = gLighting.NumDirectionalLights;
     for (i = 0; i < end; ++i)
     {
-        directLight += shadowFactor[i] * ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
+        directLight += ComputeDirectionalLight(gLighting.Lights[i], material, pin.NormalW, toEyeW);
     }
     
     end = end + gLighting.NumPointLights;

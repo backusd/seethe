@@ -1160,8 +1160,199 @@ void Application::RenderUI()
 
 		if (editLighting)
 		{
+			static size_t selectedLightIndex = -1;
+
 			ImGui::Begin("Lighting");
-			ImGui::Text("We are editing lighting now");
+
+			ImGui::SeparatorText("Add Lights");
+
+			if (ImGui::Button(ICON_ADD " Directional Light"))
+			{
+				m_mainLighting->AddDirectionalLight({ 0.5f, 0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f });
+				selectedLightIndex = m_mainLighting->NumDirectionalLights() - 1;
+				m_mainSimulationWindow->NotifyLightingChanged();
+			}
+			if (ImGui::Button(ICON_ADD " Point Light"))
+			{
+				m_mainLighting->AddPointLight({ 0.5f, 0.5f, 0.5f }, { 0.0f, 0.0f, 10.0f }, 1.0f, 20.0f);
+				selectedLightIndex = m_mainLighting->NumDirectionalLights() + m_mainLighting->NumPointLights() - 1;
+				m_mainSimulationWindow->NotifyLightingChanged();
+			}
+			if (ImGui::Button(ICON_ADD " Spot Light"))
+			{
+				m_mainLighting->AddSpotLight({ 0.5f, 0.5f, 0.5f }, { 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 10.0f }, 1.0f, 20.0f, 64.0f);
+				selectedLightIndex = m_mainLighting->NumDirectionalLights() + m_mainLighting->NumPointLights() + m_mainLighting->NumSpotLights() - 1;
+				m_mainSimulationWindow->NotifyLightingChanged();
+			}
+
+			ImGui::SeparatorText("Scene Lighting");
+
+			ImGui::Spacing();
+			ImGui::Text("Ambient Lighting");
+			ImGui::SameLine();
+			ImGui::DragFloat3("##AmbientLighting", (float*)&m_mainLighting->AmbientLight(), 0.01f, 0.0f, 1.0f, "%.2f");
+			if (ImGui::IsItemActive())
+				m_mainSimulationWindow->NotifyLightingChanged();
+
+			ImGuiTableFlags tableFlags =
+				ImGuiTableFlags_Resizable |						// Ability to drag vertical bar between columns to resize them
+				//ImGuiTableFlags_Reorderable |					// Ability to drag column headers to reorder them
+				//ImGuiTableFlags_Hideable |					// Ability to right click on the header row and toggle columns on/off
+				ImGuiTableFlags_Sortable |						// Ability to click a column header to sort the entire table on that column
+				//ImGuiTableFlags_SortMulti |					// Ability to hold SHIFT to sort on multiple columns
+				//ImGuiTableFlags_RowBg |						// Alternate row colors
+				ImGuiTableFlags_Borders |						// ???
+				ImGuiTableFlags_BordersV |						// Include vertical borders on left and right side of the table
+				ImGuiTableFlags_BordersInnerV |					// Include vertical borders between columns
+				ImGuiTableFlags_BordersOuterV |					// Include vertical borders on left and right side of the table
+				ImGuiTableFlags_BordersH |						// Include horizontal borders on top and bottom of the table
+				ImGuiTableFlags_BordersInnerH |					// Include horizontal borders between rows
+				ImGuiTableFlags_BordersOuterH |					// Include horizontal borders on top and bottom of the table
+				// ImGuiTableFlags_NoBordersInBody |			// Omit vertical borders in the table body
+				ImGuiTableFlags_NoBordersInBodyUntilResize |	// Omit vertical borders until hovering to resize column width
+				//ImGuiTableFlags_ScrollX | 
+				//ImGuiTableFlags_ScrollY |
+				ImGuiTableFlags_SizingFixedFit
+				//ImGuiTableFlags_NoHostExtendX |
+				//ImGuiTableFlags_NoHostExtendY
+				;
+
+			ImGui::Spacing();
+			ImGui::Text("Directional Lights:");
+
+			if (m_mainLighting->NumDirectionalLights() == 0)
+			{
+				ImGui::SameLine();
+				ImGui::Text("None");
+			}
+			else
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, 0.0f));
+
+				// Force the table height to be half of the available window height
+				if (ImGui::BeginTable("directional_lights_table", 3, tableFlags)) // , ImVec2(0.0f, ImGui::GetWindowHeight() / 2.0f)))
+				{
+					ImGui::TableSetupColumn("ID");
+					ImGui::TableSetupColumn("Strength");
+					ImGui::TableSetupColumn("Direction", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupScrollFreeze(1, 1); // Freeze the header row and first column when scrolling
+
+					ImGui::TableHeadersRow();
+
+					ImGuiListClipper clipper;
+					clipper.Begin(static_cast<int>(m_mainLighting->NumDirectionalLights()));
+					while (clipper.Step())
+					{
+						for (size_t row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++)
+						{
+							Light& light = m_mainLighting->GetDirectionalLight(row_n);
+
+							ImGui::TableNextRow(ImGuiTableRowFlags_None);
+
+							ImGui::TableSetColumnIndex(0);
+							ImGui::AlignTextToFramePadding();
+							bool itemIsSelected = row_n == selectedLightIndex;
+							if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
+								selectedLightIndex = row_n;
+
+							ImGui::TableSetColumnIndex(1);
+							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+							ImGui::ColorEdit3("##DirectionalStrength", (float*)&light.Strength, ImGuiColorEditFlags_AlphaPreview);
+							if (ImGui::IsItemActive())
+								m_mainSimulationWindow->NotifyLightingChanged();
+
+							ImGui::TableSetColumnIndex(2);
+							ImGui::Text("%.2f, %.2f, %.2f", light.Direction.x, light.Direction.y, light.Direction.z);
+						}
+					}
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+			}
+
+
+
+			ImGui::Spacing();
+			ImGui::Text("Point Lights:");
+
+			if (m_mainLighting->NumPointLights() == 0)
+			{
+				ImGui::SameLine();
+				ImGui::Text("None");
+			}
+			else
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, 0.0f));
+
+				// Force the table height to be half of the available window height
+				if (ImGui::BeginTable("Point_lights_table", 5, tableFlags)) // , ImVec2(0.0f, ImGui::GetWindowHeight() / 2.0f)))
+				{
+					ImGui::TableSetupColumn("ID");
+					ImGui::TableSetupColumn("Strength");
+					ImGui::TableSetupColumn("Position");
+					ImGui::TableSetupColumn("Falloff Start");
+					ImGui::TableSetupColumn("Falloff End", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupScrollFreeze(1, 1); // Freeze the header row and first column when scrolling
+
+					ImGui::TableHeadersRow();
+
+					ImGuiListClipper clipper;
+					clipper.Begin(static_cast<int>(m_mainLighting->NumPointLights()));
+					while (clipper.Step())
+					{
+						for (size_t row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++)
+						{
+							Light& light = m_mainLighting->GetPointLight(row_n);
+
+							ImGui::TableNextRow(ImGuiTableRowFlags_None);
+
+							ImGui::TableSetColumnIndex(0);
+							ImGui::AlignTextToFramePadding();
+							bool itemIsSelected = (row_n + m_mainLighting->NumDirectionalLights()) == selectedLightIndex;
+							if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
+								selectedLightIndex = row_n + m_mainLighting->NumDirectionalLights();
+
+							ImGui::TableSetColumnIndex(1); 
+							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x); 
+							ImGui::ColorEdit3("##DirectionalStrength", (float*)&light.Strength, ImGuiColorEditFlags_AlphaPreview); 
+							if (ImGui::IsItemActive()) 
+								m_mainSimulationWindow->NotifyLightingChanged(); 
+
+							ImGui::TableSetColumnIndex(2); 
+							ImGui::Text("%.1f, %.1f, %.1f", light.Position.x, light.Position.y, light.Position.z);
+
+							ImGui::TableSetColumnIndex(3);
+							ImGui::Text("%.1f", light.FalloffStart);
+
+							ImGui::TableSetColumnIndex(4);
+							ImGui::Text("%.1f", light.FalloffEnd);
+						}
+					}
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+			}
+
+
+
+			ImGui::Spacing();
+			ImGui::Text("Spot Lights:");
+
+			if (m_mainLighting->NumSpotLights() == 0)
+			{
+				ImGui::SameLine();
+				ImGui::Text("None");
+			}
+			else
+			{
+
+			}
+
+
+
+			
 			ImGui::End();
 		}
 
