@@ -1190,7 +1190,8 @@ void Application::RenderUI()
 			ImGui::Spacing();
 			ImGui::Text("Ambient Lighting");
 			ImGui::SameLine();
-			ImGui::DragFloat3("##AmbientLighting", (float*)&m_mainLighting->AmbientLight(), 0.01f, 0.0f, 1.0f, "%.2f");
+			ImGui::ColorEdit3("##AmbientLighting", (float*)&m_mainLighting->AmbientLight(), ImGuiColorEditFlags_AlphaPreview);
+			//ImGui::DragFloat3("##AmbientLighting", (float*)&m_mainLighting->AmbientLight(), 0.01f, 0.0f, 1.0f, "%.2f");
 			if (ImGui::IsItemActive())
 				m_mainSimulationWindow->NotifyLightingChanged();
 
@@ -1249,18 +1250,21 @@ void Application::RenderUI()
 
 							ImGui::TableNextRow(ImGuiTableRowFlags_None);
 
+							// ID
 							ImGui::TableSetColumnIndex(0);
 							ImGui::AlignTextToFramePadding();
 							bool itemIsSelected = row_n == selectedLightIndex;
 							if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
 								selectedLightIndex = row_n;
 
+							// Strength
 							ImGui::TableSetColumnIndex(1);
 							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 							ImGui::ColorEdit3("##DirectionalStrength", (float*)&light.Strength, ImGuiColorEditFlags_AlphaPreview);
 							if (ImGui::IsItemActive())
 								m_mainSimulationWindow->NotifyLightingChanged();
 
+							// Direction
 							ImGui::TableSetColumnIndex(2);
 							ImGui::Text("%.2f, %.2f, %.2f", light.Direction.x, light.Direction.y, light.Direction.z);
 						}
@@ -1307,24 +1311,29 @@ void Application::RenderUI()
 
 							ImGui::TableNextRow(ImGuiTableRowFlags_None);
 
+							// ID
 							ImGui::TableSetColumnIndex(0);
 							ImGui::AlignTextToFramePadding();
 							bool itemIsSelected = (row_n + m_mainLighting->NumDirectionalLights()) == selectedLightIndex;
 							if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
 								selectedLightIndex = row_n + m_mainLighting->NumDirectionalLights();
 
+							// Strength
 							ImGui::TableSetColumnIndex(1); 
 							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x); 
 							ImGui::ColorEdit3("##DirectionalStrength", (float*)&light.Strength, ImGuiColorEditFlags_AlphaPreview); 
 							if (ImGui::IsItemActive()) 
 								m_mainSimulationWindow->NotifyLightingChanged(); 
 
+							// Position
 							ImGui::TableSetColumnIndex(2); 
 							ImGui::Text("%.1f, %.1f, %.1f", light.Position.x, light.Position.y, light.Position.z);
 
+							// Falloff Start
 							ImGui::TableSetColumnIndex(3);
 							ImGui::Text("%.1f", light.FalloffStart);
 
+							// Falloff End
 							ImGui::TableSetColumnIndex(4);
 							ImGui::Text("%.1f", light.FalloffEnd);
 						}
@@ -1334,8 +1343,6 @@ void Application::RenderUI()
 				}
 				ImGui::PopStyleVar();
 			}
-
-
 
 			ImGui::Spacing();
 			ImGui::Text("Spot Lights:");
@@ -1347,11 +1354,72 @@ void Application::RenderUI()
 			}
 			else
 			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, 0.0f));
 
+				// Force the table height to be half of the available window height
+				if (ImGui::BeginTable("spot_lights_table", 7, tableFlags))
+				{
+					ImGui::TableSetupColumn("ID");
+					ImGui::TableSetupColumn("Strength");
+					ImGui::TableSetupColumn("Position");
+					ImGui::TableSetupColumn("Direction");
+					ImGui::TableSetupColumn("Falloff Start");
+					ImGui::TableSetupColumn("Falloff End");
+					ImGui::TableSetupColumn("Spot Power", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupScrollFreeze(1, 1); // Freeze the header row and first column when scrolling
+
+					ImGui::TableHeadersRow();
+
+					ImGuiListClipper clipper;
+					clipper.Begin(static_cast<int>(m_mainLighting->NumSpotLights())); 
+					while (clipper.Step())
+					{
+						for (size_t row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++)
+						{
+							Light& light = m_mainLighting->GetSpotLight(row_n);
+
+							ImGui::TableNextRow(ImGuiTableRowFlags_None);
+							
+							// ID
+							ImGui::TableSetColumnIndex(0);
+							ImGui::AlignTextToFramePadding();
+							bool itemIsSelected = (row_n + m_mainLighting->NumDirectionalLights() + m_mainLighting->NumPointLights()) == selectedLightIndex;
+							if (ImGui::Selectable(std::format(" {}", row_n).c_str(), itemIsSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap))
+								selectedLightIndex = row_n + m_mainLighting->NumDirectionalLights() + m_mainLighting->NumPointLights(); 
+
+							// Strength
+							ImGui::TableSetColumnIndex(1);
+							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+							ImGui::ColorEdit3("##SpotStrength", (float*)&light.Strength, ImGuiColorEditFlags_AlphaPreview);
+							if (ImGui::IsItemActive())
+								m_mainSimulationWindow->NotifyLightingChanged();
+
+							// Position
+							ImGui::TableSetColumnIndex(2);
+							ImGui::Text("%.1f, %.1f, %.1f", light.Position.x, light.Position.y, light.Position.z);
+
+							// Direction
+							ImGui::TableSetColumnIndex(3);
+							ImGui::Text("%.2f, %.2f, %.2f", light.Direction.x, light.Direction.y, light.Direction.z); 
+
+							// Falloff Start
+							ImGui::TableSetColumnIndex(4);
+							ImGui::Text("%.1f", light.FalloffStart);
+
+							// Falloff End
+							ImGui::TableSetColumnIndex(5);
+							ImGui::Text("%.1f", light.FalloffEnd);
+
+							// Spot Power
+							ImGui::TableSetColumnIndex(6);
+							ImGui::Text("%.1f", light.SpotPower);
+						}
+					}
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
 			}
-
-
-
 			
 			ImGui::End();
 		}
